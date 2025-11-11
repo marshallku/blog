@@ -73,8 +73,7 @@ fn main() -> Result<()> {
             }
         }
         Commands::Watch { port } => {
-            println!("Watch mode not yet implemented");
-            println!("Will watch for changes and rebuild automatically on port {}", port);
+            watch_mode(port)?;
         }
         Commands::New { category, title } => {
             create_new_post(&category, &title)?;
@@ -95,7 +94,11 @@ fn build_all(use_cache: bool) -> Result<()> {
     } else {
         BuildCache::new()
     };
-    let mut metadata = MetadataCache::new();
+    let mut metadata = if use_cache {
+        MetadataCache::load().unwrap_or_else(|_| MetadataCache::new())
+    } else {
+        MetadataCache::new()
+    };
 
     let posts_dir = Path::new(&config.content_dir);
 
@@ -269,4 +272,191 @@ Write your post here...
     println!("   Slug: {}", slug);
 
     Ok(())
+}
+
+fn watch_mode(port: u16) -> Result<()> {
+    use notify::{Watcher, RecursiveMode, Result as NotifyResult, Event};
+    use std::sync::mpsc::channel;
+    use std::time::Duration;
+
+    println!("🔍 Watch mode starting...");
+    println!("   Watching for changes in:");
+    println!("   - content/");
+    println!("   - templates/");
+    println!("   - static/");
+    println!("\n   Serving on http://localhost:{}", port);
+    println!("   Press Ctrl+C to stop\n");
+
+    // Do initial build
+    println!("📦 Initial build...");
+    build_all(true)?;
+    println!();
+
+    // Start file server in background thread
+    let server_thread = std::thread::spawn(move || {
+        if let Err(e) = start_dev_server(port) {
+            eprintln!("Dev server error: {}", e);
+        }
+    });
+
+    // Set up file watcher
+    let (tx, rx) = channel();
+
+    let mut watcher = notify::recommended_watcher(move |res: NotifyResult<Event>| {
+        if let Ok(event) = res {
+            tx.send(event).unwrap();
+        }
+    })?;
+
+    // Watch directories
+    watcher.watch(Path::new("content"), RecursiveMode::Recursive)?;
+    watcher.watch(Path::new("templates"), RecursiveMode::Recursive)?;
+    watcher.watch(Path::new("static"), RecursiveMode::Recursive)?;
+
+    // Process file change events
+    loop {
+        match rx.recv_timeout(Duration::from_secs(1)) {
+            Ok(event) => {
+                // Filter out non-modify events and build-cache changes
+                if !should_rebuild(&event) {
+                    continue;
+                }
+
+                println!("📝 File changed, rebuilding...");
+                match build_all(true) {
+                    Ok(_) => println!("✅ Rebuild complete!\n"),
+                    Err(e) => eprintln!("❌ Build error: {}\n", e),
+                }
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                // Check if server thread is still alive
+                if server_thread.is_finished() {
+                    anyhow::bail!("Dev server stopped unexpectedly");
+                }
+                continue;
+            }
+            Err(e) => {
+                anyhow::bail!("Watch error: {}", e);
+            }
+        }
+    }
+}
+
+fn should_rebuild(event: &notify::Event) -> bool {
+    use notify::EventKind;
+
+    // Only rebuild on modify, create, or remove events
+    match event.kind {
+        EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_) => {
+            // Ignore build cache and dist directory changes
+            for path in &event.paths {
+                let path_str = path.to_string_lossy();
+                if path_str.contains(".build-cache") || path_str.contains("dist/") {
+                    return false;
+                }
+            }
+            true
+        }
+        _ => false,
+    }
+}
+
+fn start_dev_server(port: u16) -> Result<()> {
+    use std::net::TcpListener;
+    use std::io::Read;
+    use anyhow::Context as _;
+
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", port))
+        .context("Failed to bind dev server")?;
+
+    println!("🌐 Dev server listening on http://localhost:{}", port);
+
+    for stream in listener.incoming() {
+        let mut stream = match stream {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Connection error: {}", e);
+                continue;
+            }
+        };
+
+        // Read request
+        let mut buffer = [0; 1024];
+        if stream.read(&mut buffer).is_err() {
+            continue;
+        }
+
+        let request = String::from_utf8_lossy(&buffer);
+        let request_line = request.lines().next().unwrap_or("");
+
+        // Parse request path
+        let path = if let Some(path_part) = request_line.split_whitespace().nth(1) {
+            path_part
+        } else {
+            "/"
+        };
+
+        // Serve file
+        serve_file(&mut stream, path);
+    }
+
+    Ok(())
+}
+
+fn serve_file(stream: &mut std::net::TcpStream, path: &str) {
+    use std::io::Write;
+
+    // Map URL path to file path
+    let file_path = if path == "/" {
+        "dist/index.html".to_string()
+    } else if path.ends_with('/') {
+        format!("dist{}index.html", path)
+    } else {
+        format!("dist{}", path)
+    };
+
+    // Try to read file
+    let (status, content_type, body) = if let Ok(contents) = std::fs::read(&file_path) {
+        let content_type = get_content_type(&file_path);
+        ("200 OK", content_type, contents)
+    } else {
+        // Try with /index.html appended
+        let index_path = format!("{}/index.html", file_path);
+        if let Ok(contents) = std::fs::read(&index_path) {
+            ("200 OK", "text/html", contents)
+        } else {
+            let body = b"404 Not Found".to_vec();
+            ("404 NOT FOUND", "text/plain", body)
+        }
+    };
+
+    // Send response
+    let response = format!(
+        "HTTP/1.1 {}\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n",
+        status,
+        content_type,
+        body.len()
+    );
+
+    let _ = stream.write_all(response.as_bytes());
+    let _ = stream.write_all(&body);
+    let _ = stream.flush();
+}
+
+fn get_content_type(path: &str) -> &'static str {
+    if path.ends_with(".html") {
+        "text/html"
+    } else if path.ends_with(".css") {
+        "text/css"
+    } else if path.ends_with(".js") {
+        "application/javascript"
+    } else if path.ends_with(".png") {
+        "image/png"
+    } else if path.ends_with(".jpg") || path.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if path.ends_with(".svg") {
+        "image/svg+xml"
+    } else {
+        "application/octet-stream"
+    }
 }
