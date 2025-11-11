@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}All Tags - {{ config.site_title }}{% endblock %}
+
+{% block content %}
+<div class="tags-page">
+    <h1>All Tags</h1>
+
+    {% if tags %}
+    <div class="tag-cloud">
+        {% for tag_entry in tags %}
+        <a href="/tag/{{ tag_entry.0 }}" class="tag-cloud-item">
+            <span class="tag-name">{{ tag_entry.0 }}</span>
+            <span class="tag-count">({{ tag_entry.1 }})</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No tags yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

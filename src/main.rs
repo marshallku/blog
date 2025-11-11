@@ -4,6 +4,7 @@ mod renderer;
 mod generator;
 mod cache;
 mod metadata;
+mod indices;
 
 use anyhow::Result;
 use clap::{Parser as ClapParser, Subcommand};
@@ -12,6 +13,7 @@ use walkdir::WalkDir;
 
 use crate::cache::{BuildCache, hash_file};
 use crate::generator::Generator;
+use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
 use crate::parser::Parser;
 use crate::renderer::Renderer;
@@ -161,6 +163,10 @@ fn build_all(use_cache: bool) -> Result<()> {
         cache.save()?;
     }
     metadata.save()?;
+
+    // Generate indices
+    let index_generator = IndexGenerator::new(config.clone())?;
+    index_generator.generate_all(&metadata)?;
 
     // Copy static assets
     generator.copy_static_assets()?;
