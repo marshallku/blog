@@ -25,6 +25,7 @@ impl Generator {
 
         let mut context = TeraContext::new();
         context.insert("post", &post.frontmatter);
+        context.insert("slug", &post.slug);
         context.insert("content", html);
         context.insert("config", &self.config);
 
