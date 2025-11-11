@@ -3,6 +3,7 @@ mod parser;
 mod renderer;
 mod generator;
 mod cache;
+mod metadata;
 
 use anyhow::Result;
 use clap::{Parser as ClapParser, Subcommand};
@@ -11,6 +12,7 @@ use walkdir::WalkDir;
 
 use crate::cache::{BuildCache, hash_file};
 use crate::generator::Generator;
+use crate::metadata::MetadataCache;
 use crate::parser::Parser;
 use crate::renderer::Renderer;
 use crate::types::Config;
@@ -91,6 +93,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     } else {
         BuildCache::new()
     };
+    let mut metadata = MetadataCache::new();
 
     let posts_dir = Path::new(&config.content_dir);
 
@@ -139,7 +142,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         // Generate HTML file
         let output_path = generator.generate_post(&post)?;
 
-        // Update cache
+        // Update build cache
         cache.update_entry(
             path,
             file_hash,
@@ -147,13 +150,17 @@ fn build_all(use_cache: bool) -> Result<()> {
             output_path.to_string_lossy().to_string(),
         );
 
+        // Update metadata cache
+        metadata.upsert_post(post.slug.clone(), post.frontmatter.clone());
+
         built_count += 1;
     }
 
-    // Save cache
+    // Save caches
     if use_cache {
         cache.save()?;
     }
+    metadata.save()?;
 
     // Copy static assets
     generator.copy_static_assets()?;
@@ -163,6 +170,8 @@ fn build_all(use_cache: bool) -> Result<()> {
     if use_cache {
         println!("   Skipped: {}", skipped_count);
     }
+    println!("   Categories: {}", metadata.get_categories().len());
+    println!("   Tags: {}", metadata.get_tags().len());
 
     Ok(())
 }
