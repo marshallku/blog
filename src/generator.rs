@@ -1,7 +1,7 @@
 use crate::config::SsgConfig;
 use crate::theme::ThemeEngine;
 use crate::types::Post;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;

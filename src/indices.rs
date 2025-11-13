@@ -1,12 +1,36 @@
 use crate::config::SsgConfig;
 use crate::metadata::MetadataCache;
 use crate::theme::ThemeEngine;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use tera::{Context as TeraContext, Tera};
+
+/// Pagination context for templates
+#[derive(Debug, Clone, Serialize)]
+struct PaginationContext {
+    current_page: usize,
+    total_pages: usize,
+    total_posts: usize,
+    posts_per_page: usize,
+    has_prev: bool,
+    has_next: bool,
+    prev_url: Option<String>,
+    next_url: Option<String>,
+    first_url: String,
+    last_url: String,
+    pages: Vec<PageLink>,
+}
+
+/// Individual page link for navigation
+#[derive(Debug, Clone, Serialize)]
+struct PageLink {
+    number: usize,
+    url: String,
+    is_current: bool,
+}
 
 /// Flattened config for template context (backward compatibility)
 #[derive(Debug, Clone, Serialize)]
@@ -100,7 +124,7 @@ impl IndexGenerator {
         Ok(())
     }
 
-    /// Generate category page
+    /// Generate category page (with pagination)
     fn generate_category_page(
         &self,
         category_info: &crate::types::Category,
@@ -111,7 +135,16 @@ impl IndexGenerator {
         // Sort by date, descending
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let post_count = metadata.categories.get(&category_info.slug).unwrap_or(&0);
+        let total_posts = posts.len();
+        let posts_per_page = self.config.build.posts_per_page;
+        let total_pages = if total_posts == 0 {
+            1
+        } else {
+            (total_posts + posts_per_page - 1) / posts_per_page
+        };
+
+        // Base URL for pagination (with trailing slash)
+        let base_url = format!("/{}/", category_info.slug);
 
         // Get visible categories for navigation
         let visible_categories: Vec<_> = metadata
@@ -126,36 +159,68 @@ impl IndexGenerator {
             author: &self.config.site.author,
         };
 
-        let mut context = TeraContext::new();
-        context.insert("category", category_info);
-        context.insert("posts", &posts);
-        context.insert("post_count", post_count);
-        context.insert("categories", &visible_categories);
-        context.insert("config", &template_config);
+        // Generate each page
+        for page_num in 1..=total_pages {
+            let start_idx = (page_num - 1) * posts_per_page;
+            let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
+            let page_posts = &posts[start_idx..end_idx];
 
-        // Add theme context
-        context.insert("theme_variables", &self.theme_variables);
-        context.insert("theme_info", &self.theme_info);
+            let mut context = TeraContext::new();
+            context.insert("category", category_info);
+            context.insert("posts", &page_posts);
+            context.insert("post_count", &total_posts);
+            context.insert("categories", &visible_categories);
+            context.insert("config", &template_config);
 
-        let output = self.tera.render("category.html", &context)?;
-        let output_path = PathBuf::from(&self.config.build.output_dir)
-            .join(&category_info.slug)
-            .join("index.html");
+            // Add pagination context only if more than 1 page
+            if total_pages > 1 {
+                let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
+                context.insert("pagination", &pagination);
+            }
 
-        fs::create_dir_all(output_path.parent().unwrap())?;
-        fs::write(&output_path, output)?;
+            // Add theme context
+            context.insert("theme_variables", &self.theme_variables);
+            context.insert("theme_info", &self.theme_info);
+
+            let output = self.tera.render("category.html", &context)?;
+
+            // Output path: page 1 at /category/, page N at /category/page/N/
+            let output_path = if page_num == 1 {
+                PathBuf::from(&self.config.build.output_dir)
+                    .join(&category_info.slug)
+                    .join("index.html")
+            } else {
+                PathBuf::from(&self.config.build.output_dir)
+                    .join(&category_info.slug)
+                    .join("page")
+                    .join(page_num.to_string())
+                    .join("index.html")
+            };
+
+            fs::create_dir_all(output_path.parent().unwrap())?;
+            fs::write(&output_path, output)?;
+        }
 
         Ok(())
     }
 
-    /// Generate tag page
+    /// Generate tag page (with pagination)
     fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
 
         // Sort by date, descending
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let post_count = metadata.tags.get(tag).unwrap_or(&0);
+        let total_posts = posts.len();
+        let posts_per_page = self.config.build.posts_per_page;
+        let total_pages = if total_posts == 0 {
+            1
+        } else {
+            (total_posts + posts_per_page - 1) / posts_per_page
+        };
+
+        // Base URL for pagination (with trailing slash)
+        let base_url = format!("/tag/{}/", tag);
 
         // Get visible categories for navigation
         let visible_categories: Vec<_> = metadata
@@ -170,25 +235,49 @@ impl IndexGenerator {
             author: &self.config.site.author,
         };
 
-        let mut context = TeraContext::new();
-        context.insert("tag", tag);
-        context.insert("posts", &posts);
-        context.insert("post_count", post_count);
-        context.insert("categories", &visible_categories);
-        context.insert("config", &template_config);
+        // Generate each page
+        for page_num in 1..=total_pages {
+            let start_idx = (page_num - 1) * posts_per_page;
+            let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
+            let page_posts = &posts[start_idx..end_idx];
 
-        // Add theme context
-        context.insert("theme_variables", &self.theme_variables);
-        context.insert("theme_info", &self.theme_info);
+            let mut context = TeraContext::new();
+            context.insert("tag", tag);
+            context.insert("posts", &page_posts);
+            context.insert("post_count", &total_posts);
+            context.insert("categories", &visible_categories);
+            context.insert("config", &template_config);
 
-        let output = self.tera.render("tag.html", &context)?;
-        let output_path = PathBuf::from(&self.config.build.output_dir)
-            .join("tag")
-            .join(tag)
-            .join("index.html");
+            // Add pagination context only if more than 1 page
+            if total_pages > 1 {
+                let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
+                context.insert("pagination", &pagination);
+            }
 
-        fs::create_dir_all(output_path.parent().unwrap())?;
-        fs::write(&output_path, output)?;
+            // Add theme context
+            context.insert("theme_variables", &self.theme_variables);
+            context.insert("theme_info", &self.theme_info);
+
+            let output = self.tera.render("tag.html", &context)?;
+
+            // Output path: page 1 at /tag/name/, page N at /tag/name/page/N/
+            let output_path = if page_num == 1 {
+                PathBuf::from(&self.config.build.output_dir)
+                    .join("tag")
+                    .join(tag)
+                    .join("index.html")
+            } else {
+                PathBuf::from(&self.config.build.output_dir)
+                    .join("tag")
+                    .join(tag)
+                    .join("page")
+                    .join(page_num.to_string())
+                    .join("index.html")
+            };
+
+            fs::create_dir_all(output_path.parent().unwrap())?;
+            fs::write(&output_path, output)?;
+        }
 
         Ok(())
     }
@@ -229,5 +318,72 @@ impl IndexGenerator {
         fs::write(&output_path, output)?;
 
         Ok(())
+    }
+
+    /// Build pagination context for a given page
+    fn build_pagination_context(
+        &self,
+        current_page: usize,
+        total_posts: usize,
+        base_url: &str,
+    ) -> PaginationContext {
+        let posts_per_page = self.config.build.posts_per_page;
+        let total_pages = if total_posts == 0 {
+            1
+        } else {
+            (total_posts + posts_per_page - 1) / posts_per_page // Ceiling division
+        };
+
+        let has_prev = current_page > 1;
+        let has_next = current_page < total_pages;
+
+        let first_url = base_url.to_string();
+        let last_url = if total_pages == 1 {
+            base_url.to_string()
+        } else {
+            format!("{}page/{}", base_url, total_pages)
+        };
+
+        let prev_url = if has_prev {
+            Some(if current_page == 2 {
+                base_url.to_string()
+            } else {
+                format!("{}page/{}", base_url, current_page - 1)
+            })
+        } else {
+            None
+        };
+
+        let next_url = if has_next {
+            Some(format!("{}page/{}", base_url, current_page + 1))
+        } else {
+            None
+        };
+
+        let pages = (1..=total_pages)
+            .map(|num| PageLink {
+                number: num,
+                url: if num == 1 {
+                    base_url.to_string()
+                } else {
+                    format!("{}page/{}", base_url, num)
+                },
+                is_current: num == current_page,
+            })
+            .collect();
+
+        PaginationContext {
+            current_page,
+            total_pages,
+            total_posts,
+            posts_per_page,
+            has_prev,
+            has_next,
+            prev_url,
+            next_url,
+            first_url,
+            last_url,
+            pages,
+        }
     }
 }

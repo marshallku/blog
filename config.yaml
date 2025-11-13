@@ -31,5 +31,5 @@ build:
   # Output directory (where generated HTML goes)
   output_dir: "dist"
 
-  # Number of posts per page (for pagination, when implemented)
+  # Number of posts per page (for pagination)
   posts_per_page: 10

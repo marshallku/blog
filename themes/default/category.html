@@ -48,6 +48,42 @@
         </article>
         {% endfor %}
     </div>
+
+    {# Pagination navigation #}
+    {% if pagination and pagination.total_pages > 1 %}
+    <nav class="pagination">
+        <div class="pagination-prev">
+            {% if pagination.has_prev %}
+            <a href="{{ pagination.prev_url }}" class="btn-pagination">← Previous</a>
+            {% else %}
+            <span class="btn-pagination disabled">← Previous</span>
+            {% endif %}
+        </div>
+
+        <div class="pagination-numbers">
+            {% for page in pagination.pages %}
+            {% if page.is_current %}
+            <span class="page-number current">{{ page.number }}</span>
+            {% else %}
+            <a href="{{ page.url }}" class="page-number">{{ page.number }}</a>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="pagination-next">
+            {% if pagination.has_next %}
+            <a href="{{ pagination.next_url }}" class="btn-pagination">Next →</a>
+            {% else %}
+            <span class="btn-pagination disabled">Next →</span>
+            {% endif %}
+        </div>
+    </nav>
+
+    <p class="pagination-info">
+        Page {{ pagination.current_page }} of {{ pagination.total_pages }}
+        ({{ pagination.total_posts }} posts total)
+    </p>
+    {% endif %}
     {% else %}
     <p>No posts in this category yet.</p>
     {% endif %}
