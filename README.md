@@ -4,19 +4,40 @@ A blazing-fast, memory-efficient static site generator built in Rust for the mar
 
 ## Quick Start
 
-### Build the project
+### 1. Configure your site
+
+Create a `config.yaml` file in the project root:
+
+```yaml
+site:
+  title: "My Blog"
+  url: "https://example.com"
+  author: "Your Name"
+
+theme:
+  name: "default"
+
+build:
+  content_dir: "content/posts"
+  output_dir: "dist"
+  posts_per_page: 10
+```
+
+If you don't create a config file, ssdocs will use sensible defaults.
+
+### 2. Build the project
 
 ```bash
 cargo build --release
 ```
 
-### Create a new post
+### 3. Create a new post
 
 ```bash
 cargo run -- new dev "My First Post"
 ```
 
-### Build your site
+### 4. Build your site
 
 ```bash
 # Full build
@@ -29,7 +50,7 @@ cargo run -- build --incremental
 cargo run -- build --post content/posts/dev/my-post.md
 ```
 
-### Development with watch mode
+### 5. Development with watch mode
 
 Watch mode automatically rebuilds when files change and serves your site:
 
@@ -41,7 +62,7 @@ cargo run -- watch
 cargo run -- watch --port 3000
 ```
 
-Then visit `http://localhost:8080` to view your site. Edit any file in `content/`, `templates/`, or `static/` and it will automatically rebuild!
+Then visit `http://localhost:8080` to view your site. Edit any file in `content/`, `themes/`, or `static/` and it will automatically rebuild!
 
 ### View your site (without watch mode)
 
@@ -59,26 +80,42 @@ miniserve dist
 
 ```
 ssdocs/
-├── src/                    # Rust source code
-│   ├── main.rs            # CLI and build logic
-│   ├── types.rs           # Core types (Post, Config, etc.)
-│   ├── parser.rs          # Markdown + frontmatter parsing
-│   ├── renderer.rs        # Markdown → HTML rendering
-│   ├── generator.rs       # Template application
-│   └── cache.rs           # Build cache management
+├── config.yaml            # Site configuration (optional)
+├── src/                   # Rust source code
+│   ├── main.rs           # CLI and build logic
+│   ├── config.rs         # Configuration loading
+│   ├── theme.rs          # Theme engine
+│   ├── types.rs          # Core types (Post, Category, etc.)
+│   ├── parser.rs         # Markdown + frontmatter parsing
+│   ├── renderer.rs       # Markdown → HTML rendering
+│   ├── generator.rs      # Template application
+│   ├── indices.rs        # Index page generation
+│   ├── category.rs       # Category discovery
+│   ├── metadata.rs       # Metadata cache
+│   └── cache.rs          # Build cache management
 ├── content/
-│   └── posts/             # Your blog posts
+│   └── posts/            # Your blog posts (by category)
 │       ├── dev/
+│       │   ├── .category.yaml  # Category metadata (optional)
+│       │   └── *.md
 │       ├── chat/
 │       ├── gallery/
-│       └── notice/
-├── templates/             # Tera templates
-│   ├── base.html
-│   └── post.html
-├── static/                # Static assets
-│   └── css/
-│       └── main.css
-└── dist/                  # Build output (gitignored)
+│       └── tutorials/
+├── themes/               # Theme system
+│   └── default/          # Default theme
+│       ├── theme.yaml    # Theme metadata
+│       ├── base.html     # Base layout
+│       ├── post.html     # Post page
+│       ├── index.html    # Homepage
+│       ├── category.html # Category pages
+│       ├── tag.html      # Tag pages
+│       ├── tags.html     # Tags overview
+│       └── components/   # Reusable components
+├── static/               # Static assets (CSS, JS, images)
+│   ├── css/
+│   ├── js/
+│   └── icons/
+└── dist/                 # Build output (gitignored)
 ```
 
 ## Commands
@@ -122,7 +159,117 @@ Options:
 Watches:
 
 - `content/` - Markdown posts
-- `templates/` - Tera templates
+- `themes/` - Theme templates and metadata
 - `static/` - CSS, JS, images
 
 The dev server automatically serves your site while watching for changes.
+
+## Configuration
+
+### Site Configuration (config.yaml)
+
+The `config.yaml` file controls your site settings, theme selection, and build options:
+
+```yaml
+site:
+  title: "My Blog"
+  url: "https://example.com"
+  author: "Your Name"
+
+theme:
+  name: "default"              # Theme to use
+  variables:                    # Override theme variables
+    primary_color: "#3498db"
+    font_family: "Inter, sans-serif"
+
+build:
+  content_dir: "content/posts"  # Where your posts are
+  output_dir: "dist"            # Where HTML is generated
+  posts_per_page: 10            # Posts per page (pagination)
+```
+
+**All fields are optional** - ssdocs will use sensible defaults if `config.yaml` doesn't exist or fields are missing.
+
+### Category Configuration
+
+Categories are automatically discovered from directory structure. Optionally customize them with `.category.yaml`:
+
+```yaml
+# content/posts/dev/.category.yaml
+name: "Development"
+description: "Technical articles about software development"
+index: 0                # Sort order (lower = first)
+hidden: false           # Hide from navigation
+icon: "code-blocks"     # Optional icon identifier
+color: "#66b3ff"        # Optional color
+```
+
+See [CATEGORY_SYSTEM.md](./CATEGORY_SYSTEM.md) for complete documentation.
+
+## Theme System
+
+ssdocs uses a powerful theme system that lets you customize your site's appearance without touching core code.
+
+### Using a Theme
+
+Select a theme in `config.yaml`:
+
+```yaml
+theme:
+  name: "default"  # Use themes/default/
+```
+
+### Customizing Theme Variables
+
+Override theme colors, fonts, and other settings:
+
+```yaml
+theme:
+  name: "default"
+  variables:
+    primary_color: "#FF5733"
+    accent_color: "#C70039"
+    font_family: "'Fira Sans', sans-serif"
+    max_width: "1200px"
+```
+
+### Creating a Custom Theme
+
+1. **Create a theme directory:**
+   ```bash
+   mkdir -p themes/mytheme
+   ```
+
+2. **Create `theme.yaml`:**
+   ```yaml
+   name: "My Theme"
+   version: "1.0.0"
+   author: "Your Name"
+   parent: "default"  # Inherit from default theme
+
+   variables:
+     primary_color: "#FF5733"
+
+   required_templates:
+     - base.html
+     - post.html
+     - index.html
+   ```
+
+3. **Override templates (optional):**
+   ```bash
+   # Only create templates you want to customize
+   cp themes/default/post.html themes/mytheme/post.html
+   # Edit themes/mytheme/post.html
+   ```
+
+4. **Activate your theme:**
+   ```yaml
+   # config.yaml
+   theme:
+     name: "mytheme"
+   ```
+
+**Theme Inheritance**: Child themes automatically fall back to parent theme templates, so you only need to override what changes!
+
+See [THEME_SYSTEM.md](./THEME_SYSTEM.md) for complete documentation and examples.
