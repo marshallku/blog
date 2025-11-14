@@ -19,6 +19,7 @@ struct TemplateConfig<'a> {
 pub struct Generator {
     tera: Tera,
     config: SsgConfig,
+    theme_engine: ThemeEngine,
     theme_variables: HashMap<String, serde_yaml::Value>,
     theme_info: HashMap<String, String>,
 }
@@ -33,6 +34,7 @@ impl Generator {
         Ok(Self {
             tera,
             config,
+            theme_engine,
             theme_variables,
             theme_info,
         })
@@ -77,18 +79,20 @@ impl Generator {
             .join("index.html")
     }
 
-    /// Copy static assets from static/ to dist/
+    /// Copy static assets from theme and static/ to dist/
     pub fn copy_static_assets(&self) -> Result<()> {
-        let src = Path::new("static");
         let dst = Path::new(&self.config.build.output_dir);
 
-        if !src.exists() {
-            println!("No static/ directory found, skipping asset copy");
-            return Ok(());
+        self.theme_engine.copy_theme_assets(dst)?;
+        if !self.theme_engine.static_paths.is_empty() {
+            println!("📦 Copied theme static assets");
         }
 
-        Self::copy_dir_all(src, dst)?;
-        println!("Copied static assets");
+        let src = Path::new("static");
+        if src.exists() {
+            Self::copy_dir_all(src, dst)?;
+            println!("📦 Copied static assets");
+        }
 
         Ok(())
     }

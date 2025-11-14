@@ -7,7 +7,6 @@ use tera::Tera;
 
 use crate::config::SsgConfig;
 
-/// Theme metadata from theme.yaml
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThemeMetadata {
     pub name: String,
@@ -26,7 +25,6 @@ pub struct ThemeMetadata {
     pub required_templates: Vec<String>,
 }
 
-/// Template hook definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThemeHook {
     pub name: String,
@@ -35,16 +33,15 @@ pub struct ThemeHook {
     pub default: Option<String>,
 }
 
-/// Theme engine manages template loading and variable merging
 #[derive(Debug, Clone)]
 pub struct ThemeEngine {
     pub active_theme: ThemeMetadata,
     pub template_paths: Vec<PathBuf>,
+    pub static_paths: Vec<PathBuf>,
     pub variables: HashMap<String, serde_yaml::Value>,
 }
 
 impl ThemeEngine {
-    /// Create a new ThemeEngine from configuration
     pub fn new(ssg_config: &SsgConfig) -> Result<Self> {
         let theme_dir = PathBuf::from("themes");
         let theme_name = ssg_config.theme.name.clone();
@@ -58,16 +55,17 @@ impl ThemeEngine {
         };
 
         let template_paths = resolve_template_paths(&theme_dir, &theme_name, &parent_theme_name)?;
+        let static_paths = resolve_static_paths(&theme_dir, &theme_name, &parent_theme_name);
         let variables = merge_variables(&active_theme, &parent_theme, &ssg_config.theme.variables);
 
         Ok(Self {
             active_theme,
             template_paths,
+            static_paths,
             variables,
         })
     }
 
-    /// Create a Tera instance with all theme template paths
     pub fn create_tera_engine(&self) -> Result<Tera> {
         let primary_path = self
             .template_paths
@@ -97,12 +95,10 @@ impl ThemeEngine {
         Ok(tera)
     }
 
-    /// Get template variables for Tera context
     pub fn get_template_variables(&self) -> HashMap<String, serde_yaml::Value> {
         self.variables.clone()
     }
 
-    /// Get theme info for Tera context
     pub fn get_theme_info(&self) -> HashMap<String, String> {
         let mut info = HashMap::new();
         info.insert("name".to_string(), self.active_theme.name.clone());
@@ -110,9 +106,34 @@ impl ThemeEngine {
         info.insert("author".to_string(), self.active_theme.author.clone());
         info
     }
+
+    pub fn copy_theme_assets(&self, output_dir: &Path) -> Result<()> {
+        for static_path in &self.static_paths {
+            copy_dir_all(static_path, output_dir)?;
+        }
+        Ok(())
+    }
 }
 
-/// Load theme metadata from theme.yaml
+fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
+    fs::create_dir_all(dst)?;
+
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+
+        if ty.is_dir() {
+            copy_dir_all(&src_path, &dst_path)?;
+        } else {
+            fs::copy(&src_path, &dst_path)?;
+        }
+    }
+
+    Ok(())
+}
+
 fn load_theme_metadata(theme_dir: &Path, theme_name: &str) -> Result<ThemeMetadata> {
     let theme_path = theme_dir.join(theme_name);
     let metadata_path = theme_path.join("theme.yaml");
@@ -197,6 +218,30 @@ fn resolve_template_paths(
     }
 
     Ok(paths)
+}
+
+/// Resolve static asset paths with inheritance chain
+/// Returns paths in priority order: parent theme, child theme (parent copied first, child overwrites)
+fn resolve_static_paths(
+    theme_dir: &Path,
+    theme_name: &str,
+    parent_theme_name: &Option<String>,
+) -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+
+    if let Some(parent_name) = parent_theme_name {
+        let parent_static = theme_dir.join(parent_name).join("static");
+        if parent_static.exists() && parent_static.is_dir() {
+            paths.push(parent_static);
+        }
+    }
+
+    let active_static = theme_dir.join(theme_name).join("static");
+    if active_static.exists() && active_static.is_dir() {
+        paths.push(active_static);
+    }
+
+    paths
 }
 
 /// Merge theme variables from parent → child → site config

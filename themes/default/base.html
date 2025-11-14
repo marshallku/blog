@@ -12,7 +12,10 @@
     {% endblock %}
 
     <link rel="stylesheet" href="/css/main.css">
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    {# Override this block in child templates to add page-specific CSS #}
+    {# Example: <link rel="stylesheet" href="/css/post.css"> #}
+    {% endblock %}
 </head>
 <body>
     <header class="site-header">
@@ -43,6 +46,9 @@
         </div>
     </footer>
 
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+    {# Override this block in child templates to add page-specific JavaScript #}
+    {# Example: <script src="/js/post.js"></script> #}
+    {% endblock %}
 </body>
 </html>
