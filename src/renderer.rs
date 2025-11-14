@@ -1,8 +1,8 @@
 use anyhow::Result;
 use pulldown_cmark::{html, Options, Parser as MdParser};
-use syntect::highlighting::{ThemeSet, Theme};
-use syntect::parsing::SyntaxSet;
+use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::highlighted_html_for_string;
+use syntect::parsing::SyntaxSet;
 
 pub struct Renderer {
     syntax_set: SyntaxSet,
@@ -28,17 +28,21 @@ impl Renderer {
         html_output
     }
 
-    /// Highlight code with Syntect
-    /// This is currently unused but available for future enhancement
     #[allow(dead_code)]
     pub fn highlight_code(&self, code: &str, lang: &str) -> Result<String> {
-        let syntax = self.syntax_set
+        let syntax = self
+            .syntax_set
             .find_syntax_by_token(lang)
             .unwrap_or_else(|| self.syntax_set.find_syntax_plain_text());
 
         let theme = self.get_theme();
 
-        Ok(highlighted_html_for_string(code, &self.syntax_set, syntax, theme)?)
+        Ok(highlighted_html_for_string(
+            code,
+            &self.syntax_set,
+            syntax,
+            theme,
+        )?)
     }
 
     fn get_theme(&self) -> &Theme {

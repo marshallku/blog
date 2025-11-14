@@ -88,7 +88,6 @@ impl Default for SsgConfig {
     }
 }
 
-// Default value functions
 fn default_site_title() -> String {
     "marshallku blog".to_string()
 }
@@ -117,23 +116,17 @@ fn default_posts_per_page() -> usize {
     10
 }
 
-/// Load configuration from config.yaml
-///
-/// Falls back to default configuration if file doesn't exist.
-/// Returns error only if file exists but is invalid.
 pub fn load_config() -> Result<SsgConfig> {
     let config_path = Path::new("config.yaml");
 
     if !config_path.exists() {
-        // No config file - use defaults
         return Ok(SsgConfig::default());
     }
 
-    let content = fs::read_to_string(config_path)
-        .context("Failed to read config.yaml")?;
+    let content = fs::read_to_string(config_path).context("Failed to read config.yaml")?;
 
-    let config: SsgConfig = serde_yaml::from_str(&content)
-        .context("Failed to parse config.yaml")?;
+    let config: SsgConfig =
+        serde_yaml::from_str(&content).context("Failed to parse config.yaml")?;
 
     Ok(config)
 }

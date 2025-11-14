@@ -1,20 +1,20 @@
-mod types;
-mod parser;
-mod renderer;
-mod generator;
 mod cache;
-mod metadata;
-mod indices;
 mod category;
 mod config;
+mod generator;
+mod indices;
+mod metadata;
+mod parser;
+mod renderer;
 mod theme;
+mod types;
 
 use anyhow::Result;
 use clap::{Parser as ClapParser, Subcommand};
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::cache::{BuildCache, hash_file};
+use crate::cache::{hash_file, BuildCache};
 use crate::category::{discover_categories, validate_category};
 use crate::config::load_config;
 use crate::generator::Generator;
@@ -114,7 +114,6 @@ fn build_all(use_cache: bool) -> Result<()> {
         );
     }
 
-    // Discover categories
     let categories = discover_categories(posts_dir)?;
     if categories.is_empty() {
         eprintln!("⚠️  Warning: No categories found in content directory");
@@ -126,7 +125,6 @@ fn build_all(use_cache: bool) -> Result<()> {
     let mut built_count = 0;
     let mut skipped_count = 0;
 
-    // Find all markdown files
     for entry in WalkDir::new(posts_dir)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -143,24 +141,19 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         println!("🔨 Building: {}", path.display());
 
-        // Parse post
         let mut post = Parser::parse_file(path)?;
 
-        // Skip drafts
         if post.frontmatter.draft {
             println!("   ⚠  Draft - skipping output");
             skipped_count += 1;
             continue;
         }
 
-        // Render markdown to HTML
         let html = renderer.render_markdown(&post.content);
         post.rendered_html = Some(html);
 
-        // Generate HTML file
         let output_path = generator.generate_post(&post)?;
 
-        // Update build cache
         cache.update_entry(
             path,
             file_hash,
@@ -168,23 +161,19 @@ fn build_all(use_cache: bool) -> Result<()> {
             output_path.to_string_lossy().to_string(),
         );
 
-        // Update metadata cache
         metadata.upsert_post(post.slug.clone(), post.frontmatter.clone());
 
         built_count += 1;
     }
 
-    // Save caches
     if use_cache {
         cache.save()?;
     }
     metadata.save()?;
 
-    // Generate indices
     let index_generator = IndexGenerator::new(config.clone())?;
     index_generator.generate_all(&metadata)?;
 
-    // Copy static assets
     generator.copy_static_assets()?;
 
     println!("\n✅ Build complete!");
@@ -211,18 +200,15 @@ fn build_single_post(post_path: &str) -> Result<()> {
         anyhow::bail!("Post file not found: {}", post_path);
     }
 
-    // Parse post
     let mut post = Parser::parse_file(path)?;
 
     if post.frontmatter.draft {
         println!("⚠  This is a draft post");
     }
 
-    // Render markdown to HTML
     let html = renderer.render_markdown(&post.content);
     post.rendered_html = Some(html);
 
-    // Generate HTML file
     let output_path = generator.generate_post(&post)?;
 
     println!("\n✅ Built: {}", output_path.display());
@@ -234,20 +220,30 @@ fn create_new_post(category: &str, title: &str) -> Result<()> {
     let config = load_config()?;
     let posts_dir = Path::new(&config.build.content_dir);
 
-    // Discover categories
     let categories = discover_categories(posts_dir)?;
 
-    // Validate category
     if !validate_category(category, &categories) {
         println!("⚠️  Category '{}' doesn't exist yet.", category);
         println!();
 
         if categories.is_empty() {
             println!("No categories found. To create one:");
-            println!("  1. Create a directory: mkdir -p {}/{}", config.build.content_dir, category);
-            println!("  2. Optionally add metadata: echo 'name: {}' > {}/{}/.category.yaml",
-                category.chars().next().unwrap().to_uppercase().chain(category.chars().skip(1)).collect::<String>(),
-                config.build.content_dir, category);
+            println!(
+                "  1. Create a directory: mkdir -p {}/{}",
+                config.build.content_dir, category
+            );
+            println!(
+                "  2. Optionally add metadata: echo 'name: {}' > {}/{}/.category.yaml",
+                category
+                    .chars()
+                    .next()
+                    .unwrap()
+                    .to_uppercase()
+                    .chain(category.chars().skip(1))
+                    .collect::<String>(),
+                config.build.content_dir,
+                category
+            );
             println!("  3. Run this command again");
         } else {
             let category_list: Vec<String> = categories
@@ -261,8 +257,14 @@ fn create_new_post(category: &str, title: &str) -> Result<()> {
             }
             println!();
             println!("To create a new category:");
-            println!("  1. Create a directory: mkdir -p {}/{}", config.build.content_dir, category);
-            println!("  2. Optionally add metadata: echo 'name: Your Name' > {}/{}/.category.yaml", config.build.content_dir, category);
+            println!(
+                "  1. Create a directory: mkdir -p {}/{}",
+                config.build.content_dir, category
+            );
+            println!(
+                "  2. Optionally add metadata: echo 'name: Your Name' > {}/{}/.category.yaml",
+                config.build.content_dir, category
+            );
             println!("  3. Add at least one post to the category");
             println!("  4. Run this command again");
         }
@@ -270,7 +272,6 @@ fn create_new_post(category: &str, title: &str) -> Result<()> {
         std::process::exit(0);
     }
 
-    // Generate slug from title
     let slug = title
         .to_lowercase()
         .replace(' ', "-")
@@ -280,12 +281,10 @@ fn create_new_post(category: &str, title: &str) -> Result<()> {
 
     let filename = format!("content/posts/{}/{}.md", category, slug);
 
-    // Check if file already exists
     if Path::new(&filename).exists() {
         anyhow::bail!("Post already exists: {}", filename);
     }
 
-    // Create frontmatter
     let content = format!(
         r#"---
 title: "{}"
@@ -302,10 +301,7 @@ Write your post here...
         category
     );
 
-    // Create directory if needed
     std::fs::create_dir_all(format!("content/posts/{}", category))?;
-
-    // Write file
     std::fs::write(&filename, content)?;
 
     println!("✅ Created: {}", filename);
@@ -317,7 +313,7 @@ Write your post here...
 }
 
 fn watch_mode(port: u16) -> Result<()> {
-    use notify::{Watcher, RecursiveMode, Result as NotifyResult, Event};
+    use notify::{Event, RecursiveMode, Result as NotifyResult, Watcher};
     use std::sync::mpsc::channel;
     use std::time::Duration;
 
@@ -350,16 +346,13 @@ fn watch_mode(port: u16) -> Result<()> {
         }
     })?;
 
-    // Watch directories
     watcher.watch(Path::new("content"), RecursiveMode::Recursive)?;
     watcher.watch(Path::new("themes"), RecursiveMode::Recursive)?;
     watcher.watch(Path::new("static"), RecursiveMode::Recursive)?;
 
-    // Process file change events
     loop {
         match rx.recv_timeout(Duration::from_secs(1)) {
             Ok(event) => {
-                // Filter out non-modify events and build-cache changes
                 if !should_rebuild(&event) {
                     continue;
                 }
@@ -371,7 +364,6 @@ fn watch_mode(port: u16) -> Result<()> {
                 }
             }
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                // Check if server thread is still alive
                 if server_thread.is_finished() {
                     anyhow::bail!("Dev server stopped unexpectedly");
                 }
@@ -387,10 +379,8 @@ fn watch_mode(port: u16) -> Result<()> {
 fn should_rebuild(event: &notify::Event) -> bool {
     use notify::EventKind;
 
-    // Only rebuild on modify, create, or remove events
     match event.kind {
         EventKind::Modify(_) | EventKind::Create(_) | EventKind::Remove(_) => {
-            // Ignore build cache and dist directory changes
             for path in &event.paths {
                 let path_str = path.to_string_lossy();
                 if path_str.contains(".build-cache") || path_str.contains("dist/") {
@@ -404,12 +394,12 @@ fn should_rebuild(event: &notify::Event) -> bool {
 }
 
 fn start_dev_server(port: u16) -> Result<()> {
-    use std::net::TcpListener;
-    use std::io::Read;
     use anyhow::Context as _;
+    use std::io::Read;
+    use std::net::TcpListener;
 
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port))
-        .context("Failed to bind dev server")?;
+    let listener =
+        TcpListener::bind(format!("127.0.0.1:{}", port)).context("Failed to bind dev server")?;
 
     println!("🌐 Dev server listening on http://localhost:{}", port);
 
@@ -422,7 +412,6 @@ fn start_dev_server(port: u16) -> Result<()> {
             }
         };
 
-        // Read request
         let mut buffer = [0; 1024];
         if stream.read(&mut buffer).is_err() {
             continue;
@@ -431,14 +420,12 @@ fn start_dev_server(port: u16) -> Result<()> {
         let request = String::from_utf8_lossy(&buffer);
         let request_line = request.lines().next().unwrap_or("");
 
-        // Parse request path
         let path = if let Some(path_part) = request_line.split_whitespace().nth(1) {
             path_part
         } else {
             "/"
         };
 
-        // Serve file
         serve_file(&mut stream, path);
     }
 
@@ -448,7 +435,6 @@ fn start_dev_server(port: u16) -> Result<()> {
 fn serve_file(stream: &mut std::net::TcpStream, path: &str) {
     use std::io::Write;
 
-    // Map URL path to file path
     let file_path = if path == "/" {
         "dist/index.html".to_string()
     } else if path.ends_with('/') {
@@ -457,12 +443,10 @@ fn serve_file(stream: &mut std::net::TcpStream, path: &str) {
         format!("dist{}", path)
     };
 
-    // Try to read file
     let (status, content_type, body) = if let Ok(contents) = std::fs::read(&file_path) {
         let content_type = get_content_type(&file_path);
         ("200 OK", content_type, contents)
     } else {
-        // Try with /index.html appended
         let index_path = format!("{}/index.html", file_path);
         if let Ok(contents) = std::fs::read(&index_path) {
             ("200 OK", "text/html", contents)
@@ -472,7 +456,6 @@ fn serve_file(stream: &mut std::net::TcpStream, path: &str) {
         }
     };
 
-    // Send response
     let response = format!(
         "HTTP/1.1 {}\r\nContent-Type: {}\r\nContent-Length: {}\r\n\r\n",
         status,

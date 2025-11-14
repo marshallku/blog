@@ -19,7 +19,6 @@ pub struct CacheEntry {
 }
 
 impl BuildCache {
-    /// Load cache from disk, or create new if doesn't exist
     pub fn load() -> Result<Self> {
         let cache_path = Path::new(".build-cache/cache.json");
 
@@ -31,7 +30,6 @@ impl BuildCache {
         }
     }
 
-    /// Create a new empty cache
     pub fn new() -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION").to_string(),
@@ -39,7 +37,6 @@ impl BuildCache {
         }
     }
 
-    /// Save cache to disk
     pub fn save(&self) -> Result<()> {
         fs::create_dir_all(".build-cache")?;
         let json = serde_json::to_string_pretty(self)?;
@@ -47,18 +44,22 @@ impl BuildCache {
         Ok(())
     }
 
-    /// Check if a file needs to be rebuilt
     pub fn needs_rebuild(&self, path: &Path, current_hash: &str) -> bool {
         let path_str = path.to_string_lossy();
 
         match self.entries.get(path_str.as_ref()) {
-            None => true,  // Never built before
-            Some(entry) => entry.file_hash != current_hash,  // File changed
+            None => true,
+            Some(entry) => entry.file_hash != current_hash,
         }
     }
 
-    /// Update cache entry for a file
-    pub fn update_entry(&mut self, path: &Path, hash: String, template_hash: String, output: String) {
+    pub fn update_entry(
+        &mut self,
+        path: &Path,
+        hash: String,
+        template_hash: String,
+        output: String,
+    ) {
         let path_str = path.to_string_lossy().to_string();
 
         self.entries.insert(
@@ -79,7 +80,6 @@ impl Default for BuildCache {
     }
 }
 
-/// Compute Blake3 hash of a file
 pub fn hash_file(path: &Path) -> Result<String> {
     let content = fs::read(path)?;
     let hash = blake3::hash(&content);
@@ -100,9 +100,8 @@ mod tests {
         let hash1 = hash_file(file.path()).unwrap();
         let hash2 = hash_file(file.path()).unwrap();
 
-        // Same content should produce same hash
         assert_eq!(hash1, hash2);
-        assert_eq!(hash1.len(), 64); // Blake3 produces 32-byte hash (64 hex chars)
+        assert_eq!(hash1.len(), 64);
     }
 
     #[test]
@@ -110,7 +109,6 @@ mod tests {
         let cache = BuildCache::new();
         let path = Path::new("test.md");
 
-        // New file should need rebuild
         assert!(cache.needs_rebuild(path, "abc123"));
     }
 

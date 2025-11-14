@@ -62,25 +62,20 @@ impl IndexGenerator {
         })
     }
 
-    /// Generate all indices (homepage, categories, tags)
     pub fn generate_all(&self, metadata: &MetadataCache) -> Result<()> {
         println!("\n📑 Generating indices...");
 
-        // Generate homepage
         self.generate_homepage(metadata)?;
 
-        // Generate category pages (from discovered categories, including hidden)
         let category_count = metadata.get_category_info().len();
         for category in metadata.get_category_info() {
             self.generate_category_page(category, metadata)?;
         }
 
-        // Generate tag pages
         for tag in metadata.get_tags() {
             self.generate_tag_page(&tag, metadata)?;
         }
 
-        // Generate tags overview page
         self.generate_tags_overview(metadata)?;
 
         println!("   ✓ Homepage");
@@ -90,11 +85,9 @@ impl IndexGenerator {
         Ok(())
     }
 
-    /// Generate homepage with recent posts
     fn generate_homepage(&self, metadata: &MetadataCache) -> Result<()> {
         let recent_posts = metadata.get_recent_posts(10);
 
-        // Get visible categories for navigation
         let visible_categories: Vec<_> = metadata
             .get_category_info()
             .iter()
@@ -124,7 +117,6 @@ impl IndexGenerator {
         Ok(())
     }
 
-    /// Generate category page (with pagination)
     fn generate_category_page(
         &self,
         category_info: &crate::types::Category,
@@ -132,7 +124,6 @@ impl IndexGenerator {
     ) -> Result<()> {
         let mut posts = metadata.get_posts_by_category(&category_info.slug);
 
-        // Sort by date, descending
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
         let total_posts = posts.len();
@@ -143,10 +134,8 @@ impl IndexGenerator {
             (total_posts + posts_per_page - 1) / posts_per_page
         };
 
-        // Base URL for pagination (with trailing slash)
         let base_url = format!("/{}/", category_info.slug);
 
-        // Get visible categories for navigation
         let visible_categories: Vec<_> = metadata
             .get_category_info()
             .iter()
@@ -172,19 +161,16 @@ impl IndexGenerator {
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
 
-            // Add pagination context only if more than 1 page
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
                 context.insert("pagination", &pagination);
             }
 
-            // Add theme context
             context.insert("theme_variables", &self.theme_variables);
             context.insert("theme_info", &self.theme_info);
 
             let output = self.tera.render("category.html", &context)?;
 
-            // Output path: page 1 at /category/, page N at /category/page/N/
             let output_path = if page_num == 1 {
                 PathBuf::from(&self.config.build.output_dir)
                     .join(&category_info.slug)
@@ -204,11 +190,9 @@ impl IndexGenerator {
         Ok(())
     }
 
-    /// Generate tag page (with pagination)
     fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
 
-        // Sort by date, descending
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
         let total_posts = posts.len();
@@ -219,10 +203,8 @@ impl IndexGenerator {
             (total_posts + posts_per_page - 1) / posts_per_page
         };
 
-        // Base URL for pagination (with trailing slash)
         let base_url = format!("/tag/{}/", tag);
 
-        // Get visible categories for navigation
         let visible_categories: Vec<_> = metadata
             .get_category_info()
             .iter()
@@ -248,19 +230,16 @@ impl IndexGenerator {
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
 
-            // Add pagination context only if more than 1 page
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
                 context.insert("pagination", &pagination);
             }
 
-            // Add theme context
             context.insert("theme_variables", &self.theme_variables);
             context.insert("theme_info", &self.theme_info);
 
             let output = self.tera.render("tag.html", &context)?;
 
-            // Output path: page 1 at /tag/name/, page N at /tag/name/page/N/
             let output_path = if page_num == 1 {
                 PathBuf::from(&self.config.build.output_dir)
                     .join("tag")
@@ -282,12 +261,10 @@ impl IndexGenerator {
         Ok(())
     }
 
-    /// Generate tags overview page (list of all tags)
     fn generate_tags_overview(&self, metadata: &MetadataCache) -> Result<()> {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
-        tags_with_counts.sort_by(|a, b| b.1.cmp(a.1)); // Sort by count, descending
+        tags_with_counts.sort_by(|a, b| b.1.cmp(a.1));
 
-        // Get visible categories for navigation
         let visible_categories: Vec<_> = metadata
             .get_category_info()
             .iter()
@@ -320,7 +297,6 @@ impl IndexGenerator {
         Ok(())
     }
 
-    /// Build pagination context for a given page
     fn build_pagination_context(
         &self,
         current_page: usize,
@@ -331,7 +307,7 @@ impl IndexGenerator {
         let total_pages = if total_posts == 0 {
             1
         } else {
-            (total_posts + posts_per_page - 1) / posts_per_page // Ceiling division
+            (total_posts + posts_per_page - 1) / posts_per_page
         };
 
         let has_prev = current_page > 1;

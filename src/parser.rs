@@ -23,12 +23,6 @@ impl Parser {
         })
     }
 
-    /// Split content into frontmatter and markdown
-    /// Expected format:
-    /// ---
-    /// frontmatter here
-    /// ---
-    /// markdown here
     fn split_frontmatter(content: &str) -> Result<(&str, &str)> {
         let parts: Vec<&str> = content.splitn(3, "---").collect();
 
@@ -36,20 +30,13 @@ impl Parser {
             anyhow::bail!("Invalid frontmatter format. Expected:\n---\nfrontmatter\n---\ncontent");
         }
 
-        // parts[0] is empty string before first ---
-        // parts[1] is frontmatter
-        // parts[2] is content
         Ok((parts[1].trim(), parts[2].trim()))
     }
 
-    /// Parse YAML frontmatter into Frontmatter struct
     fn parse_frontmatter(yaml: &str) -> Result<Frontmatter> {
-        serde_yaml::from_str(yaml)
-            .context("Failed to parse frontmatter YAML")
+        serde_yaml::from_str(yaml).context("Failed to parse frontmatter YAML")
     }
 
-    /// Convert file path to slug
-    /// Example: content/posts/dev/my-post.md → my-post
     fn path_to_slug(path: &Path) -> Result<String> {
         path.file_stem()
             .and_then(|s| s.to_str())

@@ -4,7 +4,6 @@ use std::path::Path;
 
 use crate::types::Category;
 
-/// Discover all categories from the content directory
 pub fn discover_categories(content_dir: &Path) -> Result<Vec<Category>> {
     let mut categories = Vec::new();
 
@@ -17,12 +16,10 @@ pub fn discover_categories(content_dir: &Path) -> Result<Vec<Category>> {
         let entry = entry?;
         let path = entry.path();
 
-        // Skip non-directories and hidden directories
         if !path.is_dir() || is_hidden(&path) {
             continue;
         }
 
-        // Skip if no markdown files in directory
         if !has_markdown_files(&path)? {
             continue;
         }
@@ -33,12 +30,10 @@ pub fn discover_categories(content_dir: &Path) -> Result<Vec<Category>> {
             .ok_or_else(|| anyhow::anyhow!("Invalid directory name: {}", path.display()))?
             .to_string();
 
-        // Load category metadata
         let category = load_category_metadata(&path, &slug)?;
         categories.push(category);
     }
 
-    // Sort by index, then alphabetically
     categories.sort_by(|a, b| match a.index.cmp(&b.index) {
         std::cmp::Ordering::Equal => a.name.cmp(&b.name),
         other => other,
@@ -47,7 +42,6 @@ pub fn discover_categories(content_dir: &Path) -> Result<Vec<Category>> {
     Ok(categories)
 }
 
-/// Load category metadata from .category.yaml or create default
 fn load_category_metadata(dir: &Path, slug: &str) -> Result<Category> {
     let metadata_path = dir.join(".category.yaml");
 
@@ -61,7 +55,6 @@ fn load_category_metadata(dir: &Path, slug: &str) -> Result<Category> {
         serde_yaml::from_str::<Category>(&content)
             .with_context(|| format!("Failed to parse .category.yaml in '{}'", dir.display()))?
     } else {
-        // Default category
         Category {
             slug: slug.to_string(),
             name: capitalize(slug),
@@ -74,13 +67,11 @@ fn load_category_metadata(dir: &Path, slug: &str) -> Result<Category> {
         }
     };
 
-    // Always set slug from directory name (overrides any value in .yaml)
     category.slug = slug.to_string();
 
     Ok(category)
 }
 
-/// Check if a path is hidden (starts with . or _)
 fn is_hidden(path: &Path) -> bool {
     path.file_name()
         .and_then(|n| n.to_str())
@@ -88,7 +79,6 @@ fn is_hidden(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Check if a directory contains any markdown files
 fn has_markdown_files(dir: &Path) -> Result<bool> {
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
@@ -103,7 +93,6 @@ fn has_markdown_files(dir: &Path) -> Result<bool> {
     Ok(false)
 }
 
-/// Capitalize first letter of a string
 fn capitalize(s: &str) -> String {
     let mut chars = s.chars();
     match chars.next() {
@@ -112,12 +101,10 @@ fn capitalize(s: &str) -> String {
     }
 }
 
-/// Validate that a category slug exists
 pub fn validate_category(slug: &str, categories: &[Category]) -> bool {
     categories.iter().any(|c| c.slug == slug)
 }
 
-/// Get a category by its slug
 #[allow(dead_code)]
 pub fn get_category_by_slug<'a>(slug: &str, categories: &'a [Category]) -> Option<&'a Category> {
     categories.iter().find(|c| c.slug == slug)
@@ -134,7 +121,6 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let content = temp.path();
 
-        // Create structure
         fs::create_dir(content.join("dev")).unwrap();
         fs::write(content.join("dev/post.md"), "# Test").unwrap();
 

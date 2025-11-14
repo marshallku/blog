@@ -49,10 +49,7 @@ impl ThemeEngine {
         let theme_dir = PathBuf::from("themes");
         let theme_name = ssg_config.theme.name.clone();
 
-        // Load active theme
         let active_theme = load_theme_metadata(&theme_dir, &theme_name)?;
-
-        // Load parent theme if specified
         let parent_theme_name = active_theme.parent.clone();
         let parent_theme = if let Some(ref parent_name) = parent_theme_name {
             Some(load_theme_metadata(&theme_dir, parent_name)?)
@@ -60,10 +57,7 @@ impl ThemeEngine {
             None
         };
 
-        // Resolve template paths using directory names, not display names
         let template_paths = resolve_template_paths(&theme_dir, &theme_name, &parent_theme_name)?;
-
-        // Merge variables
         let variables = merge_variables(&active_theme, &parent_theme, &ssg_config.theme.variables);
 
         Ok(Self {
@@ -75,33 +69,29 @@ impl ThemeEngine {
 
     /// Create a Tera instance with all theme template paths
     pub fn create_tera_engine(&self) -> Result<Tera> {
-        // Load templates from the highest priority path first
-        let primary_path = self.template_paths.first()
+        let primary_path = self
+            .template_paths
+            .first()
             .ok_or_else(|| anyhow::anyhow!("No template paths available"))?;
 
         let glob_pattern = format!("{}/**/*.html", primary_path.display());
         let mut tera = Tera::new(&glob_pattern)
             .context(format!("Failed to load templates from {:?}", primary_path))?;
 
-        // If there are additional paths (parent themes, legacy), try to load from them too
-        // These act as fallbacks for missing templates
         for path in self.template_paths.iter().skip(1) {
             if path.exists() {
                 let fallback_pattern = format!("{}/**/*.html", path.display());
                 match Tera::new(&fallback_pattern) {
                     Ok(fallback_tera) => {
-                        // Extend with fallback templates (won't override existing ones)
                         tera.extend(&fallback_tera)?;
                     }
                     Err(_) => {
-                        // Fallback path might not have templates - that's ok
                         continue;
                     }
                 }
             }
         }
 
-        // Validate required templates exist
         validate_required_templates(&tera, &self.active_theme)?;
 
         Ok(tera)
@@ -127,9 +117,7 @@ fn load_theme_metadata(theme_dir: &Path, theme_name: &str) -> Result<ThemeMetada
     let theme_path = theme_dir.join(theme_name);
     let metadata_path = theme_path.join("theme.yaml");
 
-    // Check if theme exists
     if !theme_path.exists() {
-        // Try fallback to templates/ directory for backward compatibility
         if theme_name == "default" && Path::new("templates").exists() {
             return create_legacy_theme_metadata();
         }
@@ -141,7 +129,6 @@ fn load_theme_metadata(theme_dir: &Path, theme_name: &str) -> Result<ThemeMetada
         );
     }
 
-    // Check if theme.yaml exists
     if !metadata_path.exists() {
         anyhow::bail!(
             "Theme '{}' is missing theme.yaml metadata file at {:?}",
@@ -150,14 +137,12 @@ fn load_theme_metadata(theme_dir: &Path, theme_name: &str) -> Result<ThemeMetada
         );
     }
 
-    // Parse theme.yaml
     let content = fs::read_to_string(&metadata_path)
         .context(format!("Failed to read {:?}", metadata_path))?;
 
-    let mut metadata: ThemeMetadata = serde_yaml::from_str(&content)
-        .context(format!("Failed to parse {:?}", metadata_path))?;
+    let mut metadata: ThemeMetadata =
+        serde_yaml::from_str(&content).context(format!("Failed to parse {:?}", metadata_path))?;
 
-    // Ensure name matches directory
     if metadata.name.is_empty() {
         metadata.name = theme_name.to_string();
     }
@@ -192,13 +177,11 @@ fn resolve_template_paths(
 ) -> Result<Vec<PathBuf>> {
     let mut paths = Vec::new();
 
-    // 1. Active theme path (highest priority)
     let active_path = theme_dir.join(theme_name);
     if active_path.exists() {
         paths.push(active_path);
     }
 
-    // 2. Parent theme path (if exists)
     if let Some(parent_name) = parent_theme_name {
         let parent_path = theme_dir.join(parent_name);
         if parent_path.exists() {
@@ -224,19 +207,16 @@ fn merge_variables(
 ) -> HashMap<String, serde_yaml::Value> {
     let mut variables = HashMap::new();
 
-    // 1. Start with parent theme variables (lowest priority)
     if let Some(parent) = parent_theme {
         for (key, value) in &parent.variables {
             variables.insert(key.clone(), value.clone());
         }
     }
 
-    // 2. Override with active theme variables
     for (key, value) in &active_theme.variables {
         variables.insert(key.clone(), value.clone());
     }
 
-    // 3. Override with site config variables (highest priority)
     for (key, value) in site_overrides {
         variables.insert(key.clone(), value.clone());
     }
@@ -246,9 +226,14 @@ fn merge_variables(
 
 /// Validate that all required templates exist in Tera
 fn validate_required_templates(tera: &Tera, theme: &ThemeMetadata) -> Result<()> {
-    let missing_templates: Vec<&String> = theme.required_templates
+    let missing_templates: Vec<&String> = theme
+        .required_templates
         .iter()
-        .filter(|template| !tera.get_template_names().any(|name| name == template.as_str()))
+        .filter(|template| {
+            !tera
+                .get_template_names()
+                .any(|name| name == template.as_str())
+        })
         .collect();
 
     if !missing_templates.is_empty() {
@@ -276,8 +261,14 @@ mod tests {
             parent: None,
             variables: {
                 let mut vars = HashMap::new();
-                vars.insert("color".to_string(), serde_yaml::Value::String("red".to_string()));
-                vars.insert("font".to_string(), serde_yaml::Value::String("Arial".to_string()));
+                vars.insert(
+                    "color".to_string(),
+                    serde_yaml::Value::String("red".to_string()),
+                );
+                vars.insert(
+                    "font".to_string(),
+                    serde_yaml::Value::String("Arial".to_string()),
+                );
                 vars
             },
             hooks: vec![],
@@ -292,7 +283,10 @@ mod tests {
             parent: Some("parent".to_string()),
             variables: {
                 let mut vars = HashMap::new();
-                vars.insert("color".to_string(), serde_yaml::Value::String("blue".to_string()));
+                vars.insert(
+                    "color".to_string(),
+                    serde_yaml::Value::String("blue".to_string()),
+                );
                 vars
             },
             hooks: vec![],
@@ -301,15 +295,22 @@ mod tests {
 
         let site_overrides = {
             let mut vars = HashMap::new();
-            vars.insert("font".to_string(), serde_yaml::Value::String("Helvetica".to_string()));
+            vars.insert(
+                "font".to_string(),
+                serde_yaml::Value::String("Helvetica".to_string()),
+            );
             vars
         };
 
         let merged = merge_variables(&child, &Some(parent), &site_overrides);
 
-        // Child overrides parent color
-        assert_eq!(merged.get("color").unwrap(), &serde_yaml::Value::String("blue".to_string()));
-        // Site overrides both for font
-        assert_eq!(merged.get("font").unwrap(), &serde_yaml::Value::String("Helvetica".to_string()));
+        assert_eq!(
+            merged.get("color").unwrap(),
+            &serde_yaml::Value::String("blue".to_string())
+        );
+        assert_eq!(
+            merged.get("font").unwrap(),
+            &serde_yaml::Value::String("Helvetica".to_string())
+        );
     }
 }

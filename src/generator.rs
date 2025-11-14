@@ -40,7 +40,9 @@ impl Generator {
 
     /// Generate a single post page
     pub fn generate_post(&self, post: &Post) -> Result<PathBuf> {
-        let html = post.rendered_html.as_ref()
+        let html = post
+            .rendered_html
+            .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Post not rendered: {}", post.slug))?;
 
         let template_config = TemplateConfig {
@@ -61,7 +63,6 @@ impl Generator {
 
         let output = self.tera.render("post.html", &context)?;
 
-        // Write to dist/{category}/{slug}/index.html
         let output_path = self.get_post_path(post);
         fs::create_dir_all(output_path.parent().unwrap())?;
         fs::write(&output_path, output)?;
@@ -69,7 +70,6 @@ impl Generator {
         Ok(output_path)
     }
 
-    /// Get the output path for a post
     fn get_post_path(&self, post: &Post) -> PathBuf {
         PathBuf::from(&self.config.build.output_dir)
             .join(&post.frontmatter.category)
@@ -93,7 +93,6 @@ impl Generator {
         Ok(())
     }
 
-    /// Recursively copy directory
     fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
         fs::create_dir_all(dst)?;
 
