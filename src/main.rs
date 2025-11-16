@@ -154,7 +154,6 @@ fn build_all(use_cache: bool) -> Result<()> {
         let html = renderer.render_markdown_with_components(
             &post.content,
             generator.get_tera(),
-            generator.get_cdn_url(),
         )?;
         post.rendered_html = Some(html);
 
@@ -224,7 +223,6 @@ fn build_single_post(post_path: &str) -> Result<()> {
     let html = renderer.render_markdown_with_components(
         &post.content,
         generator.get_tera(),
-        generator.get_cdn_url(),
     )?;
     post.rendered_html = Some(html);
 

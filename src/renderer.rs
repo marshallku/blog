@@ -1,6 +1,6 @@
 use anyhow::Result;
-use pulldown_cmark::{html, Event, Options, Parser as MdParser, Tag};
-use std::borrow::Cow;
+use pulldown_cmark::{html, Options, Parser as MdParser};
+use std::collections::HashMap;
 use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::SyntaxSet;
@@ -33,60 +33,209 @@ impl Renderer {
         &self,
         markdown: &str,
         tera: &Tera,
-        cdn_url: Option<&str>,
     ) -> Result<String> {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);
 
-        let mut events = Vec::new();
-        let mut image_data: Option<(Cow<str>, Cow<str>)> = None;
+        let mut html_output = String::new();
+        html::push_html(&mut html_output, parser);
 
-        for event in parser {
-            match event {
-                Event::Start(Tag::Image(_, dest_url, _)) => {
-                    image_data = Some((dest_url.clone().into(), Cow::Borrowed("")));
-                }
-                Event::Text(ref text) if image_data.is_some() => {
-                    if let Some((url, _)) = image_data.take() {
-                        let alt = text.to_string();
-                        let src = if let Some(cdn) = cdn_url {
-                            if url.starts_with("http") || url.starts_with("//") {
-                                url.to_string()
-                            } else {
-                                format!("{}{}", cdn, url)
-                            }
-                        } else {
-                            url.to_string()
-                        };
+        Self::post_process_components(&html_output, tera)
+    }
 
-                        if tera.get_template("components/img.html").is_ok() {
-                            let mut context = Context::new();
-                            context.insert("src", &src);
-                            context.insert("alt", &alt);
+    fn post_process_components(html: &str, tera: &Tera) -> Result<String> {
+        let mut result = html.to_string();
 
-                            if let Ok(rendered) = tera.render("components/img.html", &context) {
-                                events.push(Event::Html(rendered.into()));
-                                continue;
-                            }
+        let tag_patterns = vec![
+            "img", "code", "pre", "blockquote", "table", "a", "h1", "h2", "h3",
+            "h4", "h5", "h6", "p", "ul", "ol", "li", "strong", "em", "del"
+        ];
+
+        for tag_name in tag_patterns {
+            let template_name = format!("components/{}.html", tag_name);
+
+            if tera.get_template(&template_name).is_err() {
+                continue;
+            }
+
+            result = Self::replace_tag(&result, tag_name, tera, &template_name)?;
+        }
+
+        Ok(result)
+    }
+
+    fn replace_tag(
+        html: &str,
+        tag_name: &str,
+        tera: &Tera,
+        template_name: &str,
+    ) -> Result<String> {
+        let mut result = String::new();
+        let mut chars = html.chars().peekable();
+
+        while let Some(ch) = chars.next() {
+            if ch == '<' {
+                let tag_start_pos = result.len();
+                result.push(ch);
+
+                let mut tag_content = String::new();
+                let mut in_quotes = false;
+                let mut quote_char = ' ';
+
+                while let Some(&next_ch) = chars.peek() {
+                    chars.next();
+                    result.push(next_ch);
+
+                    if next_ch == '"' || next_ch == '\'' {
+                        if in_quotes && next_ch == quote_char {
+                            in_quotes = false;
+                        } else if !in_quotes {
+                            in_quotes = true;
+                            quote_char = next_ch;
                         }
+                    }
 
-                        let default_html = format!(r#"<img src="{}" alt="{}">"#, src, alt);
-                        events.push(Event::Html(default_html.into()));
+                    if next_ch == '>' && !in_quotes {
+                        tag_content = result[tag_start_pos..].to_string();
+                        break;
                     }
                 }
-                Event::End(Tag::Image(..)) => {
-                    continue;
+
+                if tag_content.starts_with(&format!("<{} ", tag_name))
+                    || tag_content == format!("<{}>", tag_name) {
+
+                    let attrs = Self::extract_attributes(&tag_content);
+                    let mut inner_content = String::new();
+
+                    if !tag_content.ends_with("/>") {
+                        let mut depth = 1;
+                        let close_tag = format!("</{}>", tag_name);
+
+                        while depth > 0 && chars.peek().is_some() {
+                            let ch = chars.next().unwrap();
+
+                            if ch == '<' {
+                                let mut potential_tag = String::from('<');
+                                while let Some(&next_ch) = chars.peek() {
+                                    chars.next();
+                                    potential_tag.push(next_ch);
+                                    if next_ch == '>' {
+                                        break;
+                                    }
+                                }
+
+                                if potential_tag == close_tag {
+                                    depth -= 1;
+                                    if depth == 0 {
+                                        break;
+                                    }
+                                } else if potential_tag.starts_with(&format!("<{} ", tag_name))
+                                    || potential_tag == format!("<{}>", tag_name) {
+                                    depth += 1;
+                                }
+
+                                if depth > 0 {
+                                    inner_content.push_str(&potential_tag);
+                                }
+                            } else {
+                                inner_content.push(ch);
+                            }
+                        }
+                    }
+
+                    let mut context = Context::new();
+                    for (key, value) in attrs {
+                        context.insert(&key, &value);
+                    }
+
+                    if !inner_content.is_empty() {
+                        context.insert("content", &inner_content);
+                    }
+
+                    if let Ok(rendered) = tera.render(template_name, &context) {
+                        result.truncate(tag_start_pos);
+                        result.push_str(&rendered);
+                        continue;
+                    }
                 }
-                _ => {
-                    events.push(event);
-                }
+            } else {
+                result.push(ch);
             }
         }
 
-        let mut html_output = String::new();
-        html::push_html(&mut html_output, events.into_iter());
+        Ok(result)
+    }
 
-        Ok(html_output)
+    fn extract_attributes(tag: &str) -> HashMap<String, String> {
+        let mut attrs = HashMap::new();
+
+        let tag = tag.trim_start_matches('<').trim_end_matches('>').trim_end_matches('/');
+        let parts: Vec<&str> = tag.splitn(2, ' ').collect();
+
+        if parts.len() < 2 {
+            return attrs;
+        }
+
+        let attr_string = parts[1];
+        let mut chars = attr_string.chars().peekable();
+
+        while chars.peek().is_some() {
+            while chars.peek() == Some(&' ') {
+                chars.next();
+            }
+
+            let mut key = String::new();
+            while let Some(&ch) = chars.peek() {
+                if ch == '=' || ch == ' ' {
+                    break;
+                }
+                key.push(chars.next().unwrap());
+            }
+
+            if key.is_empty() {
+                break;
+            }
+
+            while chars.peek() == Some(&' ') {
+                chars.next();
+            }
+
+            if chars.peek() != Some(&'=') {
+                attrs.insert(key, String::from("true"));
+                continue;
+            }
+
+            chars.next();
+
+            while chars.peek() == Some(&' ') {
+                chars.next();
+            }
+
+            let mut value = String::new();
+            if let Some(&quote) = chars.peek() {
+                if quote == '"' || quote == '\'' {
+                    chars.next();
+                    while let Some(&ch) = chars.peek() {
+                        if ch == quote {
+                            chars.next();
+                            break;
+                        }
+                        value.push(chars.next().unwrap());
+                    }
+                } else {
+                    while let Some(&ch) = chars.peek() {
+                        if ch == ' ' {
+                            break;
+                        }
+                        value.push(chars.next().unwrap());
+                    }
+                }
+            }
+
+            attrs.insert(key, value);
+        }
+
+        attrs
     }
 
     #[allow(dead_code)]
