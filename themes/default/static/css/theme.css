@@ -177,6 +177,11 @@ body {
   font-style: italic;
 }
 
+.post-content img {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Footer */
 .site-footer {
   background: #ecf0f1;
