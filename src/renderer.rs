@@ -33,6 +33,7 @@ impl Renderer {
         &self,
         markdown: &str,
         tera: &Tera,
+        base_path: &str,
     ) -> Result<String> {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);
@@ -40,10 +41,10 @@ impl Renderer {
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
 
-        Self::post_process_components(&html_output, tera)
+        Self::post_process_components(&html_output, tera, base_path)
     }
 
-    fn post_process_components(html: &str, tera: &Tera) -> Result<String> {
+    fn post_process_components(html: &str, tera: &Tera, base_path: &str) -> Result<String> {
         let mut result = html.to_string();
 
         let tag_patterns = vec![
@@ -58,7 +59,7 @@ impl Renderer {
                 continue;
             }
 
-            result = Self::replace_tag(&result, tag_name, tera, &template_name)?;
+            result = Self::replace_tag(&result, tag_name, tera, &template_name, base_path)?;
         }
 
         Ok(result)
@@ -69,6 +70,7 @@ impl Renderer {
         tag_name: &str,
         tera: &Tera,
         template_name: &str,
+        base_path: &str,
     ) -> Result<String> {
         let mut result = String::new();
         let mut chars = html.chars().peekable();
@@ -145,7 +147,12 @@ impl Renderer {
 
                     let mut context = Context::new();
                     for (key, value) in attrs {
-                        context.insert(&key, &value);
+                        if Self::is_url_attribute(&key) {
+                            let resolved = Self::resolve_path(&value, base_path);
+                            context.insert(&key, &resolved);
+                        } else {
+                            context.insert(&key, &value);
+                        }
                     }
 
                     if !inner_content.is_empty() {
@@ -236,6 +243,60 @@ impl Renderer {
         }
 
         attrs
+    }
+
+    fn is_url_attribute(attr: &str) -> bool {
+        matches!(attr, "src" | "href" | "data" | "poster" | "srcset")
+    }
+
+    fn resolve_path(path: &str, base_path: &str) -> String {
+        let trimmed = path.trim();
+
+        if trimmed.starts_with("http://")
+            || trimmed.starts_with("https://")
+            || trimmed.starts_with("//")
+            || trimmed.starts_with('#')
+            || trimmed.starts_with("data:")
+            || trimmed.starts_with("mailto:")
+        {
+            return trimmed.to_string();
+        }
+
+        if trimmed.starts_with('/') {
+            return trimmed.to_string();
+        }
+
+        if trimmed.starts_with("./") {
+            return format!("/{}/{}", base_path.trim_matches('/'), &trimmed[2..]);
+        }
+
+        if trimmed.starts_with("../") {
+            let base_parts: Vec<&str> = base_path.trim_matches('/').split('/').collect();
+            let mut path_parts: Vec<&str> = trimmed.split('/').collect();
+
+            let mut up_count = 0;
+            while !path_parts.is_empty() && path_parts[0] == ".." {
+                up_count += 1;
+                path_parts.remove(0);
+            }
+
+            let remaining_base = if up_count >= base_parts.len() {
+                vec![]
+            } else {
+                base_parts[..base_parts.len() - up_count].to_vec()
+            };
+
+            let mut result = String::from("/");
+            if !remaining_base.is_empty() {
+                result.push_str(&remaining_base.join("/"));
+                result.push('/');
+            }
+            result.push_str(&path_parts.join("/"));
+
+            return result;
+        }
+
+        format!("/{}/{}", base_path.trim_matches('/'), trimmed)
     }
 
     #[allow(dead_code)]

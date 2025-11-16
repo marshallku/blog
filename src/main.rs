@@ -151,9 +151,11 @@ fn build_all(use_cache: bool) -> Result<()> {
             continue;
         }
 
+        let base_path = format!("{}", post.frontmatter.category);
         let html = renderer.render_markdown_with_components(
             &post.content,
             generator.get_tera(),
+            &base_path,
         )?;
         post.rendered_html = Some(html);
 
@@ -220,9 +222,11 @@ fn build_single_post(post_path: &str) -> Result<()> {
         println!("⚠  This is a draft post");
     }
 
+    let base_path = format!("{}", post.frontmatter.category);
     let html = renderer.render_markdown_with_components(
         &post.content,
         generator.get_tera(),
+        &base_path,
     )?;
     post.rendered_html = Some(html);
 
