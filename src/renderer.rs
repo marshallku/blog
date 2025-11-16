@@ -1,8 +1,10 @@
 use anyhow::Result;
-use pulldown_cmark::{html, Options, Parser as MdParser};
+use pulldown_cmark::{html, Event, Options, Parser as MdParser, Tag};
+use std::borrow::Cow;
 use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::highlighted_html_for_string;
 use syntect::parsing::SyntaxSet;
+use tera::{Context, Tera};
 
 pub struct Renderer {
     syntax_set: SyntaxSet,
@@ -25,6 +27,66 @@ impl Renderer {
         html::push_html(&mut html_output, parser);
 
         html_output
+    }
+
+    pub fn render_markdown_with_components(
+        &self,
+        markdown: &str,
+        tera: &Tera,
+        cdn_url: Option<&str>,
+    ) -> Result<String> {
+        let options = Options::all();
+        let parser = MdParser::new_ext(markdown, options);
+
+        let mut events = Vec::new();
+        let mut image_data: Option<(Cow<str>, Cow<str>)> = None;
+
+        for event in parser {
+            match event {
+                Event::Start(Tag::Image(_, dest_url, _)) => {
+                    image_data = Some((dest_url.clone().into(), Cow::Borrowed("")));
+                }
+                Event::Text(ref text) if image_data.is_some() => {
+                    if let Some((url, _)) = image_data.take() {
+                        let alt = text.to_string();
+                        let src = if let Some(cdn) = cdn_url {
+                            if url.starts_with("http") || url.starts_with("//") {
+                                url.to_string()
+                            } else {
+                                format!("{}{}", cdn, url)
+                            }
+                        } else {
+                            url.to_string()
+                        };
+
+                        if tera.get_template("components/img.html").is_ok() {
+                            let mut context = Context::new();
+                            context.insert("src", &src);
+                            context.insert("alt", &alt);
+
+                            if let Ok(rendered) = tera.render("components/img.html", &context) {
+                                events.push(Event::Html(rendered.into()));
+                                continue;
+                            }
+                        }
+
+                        let default_html = format!(r#"<img src="{}" alt="{}">"#, src, alt);
+                        events.push(Event::Html(default_html.into()));
+                    }
+                }
+                Event::End(Tag::Image(..)) => {
+                    continue;
+                }
+                _ => {
+                    events.push(event);
+                }
+            }
+        }
+
+        let mut html_output = String::new();
+        html::push_html(&mut html_output, events.into_iter());
+
+        Ok(html_output)
     }
 
     #[allow(dead_code)]

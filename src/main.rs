@@ -151,7 +151,11 @@ fn build_all(use_cache: bool) -> Result<()> {
             continue;
         }
 
-        let html = renderer.render_markdown(&post.content);
+        let html = renderer.render_markdown_with_components(
+            &post.content,
+            generator.get_tera(),
+            generator.get_cdn_url(),
+        )?;
         post.rendered_html = Some(html);
 
         let output_path = generator.generate_post(&post)?;
@@ -217,7 +221,11 @@ fn build_single_post(post_path: &str) -> Result<()> {
         println!("⚠  This is a draft post");
     }
 
-    let html = renderer.render_markdown(&post.content);
+    let html = renderer.render_markdown_with_components(
+        &post.content,
+        generator.get_tera(),
+        generator.get_cdn_url(),
+    )?;
     post.rendered_html = Some(html);
 
     let output_path = generator.generate_post(&post)?;

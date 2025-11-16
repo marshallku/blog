@@ -71,6 +71,14 @@ impl Generator {
         Ok(output_path)
     }
 
+    pub fn get_tera(&self) -> &Tera {
+        &self.tera
+    }
+
+    pub fn get_cdn_url(&self) -> Option<&str> {
+        self.config.site.cdn_url.as_deref()
+    }
+
     fn get_post_path(&self, post: &Post) -> PathBuf {
         PathBuf::from(&self.config.build.output_dir)
             .join(&post.frontmatter.category)

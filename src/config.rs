@@ -15,6 +15,8 @@ pub struct SiteConfig {
     pub author: String,
     #[serde(default = "default_description")]
     pub description: String,
+    #[serde(default)]
+    pub cdn_url: Option<String>,
 }
 
 /// Theme configuration from config.yaml
@@ -57,6 +59,7 @@ impl Default for SiteConfig {
             url: default_site_url(),
             author: default_author(),
             description: default_description(),
+            cdn_url: None,
         }
     }
 }
