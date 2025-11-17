@@ -1,17 +1,13 @@
 use crate::config::SsgConfig;
+use crate::slug;
 use crate::theme::ThemeEngine;
 use crate::types::{Page, Post};
 use anyhow::{Context, Result};
-use blake3;
-use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context as TeraContext, Tera};
-
-const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
-const PATH: &AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
 
 /// Flattened config for template context (backward compatibility)
 #[derive(Debug, Clone, Serialize)]
@@ -212,23 +208,8 @@ impl Generator {
         for component in path.components() {
             if let std::path::Component::Normal(os_str) = component {
                 if let Some(s) = os_str.to_str() {
-                    let encoded = utf8_percent_encode(s, PATH).to_string();
-
-                    // Limit individual component length (filesystem limit is usually 255)
-                    const MAX_COMPONENT_LEN: usize = 200;
-                    let limited = if encoded.len() > MAX_COMPONENT_LEN {
-                        let hash = blake3::hash(encoded.as_bytes());
-                        println!(
-                            "file name modified. Original: {}, Modified: {}",
-                            s,
-                            format!("{}-{}", &encoded[..180], &hash.to_hex()[..16])
-                        );
-                        format!("{}-{}", &encoded[..180], &hash.to_hex()[..16])
-                    } else {
-                        encoded
-                    };
-
-                    components.push(limited);
+                    let encoded = slug::encode_for_url(s);
+                    components.push(encoded);
                 }
             }
         }

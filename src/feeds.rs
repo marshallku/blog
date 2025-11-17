@@ -2,8 +2,8 @@ use crate::config::SsgConfig;
 use crate::metadata::MetadataCache;
 use crate::parser::Parser;
 use crate::renderer::Renderer;
+use crate::slug;
 use anyhow::{Context, Result};
-use percent_encoding;
 use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
@@ -278,9 +278,7 @@ impl FeedGenerator {
 
     fn find_post_file(content_dir: &Path, slug: &str) -> Result<PathBuf> {
         // Decode the slug back to original filename for searching
-        let decoded = percent_encoding::percent_decode_str(slug)
-            .decode_utf8()
-            .unwrap_or_else(|_| std::borrow::Cow::Borrowed(slug));
+        let decoded = slug::decode_from_url(slug);
         let filename = format!("{}.md", decoded);
 
         for entry in WalkDir::new(content_dir)
