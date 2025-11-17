@@ -490,12 +490,13 @@ fn start_dev_server(port: u16) -> Result<()> {
         let request_line = request.lines().next().unwrap_or("");
 
         let path = if let Some(path_part) = request_line.split_whitespace().nth(1) {
-            path_part
+            // Decode URL for filesystem lookup (handles Korean/non-ASCII characters)
+            slug::decode_from_url(path_part)
         } else {
-            "/"
+            "/".to_string()
         };
 
-        serve_file(&mut stream, path);
+        serve_file(&mut stream, &path);
     }
 
     Ok(())

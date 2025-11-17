@@ -1,4 +1,3 @@
-use crate::slug;
 use crate::types::{Frontmatter, Page, PageFrontmatter, Post};
 use anyhow::{Context, Result};
 use std::fs;
@@ -12,16 +11,9 @@ impl Parser {
             .with_context(|| format!("Failed to read {}", path.display()))?;
 
         let (frontmatter_str, markdown) = Self::split_frontmatter(&content)?;
-        let mut frontmatter = Self::parse_frontmatter(frontmatter_str)?;
-        let raw_slug = Self::path_to_slug(path)?;
-        let slug = slug::encode_for_url(&raw_slug);
+        let frontmatter = Self::parse_frontmatter(frontmatter_str)?;
+        let slug = Self::path_to_slug(path)?;
         let category = Self::extract_category(path)?;
-
-        frontmatter.tags = frontmatter
-            .tags
-            .iter()
-            .map(|tag| slug::encode_for_url(tag))
-            .collect();
 
         Ok(Post {
             slug,

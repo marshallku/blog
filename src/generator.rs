@@ -108,16 +108,29 @@ impl Generator {
     }
 
     fn get_post_path(&self, post: &Post) -> PathBuf {
+        let category = self.maybe_encode(&post.category);
+        let slug = self.maybe_encode(&post.slug);
+
         PathBuf::from(&self.config.build.output_dir)
-            .join(&post.category)
-            .join(&post.slug)
+            .join(category)
+            .join(slug)
             .join("index.html")
     }
 
     fn get_page_path(&self, page: &Page) -> PathBuf {
+        let slug = self.maybe_encode(&page.slug);
+
         PathBuf::from(&self.config.build.output_dir)
-            .join(&page.slug)
+            .join(slug)
             .join("index.html")
+    }
+
+    fn maybe_encode(&self, s: &str) -> String {
+        if self.config.build.encode_filenames {
+            slug::encode_for_url(s)
+        } else {
+            s.to_string()
+        }
     }
 
     pub fn copy_static_assets(&self) -> Result<()> {
@@ -203,18 +216,9 @@ impl Generator {
     }
 
     fn encode_asset_path(path: &Path) -> PathBuf {
-        let mut components = Vec::new();
-
-        for component in path.components() {
-            if let std::path::Component::Normal(os_str) = component {
-                if let Some(s) = os_str.to_str() {
-                    let encoded = slug::encode_for_url(s);
-                    components.push(encoded);
-                }
-            }
-        }
-
-        components.iter().collect()
+        // No encoding needed - keep UTF-8 filenames as-is
+        // Web servers (Nginx) decode URLs before filesystem lookup
+        path.to_path_buf()
     }
 
     fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {

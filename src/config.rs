@@ -37,6 +37,10 @@ pub struct BuildConfig {
     pub output_dir: String,
     #[serde(default = "default_posts_per_page")]
     pub posts_per_page: usize,
+    /// Percent-encode filenames for URL safety (default: false)
+    /// Set to true for compatibility with older web servers
+    #[serde(default)]
+    pub encode_filenames: bool,
 }
 
 /// Complete config.yaml structure
@@ -77,6 +81,7 @@ impl Default for BuildConfig {
             content_dir: default_content_dir(),
             output_dir: default_output_dir(),
             posts_per_page: default_posts_per_page(),
+            encode_filenames: false,
         }
     }
 }

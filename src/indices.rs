@@ -1,5 +1,6 @@
 use crate::config::SsgConfig;
 use crate::metadata::MetadataCache;
+use crate::slug;
 use crate::theme::ThemeEngine;
 use anyhow::Result;
 use serde::Serialize;
@@ -171,13 +172,15 @@ impl IndexGenerator {
 
             let output = self.tera.render("category.html", &context)?;
 
+            let category_slug = self.maybe_encode(&category_info.slug);
+
             let output_path = if page_num == 1 {
                 PathBuf::from(&self.config.build.output_dir)
-                    .join(&category_info.slug)
+                    .join(&category_slug)
                     .join("index.html")
             } else {
                 PathBuf::from(&self.config.build.output_dir)
-                    .join(&category_info.slug)
+                    .join(&category_slug)
                     .join("page")
                     .join(page_num.to_string())
                     .join("index.html")
@@ -240,15 +243,17 @@ impl IndexGenerator {
 
             let output = self.tera.render("tag.html", &context)?;
 
+            let encoded_tag = self.maybe_encode(tag);
+
             let output_path = if page_num == 1 {
                 PathBuf::from(&self.config.build.output_dir)
                     .join("tag")
-                    .join(tag)
+                    .join(&encoded_tag)
                     .join("index.html")
             } else {
                 PathBuf::from(&self.config.build.output_dir)
                     .join("tag")
-                    .join(tag)
+                    .join(&encoded_tag)
                     .join("page")
                     .join(page_num.to_string())
                     .join("index.html")
@@ -360,6 +365,14 @@ impl IndexGenerator {
             first_url,
             last_url,
             pages,
+        }
+    }
+
+    fn maybe_encode(&self, s: &str) -> String {
+        if self.config.build.encode_filenames {
+            slug::encode_for_url(s)
+        } else {
+            s.to_string()
         }
     }
 }
