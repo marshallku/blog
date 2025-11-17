@@ -13,13 +13,34 @@ impl Parser {
         let (frontmatter_str, markdown) = Self::split_frontmatter(&content)?;
         let frontmatter = Self::parse_frontmatter(frontmatter_str)?;
         let slug = Self::path_to_slug(path)?;
+        let category = Self::extract_category(path)?;
 
         Ok(Post {
             slug,
+            category,
             frontmatter,
             content: markdown.to_string(),
             rendered_html: None,
         })
+    }
+
+    fn extract_category(path: &Path) -> Result<String> {
+        let components: Vec<_> = path.components().collect();
+
+        for i in 0..components.len() {
+            if let std::path::Component::Normal(comp) = components[i] {
+                if comp == "posts" && i + 1 < components.len() {
+                    if let std::path::Component::Normal(category) = components[i + 1] {
+                        return category
+                            .to_str()
+                            .map(|s| s.to_string())
+                            .ok_or_else(|| anyhow::anyhow!("Invalid category name in path: {}", path.display()));
+                    }
+                }
+            }
+        }
+
+        anyhow::bail!("Could not extract category from path: {}. Expected path format: content/posts/<category>/...", path.display())
     }
 
     pub fn parse_page_file(path: &Path) -> Result<Page> {

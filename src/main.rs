@@ -153,7 +153,7 @@ fn build_all(use_cache: bool) -> Result<()> {
             continue;
         }
 
-        let base_path = format!("{}", post.frontmatter.category);
+        let base_path = format!("{}", post.category);
         let html = renderer.render_markdown_with_components(
             &post.content,
             generator.get_tera(),
@@ -170,7 +170,7 @@ fn build_all(use_cache: bool) -> Result<()> {
             output_path.to_string_lossy().to_string(),
         );
 
-        metadata.upsert_post(post.slug.clone(), post.frontmatter.clone());
+        metadata.upsert_post(post.slug.clone(), post.category.clone(), post.frontmatter.clone());
 
         built_count += 1;
     }
@@ -262,7 +262,7 @@ fn build_single_post(post_path: &str) -> Result<()> {
         println!("⚠  This is a draft post");
     }
 
-    let base_path = format!("{}", post.frontmatter.category);
+    let base_path = format!("{}", post.category);
     let html = renderer.render_markdown_with_components(
         &post.content,
         generator.get_tera(),

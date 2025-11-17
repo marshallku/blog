@@ -1,7 +1,8 @@
 use crate::config::SsgConfig;
 use crate::theme::ThemeEngine;
-use crate::types::{Page, Post};
+use crate::types::{Page, Post, PostDate};
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -14,6 +15,22 @@ struct TemplateConfig<'a> {
     site_title: &'a str,
     site_url: &'a str,
     author: &'a str,
+}
+
+/// Flattened post for template context
+#[derive(Debug, Clone, Serialize)]
+struct TemplatePost<'a> {
+    // From Post
+    slug: &'a str,
+    category: &'a str,
+
+    // From Frontmatter
+    title: &'a str,
+    date: &'a PostDate,
+    tags: &'a Vec<String>,
+    featured_image: &'a Option<String>,
+    description: &'a Option<String>,
+    draft: bool,
 }
 
 pub struct Generator {
@@ -53,8 +70,9 @@ impl Generator {
         };
 
         let mut context = TeraContext::new();
-        context.insert("post", &post.frontmatter);
+        context.insert("post", post);
         context.insert("slug", &post.slug);
+        context.insert("category", &post.category);
         context.insert("content", html);
         context.insert("config", &template_config);
 
@@ -107,7 +125,7 @@ impl Generator {
 
     fn get_post_path(&self, post: &Post) -> PathBuf {
         PathBuf::from(&self.config.build.output_dir)
-            .join(&post.frontmatter.category)
+            .join(&post.category)
             .join(&post.slug)
             .join("index.html")
     }

@@ -48,14 +48,14 @@ impl FeedGenerator {
                 .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
             let rendered_content = renderer.render_markdown(&post.content);
-            let url = format!("{}/{}/{}", config.site.url, post.frontmatter.category, post.slug);
+            let url = format!("{}/{}/{}", config.site.url, post.category, post.slug);
 
             let category_name = metadata
                 .get_category_info()
                 .iter()
-                .find(|c| c.slug == post.frontmatter.category)
+                .find(|c| c.slug == post.category)
                 .map(|c| c.name.clone())
-                .unwrap_or_else(|| post.frontmatter.category.clone());
+                .unwrap_or_else(|| post.category.clone());
 
             let tags_xml = if !post.frontmatter.tags.is_empty() {
                 post.frontmatter
@@ -180,7 +180,7 @@ impl FeedGenerator {
                     .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
                 let rendered_content = renderer.render_markdown(&post.content);
-                let url = format!("{}/{}/{}", config.site.url, post.frontmatter.category, post.slug);
+                let url = format!("{}/{}/{}", config.site.url, post.category, post.slug);
 
                 let tags_xml = if !post.frontmatter.tags.is_empty() {
                     post.frontmatter

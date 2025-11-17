@@ -1,40 +1,40 @@
 {% extends "base.html" %}
 
-{% block title %}{{ post.title }} - {{ config.site_title }}{% endblock %}
+{% block title %}{{ post.frontmatter.title }} - {{ config.site_title }}{% endblock %}
 
-{% block description %}{{ post.description | default(value="") }}{% endblock %}
+{% block description %}{{ post.frontmatter.description | default(value="") }}{% endblock %}
 
 {% block meta %}
     {{ super() }}
-    <meta property="og:title" content="{{ post.title }}">
+    <meta property="og:title" content="{{ post.frontmatter.title }}">
     <meta property="og:type" content="article">
     <meta property="og:url" content="{{ config.site_url }}/{{ post.category }}/{{ slug }}">
-    {% if post.featured_image %}
-    <meta property="og:image" content="{{ config.site_url }}{{ post.featured_image }}">
+    {% if post.frontmatter.featured_image %}
+    <meta property="og:image" content="{{ config.site_url }}{{ post.frontmatter.featured_image }}">
     {% endif %}
 {% endblock %}
 
 {% block content %}
 <article class="post">
     <header class="post-header">
-        {% if post.featured_image %}
-        <img src="{{ post.featured_image }}" alt="{{ post.title }}" class="featured-image">
+        {% if post.frontmatter.featured_image %}
+        <img src="{{ post.frontmatter.featured_image }}" alt="{{ post.frontmatter.title }}" class="featured-image">
         {% endif %}
 
-        <h1 class="post-title">{{ post.title }}</h1>
+        <h1 class="post-title">{{ post.frontmatter.title }}</h1>
 
         <div class="post-meta">
-            <time datetime="{{ post.date }}" class="post-date">
-                {{ post.date | date(format="%B %d, %Y") }}
+            <time datetime="{{ post.frontmatter.date.posted }}" class="post-date">
+                {{ post.frontmatter.date.posted | date(format="%B %d, %Y") }}
             </time>
             <span class="post-category">
                 <a href="/{{ post.category }}">{{ post.category }}</a>
             </span>
         </div>
 
-        {% if post.tags %}
+        {% if post.frontmatter.tags %}
         <div class="post-tags">
-            {% for tag in post.tags %}
+            {% for tag in post.frontmatter.tags %}
                 <a href="/tag/{{ tag }}" class="tag">{{ tag }}</a>
             {% endfor %}
         </div>

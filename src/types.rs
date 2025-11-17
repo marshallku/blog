@@ -1,11 +1,53 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+pub struct PostDate {
+    pub posted: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub modified: Option<DateTime<Utc>>,
+}
+
+impl PostDate {
+    pub fn new(posted: DateTime<Utc>) -> Self {
+        Self {
+            posted,
+            modified: None,
+        }
+    }
+
+    pub fn to_rfc2822(&self) -> String {
+        self.posted.to_rfc2822()
+    }
+}
+
+fn deserialize_post_date<'de, D>(deserializer: D) -> Result<PostDate, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum DateFormat {
+        Simple(DateTime<Utc>),
+        Nested {
+            posted: DateTime<Utc>,
+            modified: Option<DateTime<Utc>>,
+        },
+    }
+
+    let date_format = DateFormat::deserialize(deserializer)?;
+    Ok(match date_format {
+        DateFormat::Simple(dt) => PostDate::new(dt),
+        DateFormat::Nested { posted, modified } => PostDate { posted, modified },
+    })
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Frontmatter {
     pub title: String,
-    pub date: DateTime<Utc>,
-    pub category: String,
+    #[serde(deserialize_with = "deserialize_post_date")]
+    pub date: PostDate,
+    #[serde(default)]
     pub tags: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub featured_image: Option<String>,
@@ -15,11 +57,13 @@ pub struct Frontmatter {
     pub draft: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Post {
     pub slug: String,
+    pub category: String,
     pub frontmatter: Frontmatter,
     pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rendered_html: Option<String>,
 }
 

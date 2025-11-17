@@ -14,17 +14,17 @@
         {% for post_meta in posts %}
         <article class="post-preview">
             <h2>
-                <a href="/{{ post_meta.frontmatter.category }}/{{ post_meta.slug }}">
+                <a href="/{{ post_meta.category }}/{{ post_meta.slug }}">
                     {{ post_meta.frontmatter.title }}
                 </a>
             </h2>
 
             <div class="post-meta">
-                <time datetime="{{ post_meta.frontmatter.date }}">
-                    {{ post_meta.frontmatter.date | date(format="%B %d, %Y") }}
+                <time datetime="{{ post_meta.frontmatter.date.posted }}">
+                    {{ post_meta.frontmatter.date.posted | date(format="%B %d, %Y") }}
                 </time>
                 <span class="category">
-                    <a href="/{{ post_meta.frontmatter.category }}">{{ post_meta.frontmatter.category }}</a>
+                    <a href="/{{ post_meta.category }}">{{ post_meta.category }}</a>
                 </span>
             </div>
 

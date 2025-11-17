@@ -7,6 +7,7 @@ use std::fs;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostMetadata {
     pub slug: String,
+    pub category: String,
     pub frontmatter: Frontmatter,
 }
 
@@ -50,10 +51,10 @@ impl MetadataCache {
         &self.category_info
     }
 
-    pub fn upsert_post(&mut self, slug: String, frontmatter: Frontmatter) {
+    pub fn upsert_post(&mut self, slug: String, category: String, frontmatter: Frontmatter) {
         self.posts.retain(|p| p.slug != slug);
 
-        self.posts.push(PostMetadata { slug, frontmatter });
+        self.posts.push(PostMetadata { slug, category, frontmatter });
 
         self.recalculate_stats();
     }
@@ -65,7 +66,7 @@ impl MetadataCache {
         for post in &self.posts {
             *self
                 .categories
-                .entry(post.frontmatter.category.clone())
+                .entry(post.category.clone())
                 .or_insert(0) += 1;
 
             for tag in &post.frontmatter.tags {
@@ -77,7 +78,7 @@ impl MetadataCache {
     pub fn get_posts_by_category(&self, category: &str) -> Vec<&PostMetadata> {
         self.posts
             .iter()
-            .filter(|p| p.frontmatter.category == category)
+            .filter(|p| p.category == category)
             .collect()
     }
 
@@ -125,24 +126,24 @@ mod tests {
     use super::*;
     use chrono::Utc;
 
-    fn create_test_frontmatter(category: &str, tags: Vec<&str>) -> Frontmatter {
-        Frontmatter {
+    fn create_test_post(category: &str, tags: Vec<&str>) -> (String, Frontmatter) {
+        let frontmatter = Frontmatter {
             title: "Test Post".to_string(),
-            date: Utc::now(),
-            category: category.to_string(),
+            date: crate::types::PostDate::new(Utc::now()),
             tags: tags.iter().map(|s| s.to_string()).collect(),
             featured_image: None,
             description: None,
             draft: false,
-        }
+        };
+        (category.to_string(), frontmatter)
     }
 
     #[test]
     fn test_upsert_post() {
         let mut cache = MetadataCache::new();
 
-        let fm = create_test_frontmatter("dev", vec!["rust", "webdev"]);
-        cache.upsert_post("test-post".to_string(), fm);
+        let (category, fm) = create_test_post("dev", vec!["rust", "webdev"]);
+        cache.upsert_post("test-post".to_string(), category, fm);
 
         assert_eq!(cache.posts.len(), 1);
         assert_eq!(cache.categories.get("dev"), Some(&1));
@@ -153,9 +154,13 @@ mod tests {
     fn test_get_posts_by_category() {
         let mut cache = MetadataCache::new();
 
-        cache.upsert_post("post1".to_string(), create_test_frontmatter("dev", vec![]));
-        cache.upsert_post("post2".to_string(), create_test_frontmatter("chat", vec![]));
-        cache.upsert_post("post3".to_string(), create_test_frontmatter("dev", vec![]));
+        let (cat1, fm1) = create_test_post("dev", vec![]);
+        let (cat2, fm2) = create_test_post("chat", vec![]);
+        let (cat3, fm3) = create_test_post("dev", vec![]);
+
+        cache.upsert_post("post1".to_string(), cat1, fm1);
+        cache.upsert_post("post2".to_string(), cat2, fm2);
+        cache.upsert_post("post3".to_string(), cat3, fm3);
 
         let dev_posts = cache.get_posts_by_category("dev");
         assert_eq!(dev_posts.len(), 2);
@@ -165,18 +170,13 @@ mod tests {
     fn test_get_posts_by_tag() {
         let mut cache = MetadataCache::new();
 
-        cache.upsert_post(
-            "post1".to_string(),
-            create_test_frontmatter("dev", vec!["rust"]),
-        );
-        cache.upsert_post(
-            "post2".to_string(),
-            create_test_frontmatter("dev", vec!["rust", "webdev"]),
-        );
-        cache.upsert_post(
-            "post3".to_string(),
-            create_test_frontmatter("chat", vec!["webdev"]),
-        );
+        let (cat1, fm1) = create_test_post("dev", vec!["rust"]);
+        let (cat2, fm2) = create_test_post("dev", vec!["rust", "webdev"]);
+        let (cat3, fm3) = create_test_post("chat", vec!["webdev"]);
+
+        cache.upsert_post("post1".to_string(), cat1, fm1);
+        cache.upsert_post("post2".to_string(), cat2, fm2);
+        cache.upsert_post("post3".to_string(), cat3, fm3);
 
         let rust_posts = cache.get_posts_by_tag("rust");
         assert_eq!(rust_posts.len(), 2);
