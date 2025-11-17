@@ -31,10 +31,14 @@ If you don't create a config file, ssdocs will use sensible defaults.
 cargo build --release
 ```
 
-### 3. Create a new post
+### 3. Create your content structure
 
 ```bash
-cargo run -- new dev "My First Post"
+# Create category directories
+mkdir -p content/posts/dev
+mkdir -p content/posts/tutorials
+
+# Categories are auto-discovered from directories
 ```
 
 ### 4. Build your site
@@ -142,7 +146,13 @@ Example:
 ```bash
 ssg new dev "Building a Rust SSG"
 # Creates: content/posts/dev/building-a-rust-ssg.md
+
+ssg new dev "한글 제목"
+# Creates: content/posts/dev/한글-제목.md
+# URL will be: /dev/%ED%95%9C%EA%B8%80-%EC%A0%9C%EB%AA%A9
 ```
+
+**Note**: Filenames can contain Korean, Japanese, Chinese, emoji, or any Unicode characters. They are automatically percent-encoded for URLs.
 
 ### `ssg watch`
 
@@ -273,3 +283,75 @@ theme:
 **Theme Inheritance**: Child themes automatically fall back to parent theme templates, so you only need to override what changes!
 
 See [THEME_SYSTEM.md](./THEME_SYSTEM.md) for complete documentation and examples.
+
+## Frontmatter Format
+
+### Post Frontmatter
+
+Posts require YAML frontmatter at the top of the markdown file:
+
+```yaml
+---
+title: "My Post Title"
+date:
+  posted: 2025-11-11T10:00:00Z
+  modified: 2025-11-12T15:30:00Z  # optional
+tags: [rust, webdev, 한글태그]  # non-ASCII tags supported
+description: "Optional meta description"
+featured_image: "/images/cover.jpg"  # optional
+draft: false  # optional, default: false
+---
+
+# Post content here
+```
+
+**Required fields**:
+- `title` - Post title (displayed in browser, RSS feed)
+- `date.posted` - Publication date (ISO 8601 format)
+- `tags` - Array of tags (can be empty: `[]`)
+
+**Optional fields**:
+- `date.modified` - Last modified date
+- `description` - Meta description for SEO
+- `featured_image` - Cover image URL
+- `draft` - If `true`, post is excluded from build
+
+**Notes**:
+- **Category** is not in frontmatter - it's extracted from directory path
+  - `content/posts/dev/file.md` → category: `dev`
+- **Tags** can contain non-ASCII characters (Korean, Japanese, etc.)
+  - They are automatically percent-encoded for tag page URLs
+- **Slug** is generated from filename and percent-encoded for URLs
+  - Use `title` for display, not `slug`
+
+### Backwards Compatibility
+
+Simple date format is still supported:
+
+```yaml
+date: 2025-11-11T10:00:00Z  # Converts to { posted: ..., modified: null }
+```
+
+## Non-ASCII Filename Support
+
+ssdocs fully supports Korean, Japanese, Chinese, emoji, and other Unicode characters in filenames and tags:
+
+```bash
+# Korean filename
+content/posts/dev/소스코드-검사.md
+→ URL: /dev/%EC%86%8C%EC%8A%A4%EC%BD%94%EB%93%9C-%EA%B2%80%EC%82%AC
+
+# Japanese filename
+content/posts/tutorials/日本語.md
+→ URL: /tutorials/%E6%97%A5%E6%9C%AC%E8%AA%9E
+
+# Tag with Korean
+tags: [rust, 한글태그]
+→ Tag page: /tag/%ED%95%9C%EA%B8%80%ED%83%9C%EA%B7%B8
+```
+
+**How it works**:
+- Filenames and tags are **percent-encoded** for URLs (RFC 3986)
+- Browser sends encoded URLs, ssdocs decodes to find files
+- No file renaming required - use your native language!
+- Display uses `title` from frontmatter, not encoded slug
