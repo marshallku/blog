@@ -553,8 +553,12 @@ mod tests {
         let md = "```rust\nfn main() {}\n```";
         let html = renderer.render_markdown(md);
 
-        assert!(html.contains("<code"));
-        assert!(html.contains("fn main()"));
+        // Check for class-based highlighting structure
+        assert!(html.contains("<pre class=\"syntax-highlight\">"));
+        assert!(html.contains("<code>"));
+        // Check that code content is present (even if wrapped in spans)
+        assert!(html.contains("fn"));
+        assert!(html.contains("main"));
     }
 
     #[test]

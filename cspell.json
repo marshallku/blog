@@ -58,13 +58,8 @@
     "webdev",
     "WEBM",
     "WEBP",
-    "xlink"
+    "xlink",
+    "consolas"
   ],
-  "ignorePaths": [
-    "Cargo.lock",
-    "Cargo.toml",
-    "target",
-    "content",
-    "examples"
-  ]
+  "ignorePaths": ["Cargo.lock", "Cargo.toml", "target", "content", "examples"]
 }
