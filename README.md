@@ -187,15 +187,15 @@ site:
   author: "Your Name"
 
 theme:
-  name: "default"              # Theme to use
-  variables:                    # Override theme variables
+  name: "default" # Theme to use
+  variables: # Override theme variables
     primary_color: "#3498db"
     font_family: "Inter, sans-serif"
 
 build:
-  content_dir: "content/posts"  # Where your posts are
-  output_dir: "dist"            # Where HTML is generated
-  posts_per_page: 10            # Posts per page (pagination)
+  content_dir: "content/posts" # Where your posts are
+  output_dir: "dist" # Where HTML is generated
+  posts_per_page: 10 # Posts per page (pagination)
 ```
 
 **All fields are optional** - ssdocs will use sensible defaults if `config.yaml` doesn't exist or fields are missing.
@@ -208,10 +208,10 @@ Categories are automatically discovered from directory structure. Optionally cus
 # content/posts/dev/.category.yaml
 name: "Development"
 description: "Technical articles about software development"
-index: 0                # Sort order (lower = first)
-hidden: false           # Hide from navigation
-icon: "code-blocks"     # Optional icon identifier
-color: "#66b3ff"        # Optional color
+index: 0 # Sort order (lower = first)
+hidden: false # Hide from navigation
+icon: "code-blocks" # Optional icon identifier
+color: "#66b3ff" # Optional color
 ```
 
 See [CATEGORY_SYSTEM.md](./CATEGORY_SYSTEM.md) for complete documentation.
@@ -226,7 +226,7 @@ Select a theme in `config.yaml`:
 
 ```yaml
 theme:
-  name: "default"  # Use themes/default/
+  name: "default" # Use themes/default/
 ```
 
 ### Customizing Theme Variables
@@ -246,16 +246,18 @@ theme:
 ### Creating a Custom Theme
 
 1. **Create a theme directory:**
+
    ```bash
    mkdir -p themes/mytheme
    ```
 
 2. **Create `theme.yaml`:**
+
    ```yaml
    name: "My Theme"
    version: "1.0.0"
    author: "Your Name"
-   parent: "default"  # Inherit from default theme
+   parent: "default" # Inherit from default theme
 
    variables:
      primary_color: "#FF5733"
@@ -267,6 +269,7 @@ theme:
    ```
 
 3. **Override templates (optional):**
+
    ```bash
    # Only create templates you want to customize
    cp themes/default/post.html themes/mytheme/post.html
@@ -295,28 +298,30 @@ Posts require YAML frontmatter at the top of the markdown file:
 title: "My Post Title"
 date:
   posted: 2025-11-11T10:00:00Z
-  modified: 2025-11-12T15:30:00Z  # optional
-tags: [rust, webdev, 한글태그]  # non-ASCII tags supported
+  modified: 2025-11-12T15:30:00Z # optional
+tags: [rust, webdev, 한글태그] # non-ASCII tags supported
 description: "Optional meta description"
-featured_image: "/images/cover.jpg"  # optional
-draft: false  # optional, default: false
+featured_image: "/images/cover.jpg" # optional
+draft: false # optional, default: false
 ---
-
 # Post content here
 ```
 
 **Required fields**:
+
 - `title` - Post title (displayed in browser, RSS feed)
 - `date.posted` - Publication date (ISO 8601 format)
 - `tags` - Array of tags (can be empty: `[]`)
 
 **Optional fields**:
+
 - `date.modified` - Last modified date
 - `description` - Meta description for SEO
 - `featured_image` - Cover image URL
 - `draft` - If `true`, post is excluded from build
 
 **Notes**:
+
 - **Category** is not in frontmatter - it's extracted from directory path
   - `content/posts/dev/file.md` → category: `dev`
 - **Tags** can contain non-ASCII characters (Korean, Japanese, etc.)
@@ -329,7 +334,7 @@ draft: false  # optional, default: false
 Simple date format is still supported:
 
 ```yaml
-date: 2025-11-11T10:00:00Z  # Converts to { posted: ..., modified: null }
+date: 2025-11-11T10:00:00Z # Converts to { posted: ..., modified: null }
 ```
 
 ## Non-ASCII Filename Support
@@ -351,6 +356,7 @@ tags: [rust, 한글태그]
 ```
 
 **How it works**:
+
 - Filenames and tags are **percent-encoded** for URLs (RFC 3986)
 - Browser sends encoded URLs, ssdocs decodes to find files
 - No file renaming required - use your native language!
