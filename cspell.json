@@ -4,6 +4,7 @@
     "addrs",
     "apos",
     "autodocs",
+    "autoplay",
     "BUILDKIT",
     "callout",
     "chrono",
@@ -12,7 +13,9 @@
     "codebases",
     "codepoint",
     "codepoints",
+    "consolas",
     "dotenv",
+    "figcaption",
     "fira",
     "frontmatter",
     "hookform",
@@ -58,8 +61,13 @@
     "webdev",
     "WEBM",
     "WEBP",
-    "xlink",
-    "consolas"
+    "xlink"
   ],
-  "ignorePaths": ["Cargo.lock", "Cargo.toml", "target", "content", "examples"]
+  "ignorePaths": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "target",
+    "content",
+    "examples"
+  ]
 }

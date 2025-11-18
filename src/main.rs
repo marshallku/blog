@@ -9,6 +9,7 @@ mod parser;
 mod plugin;
 mod plugins;
 mod renderer;
+mod shortcodes;
 mod slug;
 mod theme;
 mod types;
@@ -29,6 +30,7 @@ use crate::parser::Parser;
 use crate::plugin::{PluginContext, PluginManager};
 use crate::plugins::RelatedPostsPlugin;
 use crate::renderer::Renderer;
+use crate::shortcodes::ShortcodeRegistry;
 
 #[derive(ClapParser)]
 #[command(name = "ssg")]
@@ -99,6 +101,7 @@ fn build_all(use_cache: bool) -> Result<()> {
 
     let config = load_config()?;
     let renderer = Renderer::new();
+    let mut shortcode_registry = ShortcodeRegistry::new();
     let generator = Generator::new(config.clone())?;
     let mut cache = if use_cache {
         BuildCache::load()?
@@ -115,6 +118,9 @@ fn build_all(use_cache: bool) -> Result<()> {
     let mut plugin_manager = PluginManager::new();
     plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
     plugin_manager.init_all(&config)?;
+
+    // Register plugin shortcodes
+    plugin_manager.register_shortcodes(&mut shortcode_registry);
 
     println!(
         "🔌 Loaded plugins: {}",
@@ -177,9 +183,12 @@ fn build_all(use_cache: bool) -> Result<()> {
         // Plugin hook: after parsing
         plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
 
+        // Process shortcodes before markdown rendering
+        let processed_content = shortcode_registry.process(&post.content)?;
+
         let base_path = format!("{}", post.category);
         let mut html = renderer.render_markdown_with_components(
-            &post.content,
+            &processed_content,
             generator.get_tera(),
             &base_path,
         )?;
@@ -235,8 +244,11 @@ fn build_all(use_cache: bool) -> Result<()> {
                 continue;
             }
 
+            // Process shortcodes before markdown rendering
+            let processed_content = shortcode_registry.process(&page.content)?;
+
             let html = renderer.render_markdown_with_components(
-                &page.content,
+                &processed_content,
                 generator.get_tera(),
                 &page.slug,
             )?;
@@ -295,6 +307,7 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     let config = load_config()?;
     let renderer = Renderer::new();
+    let mut shortcode_registry = ShortcodeRegistry::new();
     let generator = Generator::new(config.clone())?;
     let metadata = MetadataCache::load().unwrap_or_else(|_| MetadataCache::new());
 
@@ -302,6 +315,9 @@ fn build_single_post(post_path: &str) -> Result<()> {
     let mut plugin_manager = PluginManager::new();
     plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
     plugin_manager.init_all(&config)?;
+
+    // Register plugin shortcodes
+    plugin_manager.register_shortcodes(&mut shortcode_registry);
 
     let path = Path::new(post_path);
 
@@ -324,9 +340,12 @@ fn build_single_post(post_path: &str) -> Result<()> {
     // Plugin hook: after parsing
     plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
 
+    // Process shortcodes before markdown rendering
+    let processed_content = shortcode_registry.process(&post.content)?;
+
     let base_path = format!("{}", post.category);
     let mut html = renderer.render_markdown_with_components(
-        &post.content,
+        &processed_content,
         generator.get_tera(),
         &base_path,
     )?;

@@ -1,5 +1,6 @@
 use crate::config::SsgConfig;
 use crate::metadata::MetadataCache;
+use crate::shortcodes::ShortcodeRegistry;
 use crate::types::{Page, Post};
 use anyhow::Result;
 use serde_json::Value as JsonValue;
@@ -59,6 +60,9 @@ pub trait Plugin: Send + Sync {
     fn template_context_index(&self, _ctx: &PluginContext) -> Result<HashMap<String, JsonValue>> {
         Ok(HashMap::new())
     }
+
+    /// Hook: Register custom shortcodes
+    fn register_shortcodes(&self, _registry: &mut ShortcodeRegistry) {}
 }
 
 /// Plugin manager for loading and executing plugins
@@ -84,6 +88,13 @@ impl PluginManager {
             plugin.init(config)?;
         }
         Ok(())
+    }
+
+    /// Register shortcodes from all plugins
+    pub fn register_shortcodes(&self, registry: &mut ShortcodeRegistry) {
+        for plugin in &self.plugins {
+            plugin.register_shortcodes(registry);
+        }
     }
 
     /// Execute on_post_parsed hooks
