@@ -261,7 +261,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
 
     let index_generator = IndexGenerator::new(config.clone())?;
-    index_generator.generate_all(&metadata)?;
+    index_generator.generate_all(&metadata, &plugin_manager)?;
 
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(

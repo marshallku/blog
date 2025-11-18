@@ -140,7 +140,6 @@ impl PluginManager {
     }
 
     /// Collect template context from all plugins for index pages
-    #[allow(unused)]
     pub fn template_context_index(
         &self,
         ctx: &PluginContext,

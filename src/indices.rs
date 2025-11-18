@@ -1,9 +1,11 @@
 use crate::config::SsgConfig;
 use crate::metadata::MetadataCache;
+use crate::plugin::{PluginContext, PluginManager};
 use crate::slug;
 use crate::theme::ThemeEngine;
 use anyhow::Result;
 use serde::Serialize;
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -67,21 +69,28 @@ impl IndexGenerator {
         })
     }
 
-    pub fn generate_all(&self, metadata: &MetadataCache) -> Result<()> {
+    pub fn generate_all(&self, metadata: &MetadataCache, plugin_manager: &PluginManager) -> Result<()> {
         println!("\n📑 Generating indices...");
 
-        self.generate_homepage(metadata)?;
+        // Create plugin context for index pages
+        let plugin_ctx = PluginContext {
+            config: &self.config,
+            metadata,
+        };
+        let plugin_data = plugin_manager.template_context_index(&plugin_ctx)?;
+
+        self.generate_homepage(metadata, &plugin_data)?;
 
         let category_count = metadata.get_category_info().len();
         for category in metadata.get_category_info() {
-            self.generate_category_page(category, metadata)?;
+            self.generate_category_page(category, metadata, &plugin_data)?;
         }
 
         for tag in metadata.get_tags() {
-            self.generate_tag_page(&tag, metadata)?;
+            self.generate_tag_page(&tag, metadata, &plugin_data)?;
         }
 
-        self.generate_tags_overview(metadata)?;
+        self.generate_tags_overview(metadata, &plugin_data)?;
 
         println!("   ✓ Homepage");
         println!("   ✓ {} category pages", category_count);
@@ -90,7 +99,7 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_homepage(&self, metadata: &MetadataCache) -> Result<()> {
+    fn generate_homepage(&self, metadata: &MetadataCache, plugin_data: &HashMap<String, JsonValue>) -> Result<()> {
         let recent_posts = metadata.get_recent_posts(10);
 
         let visible_categories: Vec<_> = metadata
@@ -114,6 +123,11 @@ impl IndexGenerator {
         context.insert("theme_variables", &self.theme_variables);
         context.insert("theme_info", &self.theme_info);
 
+        // Add plugin data
+        for (key, value) in plugin_data {
+            context.insert(key, value);
+        }
+
         let output = self.tera.render("index.html", &context)?;
         let output_path = PathBuf::from(&self.config.build.output_dir).join("index.html");
 
@@ -126,6 +140,7 @@ impl IndexGenerator {
         &self,
         category_info: &crate::types::Category,
         metadata: &MetadataCache,
+        plugin_data: &HashMap<String, JsonValue>,
     ) -> Result<()> {
         let mut posts = metadata.get_posts_by_category(&category_info.slug);
 
@@ -174,6 +189,11 @@ impl IndexGenerator {
             context.insert("theme_variables", &self.theme_variables);
             context.insert("theme_info", &self.theme_info);
 
+            // Add plugin data
+            for (key, value) in plugin_data {
+                context.insert(key, value);
+            }
+
             let output = self.tera.render("category.html", &context)?;
 
             let category_slug = self.maybe_encode(&category_info.slug);
@@ -197,7 +217,7 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
+    fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache, plugin_data: &HashMap<String, JsonValue>) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
 
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
@@ -245,6 +265,11 @@ impl IndexGenerator {
             context.insert("theme_variables", &self.theme_variables);
             context.insert("theme_info", &self.theme_info);
 
+            // Add plugin data
+            for (key, value) in plugin_data {
+                context.insert(key, value);
+            }
+
             let output = self.tera.render("tag.html", &context)?;
 
             let encoded_tag = self.maybe_encode(tag);
@@ -270,7 +295,7 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_tags_overview(&self, metadata: &MetadataCache) -> Result<()> {
+    fn generate_tags_overview(&self, metadata: &MetadataCache, plugin_data: &HashMap<String, JsonValue>) -> Result<()> {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
         tags_with_counts.sort_by(|a, b| b.1.cmp(a.1));
 
@@ -294,6 +319,11 @@ impl IndexGenerator {
         // Add theme context
         context.insert("theme_variables", &self.theme_variables);
         context.insert("theme_info", &self.theme_info);
+
+        // Add plugin data
+        for (key, value) in plugin_data {
+            context.insert(key, value);
+        }
 
         let output = self.tera.render("tags.html", &context)?;
         let output_path = PathBuf::from(&self.config.build.output_dir)
