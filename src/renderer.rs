@@ -26,7 +26,7 @@ impl Renderer {
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
 
-        html_output
+        self.highlight_code_blocks(&html_output)
     }
 
     pub fn render_markdown_with_components(
@@ -41,7 +41,11 @@ impl Renderer {
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
 
-        Self::post_process_components(&html_output, tera, base_path)
+        // Apply syntax highlighting first
+        let highlighted = self.highlight_code_blocks(&html_output);
+
+        // Then apply component templates
+        Self::post_process_components(&highlighted, tera, base_path)
     }
 
     fn post_process_components(html: &str, tera: &Tera, base_path: &str) -> Result<String> {
@@ -299,7 +303,131 @@ impl Renderer {
         format!("/{}/{}", base_path.trim_matches('/'), trimmed)
     }
 
-    #[allow(dead_code)]
+    fn highlight_code_blocks(&self, html: &str) -> String {
+        let mut result = String::new();
+        let mut chars = html.chars().peekable();
+
+        while let Some(ch) = chars.next() {
+            if ch == '<' {
+                let start_pos = result.len();
+                result.push(ch);
+
+                // Check if this is the start of a <pre> tag
+                let mut tag_buf = String::from("<");
+                let mut is_pre_tag = false;
+
+                // Read until we hit '>'
+                while let Some(&next_ch) = chars.peek() {
+                    chars.next();
+                    result.push(next_ch);
+                    tag_buf.push(next_ch);
+
+                    if next_ch == '>' {
+                        if tag_buf.starts_with("<pre>") || tag_buf.starts_with("<pre ") {
+                            is_pre_tag = true;
+                        }
+                        break;
+                    }
+                }
+
+                // If this is a <pre> tag, look for <code> inside
+                if is_pre_tag {
+                    // Collect everything until </pre>
+                    let mut pre_content = String::new();
+                    let mut depth = 1;
+
+                    while depth > 0 && chars.peek().is_some() {
+                        let ch = chars.next().unwrap();
+
+                        if ch == '<' {
+                            let mut potential_tag = String::from('<');
+                            while let Some(&next_ch) = chars.peek() {
+                                chars.next();
+                                potential_tag.push(next_ch);
+                                if next_ch == '>' {
+                                    break;
+                                }
+                            }
+
+                            if potential_tag == "</pre>" {
+                                depth -= 1;
+                                if depth == 0 {
+                                    // Process the pre_content for code highlighting
+                                    if let Some(highlighted) = self.process_pre_content(&pre_content) {
+                                        // Replace the accumulated content with highlighted version
+                                        result.truncate(start_pos);
+                                        result.push_str(&highlighted);
+                                    } else {
+                                        // Keep original
+                                        result.push_str(&pre_content);
+                                        result.push_str("</pre>");
+                                    }
+                                    break;
+                                }
+                            }
+
+                            pre_content.push_str(&potential_tag);
+                        } else {
+                            pre_content.push(ch);
+                        }
+                    }
+                }
+            } else {
+                result.push(ch);
+            }
+        }
+
+        result
+    }
+
+    fn process_pre_content(&self, content: &str) -> Option<String> {
+        // Look for <code class="language-XXX">...</code>
+        let content = content.trim();
+
+        if !content.starts_with("<code") {
+            return None;
+        }
+
+        // Extract language from class attribute
+        let lang = if let Some(class_start) = content.find("class=\"language-") {
+            let lang_start = class_start + "class=\"language-".len();
+            if let Some(quote_end) = content[lang_start..].find('"') {
+                Some(&content[lang_start..lang_start + quote_end])
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        // Extract code content
+        let code_start = content.find('>')? + 1;
+        let code_end = content.rfind("</code>")?;
+        let code = &content[code_start..code_end];
+
+        // Decode HTML entities
+        let decoded_code = Self::decode_html_entities(code);
+
+        // Apply syntax highlighting if language is specified
+        if let Some(language) = lang {
+            if let Ok(highlighted) = self.highlight_code(&decoded_code, language) {
+                // Syntect already wraps in <pre>, so we don't need to add it
+                return Some(highlighted);
+            }
+        }
+
+        // Return None to keep original if highlighting fails
+        None
+    }
+
+    fn decode_html_entities(html: &str) -> String {
+        html.replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
+    }
+
     pub fn highlight_code(&self, code: &str, lang: &str) -> Result<String> {
         let syntax = self
             .syntax_set
