@@ -39,5 +39,8 @@ blake3 = "1.8"
 # File watching (for watch mode)
 notify = "6.1"
 
+# Image processing (for dimensions)
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
+
 [dev-dependencies]
 tempfile = "3.23"

@@ -3,6 +3,7 @@ mod category;
 mod config;
 mod feeds;
 mod generator;
+mod image;
 mod indices;
 mod metadata;
 mod navigation;
@@ -204,11 +205,14 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         let processed_content = shortcode_registry.process(&post.content)?;
 
-        let base_path = format!("{}", post.category);
-        let mut html = renderer.render_markdown_with_components(
+        let base_path = format!("{}/{}", post.category, post.slug);
+        let content_dir = Path::new(&config.build.content_dir);
+        let mut html = renderer.render_markdown_with_components_and_images(
             &processed_content,
             generator.get_tera(),
             &base_path,
+            config.site.cdn_url.as_deref(),
+            Some(content_dir),
         )?;
 
         plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;
@@ -597,7 +601,7 @@ fn process_post_parallel(
     renderer: &Renderer,
     generator: &Generator,
     shortcode_registry: &ShortcodeRegistry,
-    _config: &crate::config::SsgConfig,
+    config: &crate::config::SsgConfig,
     cache: &Arc<Mutex<BuildCache>>,
     template_hash: &str,
     metadata: &MetadataCache,
@@ -650,11 +654,14 @@ fn process_post_parallel(
         }
     };
 
-    let base_path = post.category.clone();
-    let html = match renderer.render_markdown_with_components(
+    let base_path = format!("{}/{}", post.category, post.slug);
+    let content_dir = Path::new(&config.build.content_dir);
+    let html = match renderer.render_markdown_with_components_and_images(
         &processed_content,
         generator.get_tera(),
         &base_path,
+        config.site.cdn_url.as_deref(),
+        Some(content_dir),
     ) {
         Ok(h) => h,
         Err(e) => {
@@ -729,11 +736,14 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     let processed_content = shortcode_registry.process(&post.content)?;
 
-    let base_path = format!("{}", post.category);
-    let mut html = renderer.render_markdown_with_components(
+    let base_path = format!("{}/{}", post.category, post.slug);
+    let content_dir = Path::new(&config.build.content_dir);
+    let mut html = renderer.render_markdown_with_components_and_images(
         &processed_content,
         generator.get_tera(),
         &base_path,
+        config.site.cdn_url.as_deref(),
+        Some(content_dir),
     )?;
 
     plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;

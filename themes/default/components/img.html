@@ -1,5 +1,19 @@
 <figure class="image">
+    {% if has_srcset %}
+    <picture>
+        <source type="image/webp" srcset="{{ webp_srcset }}">
+        <source srcset="{{ srcset }}">
+        <img
+            src="{{ cdn_src }}"
+            alt="{{ alt }}"
+            loading="lazy"
+            {% if width %}width="{{ width }}"{% endif %}
+            {% if height %}height="{{ height }}"{% endif %}
+        >
+    </picture>
+    {% else %}
     <img src="{{ src }}" alt="{{ alt }}" loading="lazy">
+    {% endif %}
     {% if alt and alt != "" %}
     <figcaption>{{ alt }}</figcaption>
     {% endif %}

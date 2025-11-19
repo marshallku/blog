@@ -9,6 +9,8 @@ use syntect::parsing::SyntaxSet;
 use syntect::util::LinesWithEndings;
 use tera::{Context, Tera};
 
+use crate::image::ImageProcessor;
+
 pub struct Renderer {
     syntax_set: SyntaxSet,
     theme_set: ThemeSet,
@@ -38,6 +40,17 @@ impl Renderer {
         tera: &Tera,
         base_path: &str,
     ) -> Result<String> {
+        self.render_markdown_with_components_and_images(markdown, tera, base_path, None, None)
+    }
+
+    pub fn render_markdown_with_components_and_images(
+        &self,
+        markdown: &str,
+        tera: &Tera,
+        base_path: &str,
+        cdn_url: Option<&str>,
+        content_dir: Option<&Path>,
+    ) -> Result<String> {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);
 
@@ -48,16 +61,25 @@ impl Renderer {
         let highlighted = self.highlight_code_blocks(&html_output);
 
         // Then apply component templates
-        Self::post_process_components(&highlighted, tera, base_path)
+        Self::post_process_components(&highlighted, tera, base_path, cdn_url, content_dir)
     }
 
-    fn post_process_components(html: &str, tera: &Tera, base_path: &str) -> Result<String> {
+    fn post_process_components(
+        html: &str,
+        tera: &Tera,
+        base_path: &str,
+        cdn_url: Option<&str>,
+        content_dir: Option<&Path>,
+    ) -> Result<String> {
         let mut result = html.to_string();
 
         let tag_patterns = vec![
             "img", "code", "pre", "blockquote", "table", "a", "h1", "h2", "h3",
             "h4", "h5", "h6", "p", "ul", "ol", "li", "strong", "em", "del"
         ];
+
+        // Create image processor if CDN URL is configured
+        let image_processor = cdn_url.map(|url| ImageProcessor::new(Some(url.to_string())));
 
         for tag_name in tag_patterns {
             let template_name = format!("components/{}.html", tag_name);
@@ -66,7 +88,15 @@ impl Renderer {
                 continue;
             }
 
-            result = Self::replace_tag(&result, tag_name, tera, &template_name, base_path)?;
+            result = Self::replace_tag(
+                &result,
+                tag_name,
+                tera,
+                &template_name,
+                base_path,
+                image_processor.as_ref(),
+                content_dir,
+            )?;
         }
 
         Ok(result)
@@ -78,6 +108,8 @@ impl Renderer {
         tera: &Tera,
         template_name: &str,
         base_path: &str,
+        image_processor: Option<&ImageProcessor>,
+        content_dir: Option<&Path>,
     ) -> Result<String> {
         let mut result = String::new();
         let mut chars = html.chars().peekable();
@@ -153,12 +185,38 @@ impl Renderer {
                     }
 
                     let mut context = Context::new();
-                    for (key, value) in attrs {
-                        if Self::is_url_attribute(&key) {
-                            let resolved = Self::resolve_path(&value, base_path);
-                            context.insert(&key, &resolved);
+                    let mut original_src = String::new();
+
+                    for (key, value) in &attrs {
+                        if Self::is_url_attribute(key) {
+                            let resolved = Self::resolve_path(value, base_path);
+                            context.insert(key, &resolved);
+                            if key == "src" {
+                                original_src = value.clone();
+                            }
                         } else {
-                            context.insert(&key, &value);
+                            context.insert(key, value);
+                        }
+                    }
+
+                    // Process image for CDN srcset if this is an img tag
+                    if tag_name == "img" {
+                        if let (Some(processor), Some(content_path)) = (image_processor, content_dir) {
+                            // Build the full content directory path for the post
+                            let post_content_dir = content_path.join(base_path.trim_matches('/'));
+
+                            if let Ok(Some(metadata)) = processor.process_image(&original_src, &post_content_dir) {
+                                context.insert("cdn_src", &metadata.src);
+                                context.insert("srcset", &metadata.srcset);
+                                context.insert("webp_srcset", &metadata.webp_srcset);
+                                context.insert("width", &metadata.width);
+                                context.insert("height", &metadata.height);
+                                context.insert("has_srcset", &true);
+                            } else {
+                                context.insert("has_srcset", &false);
+                            }
+                        } else {
+                            context.insert("has_srcset", &false);
                         }
                     }
 
