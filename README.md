@@ -1,4 +1,4 @@
-# ssdocs - Static Site Generator
+# blog - Static Site Generator
 
 A blazing-fast, memory-efficient static site generator built in Rust for the marshallku blog.
 
@@ -23,7 +23,7 @@ build:
   posts_per_page: 10
 ```
 
-If you don't create a config file, ssdocs will use sensible defaults.
+If you don't create a config file, blog will use sensible defaults.
 
 ### 2. Build the project
 
@@ -45,13 +45,13 @@ mkdir -p content/posts/tutorials
 
 ```bash
 # Full build
-cargo run -- build
+cargo run --release -- build
 
 # Incremental build (uses cache)
-cargo run -- build --incremental
+cargo run --release -- build --incremental
 
 # Build specific post
-cargo run -- build --post content/posts/dev/my-post.md
+cargo run --release -- build --post content/posts/dev/my-post.md
 ```
 
 ### 5. Development with watch mode
@@ -60,10 +60,10 @@ Watch mode automatically rebuilds when files change and serves your site:
 
 ```bash
 # Start watch mode (default port 8080)
-cargo run -- watch
+cargo run --release -- watch
 
 # Use custom port
-cargo run -- watch --port 3000
+cargo run --release -- watch --port 3000
 ```
 
 Then visit `http://localhost:8080` to view your site. Edit any file in `content/`, `themes/`, or `static/` and it will automatically rebuild!
@@ -83,7 +83,7 @@ miniserve dist
 ## Project Structure
 
 ```
-ssdocs/
+blog/
 ├── config.yaml            # Site configuration (optional)
 ├── src/                   # Rust source code
 │   ├── main.rs           # CLI and build logic
@@ -124,7 +124,7 @@ ssdocs/
 
 ## Commands
 
-### `ssg build`
+### `blog build`
 
 Build all posts in `content/posts/`.
 
@@ -133,33 +133,33 @@ Options:
 - `--incremental`, `-i` - Use cache to skip unchanged files
 - `--post <path>`, `-p <path>` - Build only a specific post
 
-### `ssg new`
+### `blog new`
 
 Create a new blog post with pre-filled frontmatter.
 
 ```bash
-ssg new <category> "<title>"
+blog new <category> "<title>"
 ```
 
 Example:
 
 ```bash
-ssg new dev "Building a Rust SSG"
+blog new dev "Building a Rust SSG"
 # Creates: content/posts/dev/building-a-rust-ssg.md
 
-ssg new dev "한글 제목"
+blog new dev "한글 제목"
 # Creates: content/posts/dev/한글-제목.md
 # URL will be: /dev/%ED%95%9C%EA%B8%80-%EC%A0%9C%EB%AA%A9
 ```
 
 **Note**: Filenames can contain Korean, Japanese, Chinese, emoji, or any Unicode characters. They are automatically percent-encoded for URLs.
 
-### `ssg watch`
+### `blog watch`
 
 Watch for file changes and automatically rebuild with built-in dev server.
 
 ```bash
-ssg watch [--port <port>]
+blog watch [--port <port>]
 ```
 
 Options:
@@ -198,7 +198,7 @@ build:
   posts_per_page: 10 # Posts per page (pagination)
 ```
 
-**All fields are optional** - ssdocs will use sensible defaults if `config.yaml` doesn't exist or fields are missing.
+**All fields are optional** - blog will use sensible defaults if `config.yaml` doesn't exist or fields are missing.
 
 ### Category Configuration
 
@@ -218,7 +218,7 @@ See [CATEGORY_SYSTEM.md](./CATEGORY_SYSTEM.md) for complete documentation.
 
 ## Theme System
 
-ssdocs uses a powerful theme system that lets you customize your site's appearance without touching core code.
+blog uses a powerful theme system that lets you customize your site's appearance without touching core code.
 
 ### Using a Theme
 
@@ -339,7 +339,7 @@ date: 2025-11-11T10:00:00Z # Converts to { posted: ..., modified: null }
 
 ## Non-ASCII Filename Support
 
-ssdocs fully supports Korean, Japanese, Chinese, emoji, and other Unicode characters in filenames and tags:
+blog fully supports Korean, Japanese, Chinese, emoji, and other Unicode characters in filenames and tags:
 
 ```bash
 # Korean filename
@@ -358,6 +358,6 @@ tags: [rust, 한글태그]
 **How it works**:
 
 - Filenames and tags are **percent-encoded** for URLs (RFC 3986)
-- Browser sends encoded URLs, ssdocs decodes to find files
+- Browser sends encoded URLs, blog decodes to find files
 - No file renaming required - use your native language!
 - Display uses `title` from frontmatter, not encoded slug

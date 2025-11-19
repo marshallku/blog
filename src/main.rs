@@ -43,8 +43,8 @@ use crate::shortcodes::ShortcodeRegistry;
 use serde_json::json;
 
 #[derive(ClapParser)]
-#[command(name = "ssg")]
-#[command(about = "A blazing-fast static site generator for marshallku blog")]
+#[command(name = "blog")]
+#[command(about = "Static site generator for marshallku blog")]
 #[command(version)]
 struct Cli {
     #[command(subcommand)]

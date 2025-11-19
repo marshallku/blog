@@ -1,10 +1,11 @@
 [package]
-name = "ssdocs"
+name = "blog"
 version = "0.1.0"
 edition = "2021"
+description = "A blazing-fast static site generator for marshallku blog"
 
 [[bin]]
-name = "ssg"
+name = "blog"
 path = "src/main.rs"
 
 [dependencies]
