@@ -11,7 +11,7 @@ pub struct PostMetadata {
     pub frontmatter: Frontmatter,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetadataCache {
     pub version: String,
     pub posts: Vec<PostMetadata>,

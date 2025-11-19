@@ -44,6 +44,28 @@
     <div class="post-content">
         {{ content | safe }}
     </div>
+
+    {% if prev_post or next_post %}
+    <nav class="post-navigation">
+        {% if prev_post %}
+        <a href="{{ prev_post.url }}" class="nav-prev">
+            <span class="nav-label">← Previous</span>
+            <span class="nav-title">{{ prev_post.title }}</span>
+        </a>
+        {% else %}
+        <span class="nav-prev nav-empty"></span>
+        {% endif %}
+
+        {% if next_post %}
+        <a href="{{ next_post.url }}" class="nav-next">
+            <span class="nav-label">Next →</span>
+            <span class="nav-title">{{ next_post.title }}</span>
+        </a>
+        {% else %}
+        <span class="nav-next nav-empty"></span>
+        {% endif %}
+    </nav>
+    {% endif %}
 </article>
 
 {% block comments %}

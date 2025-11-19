@@ -169,7 +169,6 @@ index: 0
         let temp = TempDir::new().unwrap();
         let content = temp.path();
 
-        // Create categories with different indices
         for (name, index) in &[("zzz", 0), ("aaa", 2), ("mmm", 1)] {
             let dir = content.join(name);
             fs::create_dir(&dir).unwrap();
@@ -178,9 +177,9 @@ index: 0
         }
 
         let categories = discover_categories(content).unwrap();
-        assert_eq!(categories[0].slug, "zzz"); // index 0
-        assert_eq!(categories[1].slug, "mmm"); // index 1
-        assert_eq!(categories[2].slug, "aaa"); // index 2
+        assert_eq!(categories[0].slug, "zzz");
+        assert_eq!(categories[1].slug, "mmm");
+        assert_eq!(categories[2].slug, "aaa");
     }
 
     #[test]

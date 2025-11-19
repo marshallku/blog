@@ -5,6 +5,7 @@ mod feeds;
 mod generator;
 mod indices;
 mod metadata;
+mod navigation;
 mod parallel;
 mod parser;
 mod plugin;
@@ -29,13 +30,17 @@ use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
+use crate::navigation::build_post_navigation;
+use crate::parallel::{
+    get_thread_count, BuildProgress, BuildResult, SkipReason, WorkQueue, WorkerPool,
+};
 use crate::parser::Parser;
-use crate::parallel::{get_thread_count, BuildProgress, BuildResult, SkipReason, WorkQueue, WorkerPool};
 use crate::plugin::{PluginContext, PluginManager};
 use crate::plugins::RelatedPostsPlugin;
 use crate::renderer::Renderer;
 use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
+use serde_json::json;
 
 #[derive(ClapParser)]
 #[command(name = "ssg")]
@@ -132,12 +137,10 @@ fn build_all(use_cache: bool) -> Result<()> {
         MetadataCache::new()
     };
 
-    // Initialize plugin system
     let mut plugin_manager = PluginManager::new();
     plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
     plugin_manager.init_all(&config)?;
 
-    // Register plugin shortcodes
     plugin_manager.register_shortcodes(&mut shortcode_registry);
 
     println!(
@@ -192,16 +195,13 @@ fn build_all(use_cache: bool) -> Result<()> {
             continue;
         }
 
-        // Create plugin context
         let plugin_ctx = PluginContext {
             config: &config,
             metadata: &metadata,
         };
 
-        // Plugin hook: after parsing
         plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
 
-        // Process shortcodes before markdown rendering
         let processed_content = shortcode_registry.process(&post.content)?;
 
         let base_path = format!("{}", post.category);
@@ -211,13 +211,15 @@ fn build_all(use_cache: bool) -> Result<()> {
             &base_path,
         )?;
 
-        // Plugin hook: after rendering
         plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;
 
         post.rendered_html = Some(html);
 
-        // Collect plugin template data
-        let plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
+        let mut plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
+
+        let navigation = build_post_navigation(&post.slug, &post.category, &metadata, false);
+        plugin_data.insert("prev_post".to_string(), json!(navigation.prev));
+        plugin_data.insert("next_post".to_string(), json!(navigation.next));
 
         let output_path = generator.generate_post(&post, &plugin_data)?;
 
@@ -262,7 +264,6 @@ fn build_all(use_cache: bool) -> Result<()> {
                 continue;
             }
 
-            // Process shortcodes before markdown rendering
             let processed_content = shortcode_registry.process(&page.content)?;
 
             let html = renderer.render_markdown_with_components(
@@ -272,7 +273,6 @@ fn build_all(use_cache: bool) -> Result<()> {
             )?;
             page.rendered_html = Some(html);
 
-            // Collect plugin template data for pages
             let plugin_ctx = PluginContext {
                 config: &config,
                 metadata: &metadata,
@@ -359,7 +359,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         BuildCache::new()
     }));
 
-    // Initialize plugin system
     let mut plugin_manager = PluginManager::new();
     plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
     plugin_manager.init_all(&config)?;
@@ -373,13 +372,22 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         plugin_manager.list_plugins().join(", ")
     );
 
-    // Collect all post files
     let file_paths: Vec<PathBuf> = WalkDir::new(posts_dir)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
         .map(|e| e.path().to_path_buf())
         .collect();
+
+    for path in &file_paths {
+        if let Ok(post) = Parser::parse_file(path) {
+            if !post.frontmatter.draft {
+                metadata.upsert_post(post.slug, post.category, post.frontmatter);
+            }
+        }
+    }
+
+    let metadata_for_nav = Arc::new(metadata.clone());
 
     let progress = Arc::new(BuildProgress::new());
 
@@ -394,7 +402,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     }
     work_queue.close();
 
-    // Spawn worker threads
     let mut pool = WorkerPool::new();
 
     for _ in 0..num_threads {
@@ -405,6 +412,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         let template_hash = Arc::clone(&template_hash);
         let shortcode_registry = Arc::clone(&shortcode_registry);
         let progress = Arc::clone(&progress);
+        let metadata_for_nav = Arc::clone(&metadata_for_nav);
 
         pool.spawn(move || {
             let renderer = Renderer::new();
@@ -435,6 +443,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                     &config,
                     &cache,
                     &template_hash,
+                    &metadata_for_nav,
                     use_cache,
                 );
 
@@ -451,7 +460,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     drop(result_tx);
 
-    // Collect results
     let mut results = Vec::new();
     for result in result_rx {
         results.push(result);
@@ -459,7 +467,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     pool.join().map_err(|e| anyhow::anyhow!(e))?;
 
-    // Update metadata and cache from results
     let mut errors = Vec::new();
     for result in results {
         match result {
@@ -474,19 +481,15 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
             } => {
                 println!("🔨 Built: {}", path.display());
                 metadata.upsert_post(slug, category, frontmatter);
-                cache.lock().unwrap().update_entry(
-                    &path,
-                    file_hash,
-                    template_hash,
-                    output_path,
-                );
+                cache
+                    .lock()
+                    .unwrap()
+                    .update_entry(&path, file_hash, template_hash, output_path);
             }
-            BuildResult::Skipped { path, reason } => {
-                match reason {
-                    SkipReason::Cached => println!("⏭  Skipped (unchanged): {}", path.display()),
-                    SkipReason::Draft => println!("   ⚠  Draft - skipping: {}", path.display()),
-                }
-            }
+            BuildResult::Skipped { path, reason } => match reason {
+                SkipReason::Cached => println!("⏭  Skipped (unchanged): {}", path.display()),
+                SkipReason::Draft => println!("   ⚠  Draft - skipping: {}", path.display()),
+            },
             BuildResult::Error { path, error } => {
                 eprintln!("❌ Error building {}: {}", path.display(), error);
                 errors.push((path, error));
@@ -498,13 +501,12 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         anyhow::bail!("{} posts failed to build", errors.len());
     }
 
-    // Save cache
     if use_cache {
         cache.lock().unwrap().save()?;
     }
     metadata.save()?;
 
-    // Build pages (sequential for simplicity)
+    // Build pages (sequential)
     let pages_dir = Path::new("content/pages");
     if pages_dir.exists() {
         println!("\n📄 Building pages...");
@@ -552,11 +554,9 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         }
     }
 
-    // Generate indices with plugin data
     let index_generator = IndexGenerator::new((*config).clone())?;
     index_generator.generate_all(&metadata, &plugin_manager)?;
 
-    // Generate feeds
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(
         &config,
@@ -565,13 +565,11 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         Path::new(&config.build.output_dir),
     )?;
 
-    // Generate search index
     if config.build.search.enabled {
         let search_generator = SearchIndexGenerator::new((*config).clone());
         search_generator.generate(&metadata)?;
     }
 
-    // Generate syntax CSS and copy assets
     println!("🎨 Generating syntax highlighting CSS...");
     let renderer = Renderer::new();
     let generator = Generator::new((*config).clone())?;
@@ -602,9 +600,9 @@ fn process_post_parallel(
     _config: &crate::config::SsgConfig,
     cache: &Arc<Mutex<BuildCache>>,
     template_hash: &str,
+    metadata: &MetadataCache,
     use_cache: bool,
 ) -> BuildResult {
-    // Hash file
     let file_hash = match hash_file(path) {
         Ok(h) => h,
         Err(e) => {
@@ -615,7 +613,6 @@ fn process_post_parallel(
         }
     };
 
-    // Check cache
     if use_cache {
         let cache = cache.lock().unwrap();
         if !cache.needs_rebuild(path, &file_hash, template_hash) {
@@ -626,7 +623,6 @@ fn process_post_parallel(
         }
     }
 
-    // Parse post
     let mut post = match Parser::parse_file(path) {
         Ok(p) => p,
         Err(e) => {
@@ -644,7 +640,6 @@ fn process_post_parallel(
         };
     }
 
-    // Process shortcodes
     let processed_content = match shortcode_registry.process(&post.content) {
         Ok(c) => c,
         Err(e) => {
@@ -655,7 +650,6 @@ fn process_post_parallel(
         }
     };
 
-    // Render markdown
     let base_path = post.category.clone();
     let html = match renderer.render_markdown_with_components(
         &processed_content,
@@ -673,8 +667,11 @@ fn process_post_parallel(
 
     post.rendered_html = Some(html);
 
-    // Generate output (without plugin data for now - will add in second pass if needed)
-    let plugin_data = std::collections::HashMap::new();
+    let mut plugin_data = std::collections::HashMap::new();
+    let navigation = build_post_navigation(&post.slug, &post.category, metadata, false);
+    plugin_data.insert("prev_post".to_string(), json!(navigation.prev));
+    plugin_data.insert("next_post".to_string(), json!(navigation.next));
+
     let output_path = match generator.generate_post(&post, &plugin_data) {
         Ok(p) => p,
         Err(e) => {
@@ -705,12 +702,10 @@ fn build_single_post(post_path: &str) -> Result<()> {
     let generator = Generator::new(config.clone())?;
     let metadata = MetadataCache::load().unwrap_or_else(|_| MetadataCache::new());
 
-    // Initialize plugin system
     let mut plugin_manager = PluginManager::new();
     plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
     plugin_manager.init_all(&config)?;
 
-    // Register plugin shortcodes
     plugin_manager.register_shortcodes(&mut shortcode_registry);
 
     let path = Path::new(post_path);
@@ -725,16 +720,13 @@ fn build_single_post(post_path: &str) -> Result<()> {
         println!("⚠  This is a draft post");
     }
 
-    // Create plugin context
     let plugin_ctx = PluginContext {
         config: &config,
         metadata: &metadata,
     };
 
-    // Plugin hook: after parsing
     plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
 
-    // Process shortcodes before markdown rendering
     let processed_content = shortcode_registry.process(&post.content)?;
 
     let base_path = format!("{}", post.category);
@@ -744,13 +736,15 @@ fn build_single_post(post_path: &str) -> Result<()> {
         &base_path,
     )?;
 
-    // Plugin hook: after rendering
     plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;
 
     post.rendered_html = Some(html);
 
-    // Collect plugin template data
-    let plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
+    let mut plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
+
+    let navigation = build_post_navigation(&post.slug, &post.category, &metadata, false);
+    plugin_data.insert("prev_post".to_string(), json!(navigation.prev));
+    plugin_data.insert("next_post".to_string(), json!(navigation.next));
 
     let output_path = generator.generate_post(&post, &plugin_data)?;
 
@@ -868,7 +862,6 @@ fn watch_mode(port: u16) -> Result<()> {
     println!("\n   Serving on http://localhost:{}", port);
     println!("   Press Ctrl+C to stop\n");
 
-    // Do initial build
     println!("📦 Initial build...");
     build_all(true)?;
     println!();
@@ -967,7 +960,6 @@ fn start_dev_server(port: u16) -> Result<()> {
         let request_line = request.lines().next().unwrap_or("");
 
         let path = if let Some(path_part) = request_line.split_whitespace().nth(1) {
-            // Decode URL for filesystem lookup (handles Korean/non-ASCII characters)
             slug::decode_from_url(path_part)
         } else {
             "/".to_string()
