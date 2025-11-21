@@ -11,6 +11,28 @@ use tera::{Context, Tera};
 
 use crate::image::ImageProcessor;
 
+const COMPONENT_TAGS: &[&str] = &[
+    "img",
+    "code",
+    "pre",
+    "blockquote",
+    "table",
+    "a",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "p",
+    "ul",
+    "ol",
+    "li",
+    "strong",
+    "em",
+    "del",
+];
+
 pub struct Renderer {
     syntax_set: SyntaxSet,
     theme_set: ThemeSet,
@@ -73,32 +95,9 @@ impl Renderer {
     ) -> Result<String> {
         let mut result = html.to_string();
 
-        let tag_patterns = vec![
-            "img",
-            "code",
-            "pre",
-            "blockquote",
-            "table",
-            "a",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "p",
-            "ul",
-            "ol",
-            "li",
-            "strong",
-            "em",
-            "del",
-        ];
-
-        // Create image processor if CDN URL is configured
         let image_processor = cdn_url.map(|url| ImageProcessor::new(Some(url.to_string())));
 
-        for tag_name in tag_patterns {
+        for &tag_name in COMPONENT_TAGS {
             let template_name = format!("components/{}.html", tag_name);
 
             if tera.get_template(&template_name).is_err() {
