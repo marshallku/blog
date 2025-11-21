@@ -720,4 +720,114 @@ mod tests {
         assert!(html.contains("<a href=\"https://example.com\">"));
         assert!(html.contains("Click here"));
     }
+
+    #[test]
+    fn test_resolve_path_absolute_urls() {
+        assert_eq!(
+            Renderer::resolve_path("https://example.com/image.png", "chat/post"),
+            "https://example.com/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("http://example.com/image.png", "chat/post"),
+            "http://example.com/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("//cdn.example.com/image.png", "chat/post"),
+            "//cdn.example.com/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_absolute_paths() {
+        assert_eq!(
+            Renderer::resolve_path("/assets/image.png", "chat/post"),
+            "/assets/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_current_dir() {
+        assert_eq!(
+            Renderer::resolve_path("./post/image.png", "chat/my-post"),
+            "/chat/post/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("./image.png", "dev/article"),
+            "/dev/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_current_dir_edge_cases() {
+        assert_eq!(Renderer::resolve_path("./", "chat/post"), "/chat");
+        assert_eq!(Renderer::resolve_path("./", ""), "/");
+        assert_eq!(
+            Renderer::resolve_path("././image.png", "chat/post"),
+            "/chat/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_parent_dir() {
+        assert_eq!(
+            Renderer::resolve_path("../image.png", "chat/post"),
+            "/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("../../image.png", "chat/post"),
+            "/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_parent_dir_edge_cases() {
+        assert_eq!(Renderer::resolve_path("../", "chat/post"), "/");
+        assert_eq!(
+            Renderer::resolve_path("../../../image.png", "chat/post"),
+            "/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_bare_relative() {
+        assert_eq!(
+            Renderer::resolve_path("image.png", "chat/post"),
+            "/chat/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("subfolder/image.png", "dev/article"),
+            "/dev/subfolder/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_empty() {
+        assert_eq!(Renderer::resolve_path("", "chat/post"), "/");
+        assert_eq!(Renderer::resolve_path("  ", "chat/post"), "/");
+    }
+
+    #[test]
+    fn test_resolve_path_special_protocols() {
+        assert_eq!(Renderer::resolve_path("#anchor", "chat/post"), "#anchor");
+        assert_eq!(
+            Renderer::resolve_path("mailto:test@example.com", "chat/post"),
+            "mailto:test@example.com"
+        );
+        assert_eq!(
+            Renderer::resolve_path("data:image/png;base64,abc", "chat/post"),
+            "data:image/png;base64,abc"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_category_extraction() {
+        assert_eq!(
+            Renderer::resolve_path("./i-use-arch-btw/image.png", "chat/i-use-arch-btw"),
+            "/chat/i-use-arch-btw/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("./subdir/image.png", "tutorials/rust/ownership"),
+            "/tutorials/subdir/image.png"
+        );
+    }
 }
