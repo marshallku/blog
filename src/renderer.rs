@@ -74,8 +74,25 @@ impl Renderer {
         let mut result = html.to_string();
 
         let tag_patterns = vec![
-            "img", "code", "pre", "blockquote", "table", "a", "h1", "h2", "h3",
-            "h4", "h5", "h6", "p", "ul", "ol", "li", "strong", "em", "del"
+            "img",
+            "code",
+            "pre",
+            "blockquote",
+            "table",
+            "a",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "p",
+            "ul",
+            "ol",
+            "li",
+            "strong",
+            "em",
+            "del",
         ];
 
         // Create image processor if CDN URL is configured
@@ -143,8 +160,8 @@ impl Renderer {
                 }
 
                 if tag_content.starts_with(&format!("<{} ", tag_name))
-                    || tag_content == format!("<{}>", tag_name) {
-
+                    || tag_content == format!("<{}>", tag_name)
+                {
                     let attrs = Self::extract_attributes(&tag_content);
                     let mut inner_content = String::new();
 
@@ -171,7 +188,8 @@ impl Renderer {
                                         break;
                                     }
                                 } else if potential_tag.starts_with(&format!("<{} ", tag_name))
-                                    || potential_tag == format!("<{}>", tag_name) {
+                                    || potential_tag == format!("<{}>", tag_name)
+                                {
                                     depth += 1;
                                 }
 
@@ -201,11 +219,15 @@ impl Renderer {
 
                     // Process image for CDN srcset if this is an img tag
                     if tag_name == "img" {
-                        if let (Some(processor), Some(content_path)) = (image_processor, content_dir) {
+                        if let (Some(processor), Some(content_path)) =
+                            (image_processor, content_dir)
+                        {
                             // Build the full content directory path for the post
                             let post_content_dir = content_path.join(base_path.trim_matches('/'));
 
-                            if let Ok(Some(metadata)) = processor.process_image(&original_src, &post_content_dir) {
+                            if let Ok(Some(metadata)) =
+                                processor.process_image(&original_src, &post_content_dir)
+                            {
                                 context.insert("cdn_src", &metadata.src);
                                 context.insert("srcset", &metadata.srcset);
                                 context.insert("webp_srcset", &metadata.webp_srcset);
@@ -241,7 +263,10 @@ impl Renderer {
     fn extract_attributes(tag: &str) -> HashMap<String, String> {
         let mut attrs = HashMap::new();
 
-        let tag = tag.trim_start_matches('<').trim_end_matches('>').trim_end_matches('/');
+        let tag = tag
+            .trim_start_matches('<')
+            .trim_end_matches('>')
+            .trim_end_matches('/');
         let parts: Vec<&str> = tag.splitn(2, ' ').collect();
 
         if parts.len() < 2 {
@@ -414,7 +439,9 @@ impl Renderer {
                                 depth -= 1;
                                 if depth == 0 {
                                     // Process the pre_content for code highlighting
-                                    if let Some(highlighted) = self.process_pre_content(&pre_content) {
+                                    if let Some(highlighted) =
+                                        self.process_pre_content(&pre_content)
+                                    {
                                         // Replace the accumulated content with highlighted version
                                         result.truncate(start_pos);
                                         result.push_str(&highlighted);
@@ -496,15 +523,20 @@ impl Renderer {
             .unwrap_or_else(|| self.syntax_set.find_syntax_plain_text());
 
         // Use ClassedHTMLGenerator for CSS class-based highlighting
-        let mut html_generator =
-            ClassedHTMLGenerator::new_with_class_style(syntax, &self.syntax_set, ClassStyle::Spaced);
+        let mut html_generator = ClassedHTMLGenerator::new_with_class_style(
+            syntax,
+            &self.syntax_set,
+            ClassStyle::Spaced,
+        );
 
         for line in LinesWithEndings::from(code) {
             html_generator.parse_html_for_line_which_includes_newline(line)?;
         }
 
-        Ok(format!("<pre class=\"syntax-highlight\"><code>{}</code></pre>",
-            html_generator.finalize()))
+        Ok(format!(
+            "<pre class=\"syntax-highlight\"><code>{}</code></pre>",
+            html_generator.finalize()
+        ))
     }
 
     /// Generate CSS for syntax highlighting themes
@@ -520,7 +552,7 @@ impl Renderer {
         css.push_str("/* Light theme */\n");
         css.push_str("@media (prefers-color-scheme: light) {\n");
         css.push_str("  :root {\n");
-        let light_theme = &self.theme_set.themes["Solarized (light)"];
+        let light_theme = &self.theme_set.themes["base16-ocean.light"];
         Self::add_theme_variables(&mut css, light_theme, "    ");
         css.push_str("  }\n");
         css.push_str("}\n\n");
@@ -552,17 +584,33 @@ impl Renderer {
         css.push_str(".syntax-highlight code {\n");
         css.push_str("  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n");
         css.push_str("  font-size: 0.9em;\n");
-        css.push_str("  line-height: 1.5;\n");
+        css.push_str("  line-height: 1.2;\n");
         css.push_str("}\n");
 
         Ok(css)
     }
 
     fn add_theme_variables(css: &mut String, theme: &Theme, indent: &str) {
-        css.push_str(&format!("{}--syntax-bg: {};\n", indent,
-            Self::color_to_css(&theme.settings.background.unwrap_or(syntect::highlighting::Color::WHITE))));
-        css.push_str(&format!("{}--syntax-fg: {};\n", indent,
-            Self::color_to_css(&theme.settings.foreground.unwrap_or(syntect::highlighting::Color::BLACK))));
+        css.push_str(&format!(
+            "{}--syntax-bg: {};\n",
+            indent,
+            Self::color_to_css(
+                &theme
+                    .settings
+                    .background
+                    .unwrap_or(syntect::highlighting::Color::WHITE)
+            )
+        ));
+        css.push_str(&format!(
+            "{}--syntax-fg: {};\n",
+            indent,
+            Self::color_to_css(
+                &theme
+                    .settings
+                    .foreground
+                    .unwrap_or(syntect::highlighting::Color::BLACK)
+            )
+        ));
     }
 
     fn color_to_css(color: &syntect::highlighting::Color) -> String {
@@ -572,8 +620,11 @@ impl Renderer {
     fn convert_css_to_variables(css: &str) -> String {
         // Replace hardcoded colors with CSS variables in the generated CSS
         // This is a simplified version - we'll use the variables defined above
-        css.replace("background-color:#", "background-color: var(--syntax-bg); /* #")
-            .replace("color:#", "color: var(--syntax-fg); /* #")
+        css.replace(
+            "background-color:#",
+            "background-color: var(--syntax-bg); /* #",
+        )
+        .replace("color:#", "color: var(--syntax-fg); /* #")
     }
 
     /// Write syntax highlighting CSS to file

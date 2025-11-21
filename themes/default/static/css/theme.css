@@ -87,7 +87,7 @@ body {
   margin-top: 1rem;
 }
 
-.tag {
+.post-tags .tag {
   display: inline-block;
   background: #ecf0f1;
   color: #2c3e50;
@@ -99,7 +99,7 @@ body {
   transition: background 0.2s;
 }
 
-.tag:hover {
+.post-tags .tag:hover {
   background: #bdc3c7;
 }
 
@@ -155,6 +155,7 @@ body {
   border-radius: 8px;
   overflow-x: auto;
   margin-bottom: 1.5rem;
+  line-height: 1;
 }
 
 .post-content pre code {
