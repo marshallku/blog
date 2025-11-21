@@ -95,6 +95,13 @@ impl Renderer {
     ) -> Result<String> {
         let mut result = html.to_string();
 
+        let category = base_path
+            .split('/')
+            .next()
+            .unwrap_or("")
+            .trim_matches('/')
+            .to_string();
+
         let image_processor = cdn_url.map(|url| ImageProcessor::new(Some(url.to_string())));
 
         for &tag_name in COMPONENT_TAGS {
@@ -109,7 +116,7 @@ impl Renderer {
                 tag_name,
                 tera,
                 &template_name,
-                base_path,
+                &category,
                 image_processor.as_ref(),
                 content_dir,
             )?;
@@ -123,7 +130,7 @@ impl Renderer {
         tag_name: &str,
         tera: &Tera,
         template_name: &str,
-        base_path: &str,
+        category: &str,
         image_processor: Option<&ImageProcessor>,
         content_dir: Option<&Path>,
     ) -> Result<String> {
@@ -206,7 +213,7 @@ impl Renderer {
 
                     for (key, value) in &attrs {
                         if Self::is_url_attribute(key) {
-                            let resolved = Self::resolve_path(value, base_path);
+                            let resolved = Self::resolve_path(value, category);
                             context.insert(key, &resolved);
                             if key == "src" {
                                 original_src = value.clone();
@@ -221,7 +228,6 @@ impl Renderer {
                         if let (Some(processor), Some(content_path)) =
                             (image_processor, content_dir)
                         {
-                            let category = base_path.split('/').next().unwrap_or(base_path);
                             let post_content_dir = content_path.join(category.trim_matches('/'));
 
                             if let Ok(Some(metadata)) =
@@ -338,7 +344,7 @@ impl Renderer {
         matches!(attr, "src" | "href" | "data" | "poster" | "srcset")
     }
 
-    fn resolve_path(path: &str, base_path: &str) -> String {
+    fn resolve_path(path: &str, category: &str) -> String {
         let trimmed = path.trim();
 
         if trimmed.is_empty() {
@@ -358,8 +364,6 @@ impl Renderer {
         if trimmed.starts_with('/') {
             return trimmed.to_string();
         }
-
-        let category = base_path.split('/').next().unwrap_or("").trim_matches('/');
 
         if trimmed.starts_with("./") {
             let mut relative_path = &trimmed[2..];
@@ -723,15 +727,15 @@ mod tests {
     #[test]
     fn test_resolve_path_absolute_urls() {
         assert_eq!(
-            Renderer::resolve_path("https://example.com/image.png", "chat/post"),
+            Renderer::resolve_path("https://example.com/image.png", "chat"),
             "https://example.com/image.png"
         );
         assert_eq!(
-            Renderer::resolve_path("http://example.com/image.png", "chat/post"),
+            Renderer::resolve_path("http://example.com/image.png", "chat"),
             "http://example.com/image.png"
         );
         assert_eq!(
-            Renderer::resolve_path("//cdn.example.com/image.png", "chat/post"),
+            Renderer::resolve_path("//cdn.example.com/image.png", "chat"),
             "//cdn.example.com/image.png"
         );
     }
@@ -739,7 +743,7 @@ mod tests {
     #[test]
     fn test_resolve_path_absolute_paths() {
         assert_eq!(
-            Renderer::resolve_path("/assets/image.png", "chat/post"),
+            Renderer::resolve_path("/assets/image.png", "chat"),
             "/assets/image.png"
         );
     }
@@ -747,21 +751,21 @@ mod tests {
     #[test]
     fn test_resolve_path_current_dir() {
         assert_eq!(
-            Renderer::resolve_path("./post/image.png", "chat/my-post"),
+            Renderer::resolve_path("./post/image.png", "chat"),
             "/chat/post/image.png"
         );
         assert_eq!(
-            Renderer::resolve_path("./image.png", "dev/article"),
+            Renderer::resolve_path("./image.png", "dev"),
             "/dev/image.png"
         );
     }
 
     #[test]
     fn test_resolve_path_current_dir_edge_cases() {
-        assert_eq!(Renderer::resolve_path("./", "chat/post"), "/chat");
+        assert_eq!(Renderer::resolve_path("./", "chat"), "/chat");
         assert_eq!(Renderer::resolve_path("./", ""), "/");
         assert_eq!(
-            Renderer::resolve_path("././image.png", "chat/post"),
+            Renderer::resolve_path("././image.png", "chat"),
             "/chat/image.png"
         );
     }
@@ -769,20 +773,20 @@ mod tests {
     #[test]
     fn test_resolve_path_parent_dir() {
         assert_eq!(
-            Renderer::resolve_path("../image.png", "chat/post"),
+            Renderer::resolve_path("../image.png", "chat"),
             "/image.png"
         );
         assert_eq!(
-            Renderer::resolve_path("../../image.png", "chat/post"),
+            Renderer::resolve_path("../../image.png", "chat"),
             "/image.png"
         );
     }
 
     #[test]
     fn test_resolve_path_parent_dir_edge_cases() {
-        assert_eq!(Renderer::resolve_path("../", "chat/post"), "/");
+        assert_eq!(Renderer::resolve_path("../", "chat"), "/");
         assert_eq!(
-            Renderer::resolve_path("../../../image.png", "chat/post"),
+            Renderer::resolve_path("../../../image.png", "chat"),
             "/image.png"
         );
     }
@@ -790,30 +794,30 @@ mod tests {
     #[test]
     fn test_resolve_path_bare_relative() {
         assert_eq!(
-            Renderer::resolve_path("image.png", "chat/post"),
+            Renderer::resolve_path("image.png", "chat"),
             "/chat/image.png"
         );
         assert_eq!(
-            Renderer::resolve_path("subfolder/image.png", "dev/article"),
+            Renderer::resolve_path("subfolder/image.png", "dev"),
             "/dev/subfolder/image.png"
         );
     }
 
     #[test]
     fn test_resolve_path_empty() {
-        assert_eq!(Renderer::resolve_path("", "chat/post"), "/");
-        assert_eq!(Renderer::resolve_path("  ", "chat/post"), "/");
+        assert_eq!(Renderer::resolve_path("", "chat"), "/");
+        assert_eq!(Renderer::resolve_path("  ", "chat"), "/");
     }
 
     #[test]
     fn test_resolve_path_special_protocols() {
-        assert_eq!(Renderer::resolve_path("#anchor", "chat/post"), "#anchor");
+        assert_eq!(Renderer::resolve_path("#anchor", "chat"), "#anchor");
         assert_eq!(
-            Renderer::resolve_path("mailto:test@example.com", "chat/post"),
+            Renderer::resolve_path("mailto:test@example.com", "chat"),
             "mailto:test@example.com"
         );
         assert_eq!(
-            Renderer::resolve_path("data:image/png;base64,abc", "chat/post"),
+            Renderer::resolve_path("data:image/png;base64,abc", "chat"),
             "data:image/png;base64,abc"
         );
     }
@@ -821,11 +825,11 @@ mod tests {
     #[test]
     fn test_resolve_path_category_extraction() {
         assert_eq!(
-            Renderer::resolve_path("./i-use-arch-btw/image.png", "chat/i-use-arch-btw"),
+            Renderer::resolve_path("./i-use-arch-btw/image.png", "chat"),
             "/chat/i-use-arch-btw/image.png"
         );
         assert_eq!(
-            Renderer::resolve_path("./subdir/image.png", "tutorials/rust/ownership"),
+            Renderer::resolve_path("./subdir/image.png", "tutorials"),
             "/tutorials/subdir/image.png"
         );
     }
