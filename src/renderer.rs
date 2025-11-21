@@ -222,8 +222,8 @@ impl Renderer {
                         if let (Some(processor), Some(content_path)) =
                             (image_processor, content_dir)
                         {
-                            // Build the full content directory path for the post
-                            let post_content_dir = content_path.join(base_path.trim_matches('/'));
+                            let category = base_path.split('/').next().unwrap_or(base_path);
+                            let post_content_dir = content_path.join(category.trim_matches('/'));
 
                             if let Ok(Some(metadata)) =
                                 processor.process_image(&original_src, &post_content_dir)
@@ -342,6 +342,10 @@ impl Renderer {
     fn resolve_path(path: &str, base_path: &str) -> String {
         let trimmed = path.trim();
 
+        if trimmed.is_empty() {
+            return "/".to_string();
+        }
+
         if trimmed.starts_with("http://")
             || trimmed.starts_with("https://")
             || trimmed.starts_with("//")
@@ -356,18 +360,41 @@ impl Renderer {
             return trimmed.to_string();
         }
 
+        let category = base_path.split('/').next().unwrap_or("").trim_matches('/');
+
         if trimmed.starts_with("./") {
-            return format!("/{}/{}", base_path.trim_matches('/'), &trimmed[2..]);
+            let mut relative_path = &trimmed[2..];
+
+            // Strip any additional ./ patterns (e.g., "././image.png")
+            while relative_path.starts_with("./") {
+                relative_path = &relative_path[2..];
+            }
+
+            let relative_path = relative_path.trim_start_matches('/');
+
+            if relative_path.is_empty() {
+                return if category.is_empty() {
+                    "/".to_string()
+                } else {
+                    format!("/{}", category)
+                };
+            }
+
+            return if category.is_empty() {
+                format!("/{}", relative_path)
+            } else {
+                format!("/{}/{}", category, relative_path)
+            };
         }
 
         if trimmed.starts_with("../") {
-            let base_parts: Vec<&str> = base_path.trim_matches('/').split('/').collect();
-            let mut path_parts: Vec<&str> = trimmed.split('/').collect();
+            let base_parts: Vec<&str> = category.split('/').filter(|s| !s.is_empty()).collect();
 
+            let mut remaining_path = trimmed;
             let mut up_count = 0;
-            while !path_parts.is_empty() && path_parts[0] == ".." {
+            while remaining_path.starts_with("../") {
                 up_count += 1;
-                path_parts.remove(0);
+                remaining_path = &remaining_path[3..];
             }
 
             let remaining_base = if up_count >= base_parts.len() {
@@ -376,17 +403,31 @@ impl Renderer {
                 base_parts[..base_parts.len() - up_count].to_vec()
             };
 
+            let remaining_path = remaining_path.trim_start_matches('/');
+            if remaining_base.is_empty() && remaining_path.is_empty() {
+                return "/".to_string();
+            }
+
             let mut result = String::from("/");
             if !remaining_base.is_empty() {
                 result.push_str(&remaining_base.join("/"));
-                result.push('/');
+                if !remaining_path.is_empty() {
+                    result.push('/');
+                }
             }
-            result.push_str(&path_parts.join("/"));
+            if !remaining_path.is_empty() {
+                result.push_str(remaining_path);
+            }
 
             return result;
         }
 
-        format!("/{}/{}", base_path.trim_matches('/'), trimmed)
+        let trimmed = trimmed.trim_start_matches('/');
+        if category.is_empty() {
+            format!("/{}", trimmed)
+        } else {
+            format!("/{}/{}", category, trimmed)
+        }
     }
 
     fn highlight_code_blocks(&self, html: &str) -> String {
