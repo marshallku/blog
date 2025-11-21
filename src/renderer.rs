@@ -561,9 +561,17 @@ impl Renderer {
     }
 
     pub fn highlight_code(&self, code: &str, lang: &str) -> Result<String> {
+        // Map TypeScript-related languages to JavaScript as fallback
+        let lang = match lang {
+            "typescript" | "ts" | "tsx" => "javascript",
+            "jsx" => "javascript",
+            other => other,
+        };
+
         let syntax = self
             .syntax_set
             .find_syntax_by_token(lang)
+            .or_else(|| self.syntax_set.find_syntax_by_extension(lang))
             .unwrap_or_else(|| self.syntax_set.find_syntax_plain_text());
 
         // Use ClassedHTMLGenerator for CSS class-based highlighting
