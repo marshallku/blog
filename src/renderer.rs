@@ -50,7 +50,7 @@ impl Renderer {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);
 
-        let mut html_output = String::new();
+        let mut html_output = String::with_capacity(markdown.len() * 2);
         html::push_html(&mut html_output, parser);
 
         self.highlight_code_blocks(&html_output)
@@ -76,7 +76,7 @@ impl Renderer {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);
 
-        let mut html_output = String::new();
+        let mut html_output = String::with_capacity(markdown.len() * 2);
         html::push_html(&mut html_output, parser);
 
         // Apply syntax highlighting first
@@ -127,7 +127,7 @@ impl Renderer {
         image_processor: Option<&ImageProcessor>,
         content_dir: Option<&Path>,
     ) -> Result<String> {
-        let mut result = String::new();
+        let mut result = String::with_capacity(html.len() + html.len() / 10);
         let mut chars = html.chars().peekable();
 
         while let Some(ch) = chars.next() {
@@ -430,7 +430,7 @@ impl Renderer {
     }
 
     fn highlight_code_blocks(&self, html: &str) -> String {
-        let mut result = String::new();
+        let mut result = String::with_capacity(html.len() + html.len() / 5);
         let mut chars = html.chars().peekable();
 
         while let Some(ch) = chars.next() {
