@@ -38,7 +38,7 @@ impl SearchIndexGenerator {
         let mut posts: Vec<SearchEntry> = metadata
             .posts
             .iter()
-            .filter(|p| !p.frontmatter.draft)
+            .filter(|p| !p.frontmatter.hidden)
             .map(|post| {
                 let url = if self.config.build.encode_filenames {
                     format!(
@@ -97,9 +97,11 @@ mod tests {
             title: "Test Post".to_string(),
             date: PostDate::new(Utc::now()),
             tags: vec!["rust".to_string(), "test".to_string()],
-            featured_image: None,
+            cover_image: None,
+            og_image: None,
             description: Some("A test post".to_string()),
-            draft: false,
+            display_ad: false,
+            hidden: false,
         };
 
         metadata.upsert_post("test-post".to_string(), "dev".to_string(), frontmatter);

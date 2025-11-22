@@ -132,9 +132,11 @@ mod tests {
             title: "Test Post".to_string(),
             date: crate::types::PostDate::new(Utc::now()),
             tags: tags.iter().map(|s| s.to_string()).collect(),
-            featured_image: None,
+            cover_image: None,
+            og_image: None,
             description: None,
-            draft: false,
+            display_ad: false,
+            hidden: false,
         };
         (category.to_string(), frontmatter)
     }

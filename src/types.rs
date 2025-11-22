@@ -49,12 +49,16 @@ pub struct Frontmatter {
     pub date: PostDate,
     #[serde(default)]
     pub tags: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub featured_image: Option<String>,
+    #[serde(alias = "coverImage", skip_serializing_if = "Option::is_none")]
+    pub cover_image: Option<String>,
+    #[serde(alias = "ogImage", skip_serializing_if = "Option::is_none")]
+    pub og_image: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(alias = "displayAd", default)]
+    pub display_ad: bool,
     #[serde(default)]
-    pub draft: bool,
+    pub hidden: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -112,7 +116,7 @@ pub struct PageFrontmatter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default)]
-    pub draft: bool,
+    pub hidden: bool,
 }
 
 #[derive(Debug, Clone)]

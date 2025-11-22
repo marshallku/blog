@@ -64,7 +64,7 @@ impl Parser {
                 frontmatter: PageFrontmatter {
                     title: slug.replace('-', " "),
                     description: None,
-                    draft: false,
+                    hidden: false,
                 },
                 content: content.to_string(),
                 rendered_html: None,

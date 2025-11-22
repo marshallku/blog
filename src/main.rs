@@ -190,8 +190,8 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         let mut post = Parser::parse_file(path)?;
 
-        if post.frontmatter.draft {
-            println!("   ⚠  Draft - skipping output");
+        if post.frontmatter.hidden {
+            println!("   ⚠  Hidden - skipping output");
             skipped_count += 1;
             continue;
         }
@@ -263,8 +263,8 @@ fn build_all(use_cache: bool) -> Result<()> {
 
             let mut page = Parser::parse_page_file(path)?;
 
-            if page.frontmatter.draft {
-                println!("   ⚠  Draft - skipping output");
+            if page.frontmatter.hidden {
+                println!("   ⚠  Hidden - skipping output");
                 continue;
             }
 
@@ -382,7 +382,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     for path in &file_paths {
         if let Ok(post) = Parser::parse_file(path) {
-            if !post.frontmatter.draft {
+            if !post.frontmatter.hidden {
                 metadata.upsert_post(post.slug, post.category, post.frontmatter);
             }
         }
@@ -525,8 +525,8 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
             let mut page = Parser::parse_page_file(path)?;
 
-            if page.frontmatter.draft {
-                println!("   ⚠  Draft - skipping output");
+            if page.frontmatter.hidden {
+                println!("   ⚠  Hidden - skipping output");
                 continue;
             }
 
@@ -634,7 +634,7 @@ fn process_post_parallel(
         }
     };
 
-    if post.frontmatter.draft {
+    if post.frontmatter.hidden {
         return BuildResult::Skipped {
             path: path.to_path_buf(),
             reason: SkipReason::Draft,
@@ -720,8 +720,8 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     let mut post = Parser::parse_file(path)?;
 
-    if post.frontmatter.draft {
-        println!("⚠  This is a draft post");
+    if post.frontmatter.hidden {
+        println!("⚠  This is a hidden post");
     }
 
     let plugin_ctx = PluginContext {
@@ -835,7 +835,7 @@ title: "{}"
 date: {}
 category: {}
 tags: []
-draft: false
+hidden: false
 ---
 
 Write your post here...

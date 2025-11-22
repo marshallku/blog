@@ -40,7 +40,7 @@ impl FeedGenerator {
         let mut items = Vec::new();
 
         for post_meta in recent_posts {
-            if post_meta.frontmatter.draft {
+            if post_meta.frontmatter.hidden {
                 continue;
             }
 
@@ -149,7 +149,7 @@ impl FeedGenerator {
             let mut category_posts: Vec<_> = metadata
                 .get_posts_by_category(&category_slug)
                 .into_iter()
-                .filter(|p| !p.frontmatter.draft)
+                .filter(|p| !p.frontmatter.hidden)
                 .collect();
 
             category_posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
