@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -18,17 +17,6 @@ pub struct SiteConfig {
     /// CDN URL for image optimization (optional)
     #[serde(default)]
     pub cdn_url: Option<String>,
-}
-
-/// Theme configuration from config.yaml
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ThemeConfig {
-    #[serde(default = "default_theme_name")]
-    pub name: String,
-    #[serde(default)]
-    pub custom_dir: Option<String>,
-    #[serde(default)]
-    pub variables: HashMap<String, serde_yaml::Value>,
 }
 
 /// Search configuration
@@ -79,8 +67,6 @@ pub struct SsgConfig {
     #[serde(default)]
     pub site: SiteConfig,
     #[serde(default)]
-    pub theme: ThemeConfig,
-    #[serde(default)]
     pub build: BuildConfig,
 }
 
@@ -92,16 +78,6 @@ impl Default for SiteConfig {
             author: default_author(),
             description: default_description(),
             cdn_url: None,
-        }
-    }
-}
-
-impl Default for ThemeConfig {
-    fn default() -> Self {
-        Self {
-            name: default_theme_name(),
-            custom_dir: None,
-            variables: HashMap::new(),
         }
     }
 }
@@ -123,7 +99,6 @@ impl Default for SsgConfig {
     fn default() -> Self {
         Self {
             site: SiteConfig::default(),
-            theme: ThemeConfig::default(),
             build: BuildConfig::default(),
         }
     }
@@ -143,10 +118,6 @@ fn default_author() -> String {
 
 fn default_description() -> String {
     "marshallku blog".to_string()
-}
-
-fn default_theme_name() -> String {
-    "default".to_string()
 }
 
 fn default_content_dir() -> String {
@@ -188,7 +159,6 @@ mod tests {
     fn test_default_config() {
         let config = SsgConfig::default();
         assert_eq!(config.site.title, "marshallku blog");
-        assert_eq!(config.theme.name, "default");
         assert_eq!(config.build.posts_per_page, 10);
     }
 }

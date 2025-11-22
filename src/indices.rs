@@ -2,14 +2,13 @@ use crate::config::SsgConfig;
 use crate::metadata::MetadataCache;
 use crate::plugin::{PluginContext, PluginManager};
 use crate::slug;
-use crate::theme::ThemeEngine;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::Serialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
-use tera::{Context as TeraContext, Tera};
+use std::path::{Path, PathBuf};
+use tera::{Context as TeraContext, Tera, Value};
 
 /// Pagination context for templates
 #[derive(Debug, Clone, Serialize)]
@@ -24,9 +23,7 @@ struct PaginationContext {
     next_url: Option<String>,
     first_url: String,
     last_url: String,
-    /// Jump to page before current window (e.g., window [6,7,8,9,10] -> jump to 5)
     jump_prev_url: Option<String>,
-    /// Jump to page after current window (e.g., window [1,2,3,4,5] -> jump to 6)
     jump_next_url: Option<String>,
     pages: Vec<PageLink>,
 }
@@ -50,29 +47,22 @@ struct TemplateConfig<'a> {
 pub struct IndexGenerator {
     tera: Tera,
     config: SsgConfig,
-    theme_variables: HashMap<String, serde_yaml::Value>,
-    theme_info: HashMap<String, String>,
 }
 
 impl IndexGenerator {
     pub fn new(config: SsgConfig) -> Result<Self> {
-        let theme_engine = ThemeEngine::new(&config)?;
-        let tera = theme_engine.create_tera_engine()?;
-        let theme_variables = theme_engine.get_template_variables();
-        let theme_info = theme_engine.get_theme_info();
+        let tera = create_tera_engine()?;
 
-        Ok(Self {
-            tera,
-            config,
-            theme_variables,
-            theme_info,
-        })
+        Ok(Self { tera, config })
     }
 
-    pub fn generate_all(&self, metadata: &MetadataCache, plugin_manager: &PluginManager) -> Result<()> {
+    pub fn generate_all(
+        &self,
+        metadata: &MetadataCache,
+        plugin_manager: &PluginManager,
+    ) -> Result<()> {
         println!("\n📑 Generating indices...");
 
-        // Create plugin context for index pages
         let plugin_ctx = PluginContext {
             config: &self.config,
             metadata,
@@ -99,7 +89,11 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_homepage(&self, metadata: &MetadataCache, plugin_data: &HashMap<String, JsonValue>) -> Result<()> {
+    fn generate_homepage(
+        &self,
+        metadata: &MetadataCache,
+        plugin_data: &HashMap<String, JsonValue>,
+    ) -> Result<()> {
         let recent_posts = metadata.get_recent_posts(10);
 
         let visible_categories: Vec<_> = metadata
@@ -119,11 +113,6 @@ impl IndexGenerator {
         context.insert("categories", &visible_categories);
         context.insert("config", &template_config);
 
-        // Add theme context
-        context.insert("theme_variables", &self.theme_variables);
-        context.insert("theme_info", &self.theme_info);
-
-        // Add plugin data
         for (key, value) in plugin_data {
             context.insert(key, value);
         }
@@ -168,7 +157,6 @@ impl IndexGenerator {
             author: &self.config.site.author,
         };
 
-        // Generate each page
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
             let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
@@ -186,10 +174,6 @@ impl IndexGenerator {
                 context.insert("pagination", &pagination);
             }
 
-            context.insert("theme_variables", &self.theme_variables);
-            context.insert("theme_info", &self.theme_info);
-
-            // Add plugin data
             for (key, value) in plugin_data {
                 context.insert(key, value);
             }
@@ -217,7 +201,12 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache, plugin_data: &HashMap<String, JsonValue>) -> Result<()> {
+    fn generate_tag_page(
+        &self,
+        tag: &str,
+        metadata: &MetadataCache,
+        plugin_data: &HashMap<String, JsonValue>,
+    ) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
 
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
@@ -244,7 +233,6 @@ impl IndexGenerator {
             author: &self.config.site.author,
         };
 
-        // Generate each page
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
             let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
@@ -262,10 +250,6 @@ impl IndexGenerator {
                 context.insert("pagination", &pagination);
             }
 
-            context.insert("theme_variables", &self.theme_variables);
-            context.insert("theme_info", &self.theme_info);
-
-            // Add plugin data
             for (key, value) in plugin_data {
                 context.insert(key, value);
             }
@@ -295,7 +279,11 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_tags_overview(&self, metadata: &MetadataCache, plugin_data: &HashMap<String, JsonValue>) -> Result<()> {
+    fn generate_tags_overview(
+        &self,
+        metadata: &MetadataCache,
+        plugin_data: &HashMap<String, JsonValue>,
+    ) -> Result<()> {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
         tags_with_counts.sort_by(|a, b| b.1.cmp(a.1));
 
@@ -316,11 +304,6 @@ impl IndexGenerator {
         context.insert("categories", &visible_categories);
         context.insert("config", &template_config);
 
-        // Add theme context
-        context.insert("theme_variables", &self.theme_variables);
-        context.insert("theme_info", &self.theme_info);
-
-        // Add plugin data
         for (key, value) in plugin_data {
             context.insert(key, value);
         }
@@ -362,13 +345,10 @@ impl IndexGenerator {
         let (start_page, end_page) = if total_pages <= window {
             (1, total_pages)
         } else if current_page <= half_window + 1 {
-            // Near start
             (1, window)
         } else if current_page >= total_pages - half_window {
-            // Near end
             (total_pages - window + 1, total_pages)
         } else {
-            // Middle
             (current_page - half_window, current_page + half_window)
         };
 
@@ -384,7 +364,6 @@ impl IndexGenerator {
             })
             .collect();
 
-        // Jump URLs: go to page outside current window
         let jump_prev_url = if start_page > 1 {
             let jump_page = start_page - 1;
             Some(if jump_page == 1 {
@@ -431,4 +410,29 @@ impl IndexGenerator {
             s.to_string()
         }
     }
+}
+
+fn create_tera_engine() -> Result<Tera> {
+    let template_dir = Path::new("templates");
+
+    if !template_dir.exists() {
+        anyhow::bail!(
+            "Templates directory not found. Expected templates at {:?}",
+            template_dir
+        );
+    }
+
+    let glob_pattern = format!("{}/**/*.html", template_dir.display());
+    let mut tera = Tera::new(&glob_pattern)
+        .context(format!("Failed to load templates from {:?}", template_dir))?;
+
+    tera.register_filter("urldecode", urldecode_filter);
+
+    Ok(tera)
+}
+
+fn urldecode_filter(value: &Value, _args: &HashMap<String, Value>) -> tera::Result<Value> {
+    let s = tera::try_get_value!("urldecode", "value", String, value);
+    let decoded = slug::decode_from_url(&s);
+    Ok(Value::String(decoded))
 }

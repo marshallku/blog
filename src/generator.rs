@@ -1,6 +1,5 @@
 use crate::config::SsgConfig;
 use crate::slug;
-use crate::theme::ThemeEngine;
 use crate::types::{Page, Post};
 use anyhow::{Context, Result};
 use serde::Serialize;
@@ -8,7 +7,7 @@ use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use tera::{Context as TeraContext, Tera};
+use tera::{Context as TeraContext, Tera, Value};
 
 /// Flattened config for template context (backward compatibility)
 #[derive(Debug, Clone, Serialize)]
@@ -21,25 +20,13 @@ struct TemplateConfig<'a> {
 pub struct Generator {
     tera: Tera,
     config: SsgConfig,
-    theme_engine: ThemeEngine,
-    theme_variables: HashMap<String, serde_yaml::Value>,
-    theme_info: HashMap<String, String>,
 }
 
 impl Generator {
     pub fn new(config: SsgConfig) -> Result<Self> {
-        let theme_engine = ThemeEngine::new(&config)?;
-        let tera = theme_engine.create_tera_engine()?;
-        let theme_variables = theme_engine.get_template_variables();
-        let theme_info = theme_engine.get_theme_info();
+        let tera = create_tera_engine()?;
 
-        Ok(Self {
-            tera,
-            config,
-            theme_engine,
-            theme_variables,
-            theme_info,
-        })
+        Ok(Self { tera, config })
     }
 
     pub fn generate_post(
@@ -65,11 +52,6 @@ impl Generator {
         context.insert("content", html);
         context.insert("config", &template_config);
 
-        // Add theme context
-        context.insert("theme_variables", &self.theme_variables);
-        context.insert("theme_info", &self.theme_info);
-
-        // Add plugin data to context
         for (key, value) in plugin_data {
             context.insert(key, value);
         }
@@ -104,9 +86,6 @@ impl Generator {
         context.insert("slug", &page.slug);
         context.insert("content", html);
         context.insert("config", &template_config);
-
-        context.insert("theme_variables", &self.theme_variables);
-        context.insert("theme_info", &self.theme_info);
 
         for (key, value) in plugin_data {
             context.insert(key, value);
@@ -153,11 +132,6 @@ impl Generator {
 
     pub fn copy_static_assets(&self) -> Result<()> {
         let dst = Path::new(&self.config.build.output_dir);
-
-        self.theme_engine.copy_theme_assets(dst)?;
-        if !self.theme_engine.static_paths.is_empty() {
-            println!("📦 Copied theme static assets");
-        }
 
         let src = Path::new("static");
         if src.exists() {
@@ -234,8 +208,6 @@ impl Generator {
     }
 
     fn encode_asset_path(path: &Path) -> PathBuf {
-        // No encoding needed - keep UTF-8 filenames as-is
-        // Web servers (Nginx) decode URLs before filesystem lookup
         path.to_path_buf()
     }
 
@@ -257,4 +229,29 @@ impl Generator {
 
         Ok(())
     }
+}
+
+fn create_tera_engine() -> Result<Tera> {
+    let template_dir = Path::new("templates");
+
+    if !template_dir.exists() {
+        anyhow::bail!(
+            "Templates directory not found. Expected templates at {:?}",
+            template_dir
+        );
+    }
+
+    let glob_pattern = format!("{}/**/*.html", template_dir.display());
+    let mut tera = Tera::new(&glob_pattern)
+        .context(format!("Failed to load templates from {:?}", template_dir))?;
+
+    tera.register_filter("urldecode", urldecode_filter);
+
+    Ok(tera)
+}
+
+fn urldecode_filter(value: &Value, _args: &HashMap<String, Value>) -> tera::Result<Value> {
+    let s = tera::try_get_value!("urldecode", "value", String, value);
+    let decoded = slug::decode_from_url(&s);
+    Ok(Value::String(decoded))
 }

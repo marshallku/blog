@@ -16,7 +16,6 @@ mod search;
 mod shortcodes;
 mod slug;
 mod syntax_highlighter;
-mod theme;
 mod types;
 
 use anyhow::Result;
@@ -160,7 +159,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         );
     }
 
-    let template_hash = hash_directory(Path::new(&format!("themes/{}", config.theme.name)))?;
+    let template_hash = hash_directory(Path::new("templates"))?;
 
     let categories = discover_categories(posts_dir)?;
     if categories.is_empty() {
@@ -345,10 +344,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         );
     }
 
-    let template_hash = Arc::new(hash_directory(Path::new(&format!(
-        "themes/{}",
-        config.theme.name
-    )))?);
+    let template_hash = Arc::new(hash_directory(Path::new("templates"))?);
 
     let categories = discover_categories(posts_dir)?;
     let mut metadata = if use_cache {
@@ -868,7 +864,7 @@ fn watch_mode(port: u16) -> Result<()> {
     println!("🔍 Watch mode starting...");
     println!("   Watching for changes in:");
     println!("   - content/");
-    println!("   - themes/");
+    println!("   - templates/");
     println!("   - static/");
     println!("\n   Serving on http://localhost:{}", port);
     println!("   Press Ctrl+C to stop\n");
@@ -894,7 +890,7 @@ fn watch_mode(port: u16) -> Result<()> {
     })?;
 
     watcher.watch(Path::new("content"), RecursiveMode::Recursive)?;
-    watcher.watch(Path::new("themes"), RecursiveMode::Recursive)?;
+    watcher.watch(Path::new("templates"), RecursiveMode::Recursive)?;
 
     if Path::new("static").exists() {
         watcher.watch(Path::new("static"), RecursiveMode::Recursive)?;

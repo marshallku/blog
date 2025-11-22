@@ -14,9 +14,6 @@ site:
   url: "https://example.com"
   author: "Your Name"
 
-theme:
-  name: "default"
-
 build:
   content_dir: "content/posts"
   output_dir: "dist"
@@ -66,7 +63,7 @@ cargo run --release -- watch
 cargo run --release -- watch --port 3000
 ```
 
-Then visit `http://localhost:8080` to view your site. Edit any file in `content/`, `themes/`, or `static/` and it will automatically rebuild!
+Then visit `http://localhost:8080` to view your site. Edit any file in `content/`, `templates/`, or `static/` and it will automatically rebuild!
 
 ### View your site (without watch mode)
 
@@ -88,7 +85,6 @@ blog/
 ├── src/                   # Rust source code
 │   ├── main.rs           # CLI and build logic
 │   ├── config.rs         # Configuration loading
-│   ├── theme.rs          # Theme engine
 │   ├── types.rs          # Core types (Post, Category, etc.)
 │   ├── parser.rs         # Markdown + frontmatter parsing
 │   ├── renderer.rs       # Markdown → HTML rendering
@@ -105,16 +101,14 @@ blog/
 │       ├── chat/
 │       ├── gallery/
 │       └── tutorials/
-├── themes/               # Theme system
-│   └── default/          # Default theme
-│       ├── theme.yaml    # Theme metadata
-│       ├── base.html     # Base layout
-│       ├── post.html     # Post page
-│       ├── index.html    # Homepage
-│       ├── category.html # Category pages
-│       ├── tag.html      # Tag pages
-│       ├── tags.html     # Tags overview
-│       └── components/   # Reusable components
+├── templates/            # Tera HTML templates
+│   ├── base.html         # Base layout
+│   ├── post.html         # Post page
+│   ├── index.html        # Homepage
+│   ├── category.html     # Category pages
+│   ├── tag.html          # Tag pages
+│   ├── tags.html         # Tags overview
+│   └── components/       # Reusable components
 ├── static/               # Static assets (CSS, JS, images)
 │   ├── css/
 │   ├── js/
@@ -169,7 +163,7 @@ Options:
 Watches:
 
 - `content/` - Markdown posts
-- `themes/` - Theme templates and metadata
+- `templates/` - HTML templates
 - `static/` - CSS, JS, images
 
 The dev server automatically serves your site while watching for changes.
@@ -178,19 +172,13 @@ The dev server automatically serves your site while watching for changes.
 
 ### Site Configuration (config.yaml)
 
-The `config.yaml` file controls your site settings, theme selection, and build options:
+The `config.yaml` file controls your site settings and build options:
 
 ```yaml
 site:
   title: "My Blog"
   url: "https://example.com"
   author: "Your Name"
-
-theme:
-  name: "default" # Theme to use
-  variables: # Override theme variables
-    primary_color: "#3498db"
-    font_family: "Inter, sans-serif"
 
 build:
   content_dir: "content/posts" # Where your posts are
@@ -215,77 +203,6 @@ color: "#66b3ff" # Optional color
 ```
 
 See [CATEGORY_SYSTEM.md](./CATEGORY_SYSTEM.md) for complete documentation.
-
-## Theme System
-
-blog uses a powerful theme system that lets you customize your site's appearance without touching core code.
-
-### Using a Theme
-
-Select a theme in `config.yaml`:
-
-```yaml
-theme:
-  name: "default" # Use themes/default/
-```
-
-### Customizing Theme Variables
-
-Override theme colors, fonts, and other settings:
-
-```yaml
-theme:
-  name: "default"
-  variables:
-    primary_color: "#FF5733"
-    accent_color: "#C70039"
-    font_family: "'Fira Sans', sans-serif"
-    max_width: "1200px"
-```
-
-### Creating a Custom Theme
-
-1. **Create a theme directory:**
-
-   ```bash
-   mkdir -p themes/mytheme
-   ```
-
-2. **Create `theme.yaml`:**
-
-   ```yaml
-   name: "My Theme"
-   version: "1.0.0"
-   author: "Your Name"
-   parent: "default" # Inherit from default theme
-
-   variables:
-     primary_color: "#FF5733"
-
-   required_templates:
-     - base.html
-     - post.html
-     - index.html
-   ```
-
-3. **Override templates (optional):**
-
-   ```bash
-   # Only create templates you want to customize
-   cp themes/default/post.html themes/mytheme/post.html
-   # Edit themes/mytheme/post.html
-   ```
-
-4. **Activate your theme:**
-   ```yaml
-   # config.yaml
-   theme:
-     name: "mytheme"
-   ```
-
-**Theme Inheritance**: Child themes automatically fall back to parent theme templates, so you only need to override what changes!
-
-See [THEME_SYSTEM.md](./THEME_SYSTEM.md) for complete documentation and examples.
 
 ## Frontmatter Format
 
