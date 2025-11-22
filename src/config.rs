@@ -52,6 +52,9 @@ pub struct BuildConfig {
     /// Shows prev N/2, current, next N/2 pages
     #[serde(default = "default_pagination_window")]
     pub pagination_window: usize,
+    /// Number of posts to show on the homepage (default: posts_per_page)
+    #[serde(default)]
+    pub homepage_posts_limit: Option<usize>,
     /// Percent-encode filenames for URL safety (default: false)
     /// Set to true for compatibility with older web servers
     #[serde(default)]
@@ -89,6 +92,7 @@ impl Default for BuildConfig {
             output_dir: default_output_dir(),
             posts_per_page: default_posts_per_page(),
             pagination_window: default_pagination_window(),
+            homepage_posts_limit: None,
             encode_filenames: false,
             search: SearchConfig::default(),
         }

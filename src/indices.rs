@@ -1,11 +1,12 @@
 use crate::config::SsgConfig;
-use crate::metadata::MetadataCache;
+use crate::metadata::{MetadataCache, PostMetadata};
 use crate::plugin::{PluginContext, PluginManager};
 use crate::slug;
+use crate::types::Category;
 use anyhow::{Context, Result};
 use serde::Serialize;
 use serde_json::Value as JsonValue;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context as TeraContext, Tera, Value};
@@ -43,6 +44,13 @@ struct TemplateConfig<'a> {
     site_url: &'a str,
     author: &'a str,
     description: &'a str,
+}
+
+/// Category with its recent posts for homepage tabs
+#[derive(Debug, Clone, Serialize)]
+struct CategoryPosts<'a> {
+    category: &'a Category,
+    posts: Vec<&'a PostMetadata>,
 }
 
 pub struct IndexGenerator {
@@ -95,12 +103,38 @@ impl IndexGenerator {
         metadata: &MetadataCache,
         plugin_data: &HashMap<String, JsonValue>,
     ) -> Result<()> {
-        let recent_posts = metadata.get_recent_posts(10);
+        let posts_limit = self
+            .config
+            .build
+            .homepage_posts_limit
+            .unwrap_or(self.config.build.posts_per_page);
 
-        let visible_categories: Vec<_> = metadata
+        let mut visible_categories: Vec<_> = metadata
             .get_category_info()
             .iter()
             .filter(|c| !c.hidden)
+            .collect();
+        visible_categories.sort_by_key(|c| c.index);
+
+        let visible_category_slugs: HashSet<_> =
+            visible_categories.iter().map(|c| c.slug.as_str()).collect();
+
+        let all_recent_posts: Vec<_> = metadata
+            .get_recent_posts(posts_limit)
+            .into_iter()
+            .filter(|p| visible_category_slugs.contains(p.category.as_str()))
+            .collect();
+
+        let category_posts: Vec<CategoryPosts> = visible_categories
+            .iter()
+            .map(|cat| {
+                let mut posts = metadata.get_posts_by_category(&cat.slug);
+                posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+                CategoryPosts {
+                    category: cat,
+                    posts: posts.into_iter().take(posts_limit).collect(),
+                }
+            })
             .collect();
 
         let template_config = TemplateConfig {
@@ -111,7 +145,8 @@ impl IndexGenerator {
         };
 
         let mut context = TeraContext::new();
-        context.insert("posts", &recent_posts);
+        context.insert("posts", &all_recent_posts);
+        context.insert("category_posts", &category_posts);
         context.insert("categories", &visible_categories);
         context.insert("config", &template_config);
 
