@@ -421,8 +421,24 @@ impl IndexGenerator {
             None
         };
 
-        let prev_url = jump_prev_url.clone();
-        let next_url = jump_next_url.clone();
+        let prev_url = jump_prev_url.clone().or_else(|| {
+            if current_page > 1 {
+                Some(if current_page == 2 {
+                    base_url.to_string()
+                } else {
+                    format!("{}page/{}", base_url, current_page - 1)
+                })
+            } else {
+                None
+            }
+        });
+        let next_url = jump_next_url.clone().or_else(|| {
+            if current_page < total_pages {
+                Some(format!("{}page/{}", base_url, current_page + 1))
+            } else {
+                None
+            }
+        });
         let has_prev = prev_url.is_some();
         let has_next = next_url.is_some();
 
