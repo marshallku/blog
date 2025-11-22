@@ -2,6 +2,13 @@
 
 A blazing-fast, memory-efficient static site generator built in Rust for the marshallku blog.
 
+This is a **pnpm monorepo** containing:
+
+- **Rust SSG** - Core static site generator (`src/`)
+- **@blog/icon** - Icon font generator (`packages/icon/`)
+- **@blog/scripts** - TypeScript browser scripts (`packages/scripts/`)
+- **@blog/styles** - CSS processing with PostCSS (`packages/styles/`)
+
 ## Quick Start
 
 ### 1. Configure your site
@@ -81,7 +88,23 @@ miniserve dist
 
 ```
 blog/
+├── package.json           # pnpm workspace root
+├── pnpm-workspace.yaml    # Workspace configuration
+├── tsconfig.base.json     # Shared TypeScript config
+├── Cargo.toml             # Rust dependencies
 ├── config.yaml            # Site configuration (optional)
+│
+├── packages/              # Frontend tooling packages
+│   ├── icon/              # @blog/icon - Icon font generator
+│   │   ├── src/icons/     # SVG source files
+│   │   └── dist/          # Generated fonts + CSS
+│   ├── scripts/           # @blog/scripts - TypeScript
+│   │   ├── src/           # TypeScript source
+│   │   └── dist/          # Bundled JS
+│   └── styles/            # @blog/styles - CSS processing
+│       ├── src/           # CSS source (PostCSS)
+│       └── dist/          # Minified CSS
+│
 ├── src/                   # Rust source code
 │   ├── main.rs           # CLI and build logic
 │   ├── config.rs         # Configuration loading
@@ -167,6 +190,78 @@ Watches:
 - `static/` - CSS, JS, images
 
 The dev server automatically serves your site while watching for changes.
+
+## Frontend Tooling
+
+The monorepo includes TypeScript packages for icons, scripts, and CSS. These are built separately from the Rust SSG.
+
+### Setup
+
+```bash
+# Install pnpm and node with mise
+mise install
+
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm build
+```
+
+### Package Commands
+
+```bash
+# Build all packages
+pnpm build
+
+# Watch mode for all packages
+pnpm dev
+
+# Clean all dist folders
+pnpm clean
+
+# TypeScript type checking
+pnpm typecheck
+```
+
+### Individual Packages
+
+**@blog/icon** - Icon font generator
+
+```bash
+cd packages/icon
+pnpm build      # Generate icon fonts from SVGs
+pnpm dev        # Watch mode
+```
+
+**@blog/scripts** - TypeScript browser scripts
+
+```bash
+cd packages/scripts
+pnpm build      # Bundle TypeScript to minified JS
+pnpm dev        # Watch mode
+```
+
+**@blog/styles** - CSS processing
+
+```bash
+cd packages/styles
+pnpm build      # Process and minify CSS
+pnpm dev        # Watch mode
+pnpm lint       # Run stylelint
+```
+
+### Deploying Assets
+
+After building packages, copy outputs to `static/`:
+
+```bash
+# Copy built assets to static directory
+cp packages/icon/dist/icons.css static/css/
+cp packages/icon/dist/icons.woff* static/fonts/
+cp packages/scripts/dist/bundle.js static/js/
+cp packages/styles/dist/theme.css static/css/
+```
 
 ## Configuration
 

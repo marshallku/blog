@@ -13,7 +13,7 @@ pub struct PluginContext<'a> {
     pub metadata: &'a MetadataCache,
 }
 
-/// Plugin trait for extending ssdocs functionality
+/// Plugin trait for extending blog functionality
 pub trait Plugin: Send + Sync {
     /// Plugin name (must be unique)
     fn name(&self) -> &str;
