@@ -15,6 +15,7 @@ mod renderer;
 mod search;
 mod shortcodes;
 mod slug;
+mod syntax_highlighter;
 mod theme;
 mod types;
 

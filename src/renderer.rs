@@ -1,15 +1,13 @@
 use anyhow::Result;
 use pulldown_cmark::{html, Options, Parser as MdParser};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use syntect::highlighting::{Theme, ThemeSet};
-use syntect::html::{css_for_theme_with_class_style, ClassStyle, ClassedHTMLGenerator};
-use syntect::parsing::SyntaxSet;
-use syntect::util::LinesWithEndings;
 use tera::{Context, Tera};
 
 use crate::image::ImageProcessor;
+use crate::syntax_highlighter::TreeSitterHighlighter;
 
 const COMPONENT_TAGS: &[&str] = &[
     "img",
@@ -34,15 +32,15 @@ const COMPONENT_TAGS: &[&str] = &[
 ];
 
 pub struct Renderer {
-    syntax_set: SyntaxSet,
-    theme_set: ThemeSet,
+    highlighter: RefCell<TreeSitterHighlighter>,
 }
 
 impl Renderer {
     pub fn new() -> Self {
         Self {
-            syntax_set: SyntaxSet::load_defaults_newlines(),
-            theme_set: ThemeSet::load_defaults(),
+            highlighter: RefCell::new(
+                TreeSitterHighlighter::new().expect("Failed to initialize syntax highlighter"),
+            ),
         }
     }
 
@@ -561,122 +559,92 @@ impl Renderer {
     }
 
     pub fn highlight_code(&self, code: &str, lang: &str) -> Result<String> {
-        // Map TypeScript-related languages to JavaScript as fallback
-        let lang = match lang {
-            "typescript" | "ts" | "tsx" => "javascript",
-            "jsx" => "javascript",
-            other => other,
-        };
-
-        let syntax = self
-            .syntax_set
-            .find_syntax_by_token(lang)
-            .or_else(|| self.syntax_set.find_syntax_by_extension(lang))
-            .unwrap_or_else(|| self.syntax_set.find_syntax_plain_text());
-
-        // Use ClassedHTMLGenerator for CSS class-based highlighting
-        let mut html_generator = ClassedHTMLGenerator::new_with_class_style(
-            syntax,
-            &self.syntax_set,
-            ClassStyle::Spaced,
-        );
-
-        for line in LinesWithEndings::from(code) {
-            html_generator.parse_html_for_line_which_includes_newline(line)?;
-        }
-
-        Ok(format!(
-            "<pre class=\"syntax-highlight\"><code>{}</code></pre>",
-            html_generator.finalize()
-        ))
+        self.highlighter.borrow_mut().highlight(code, lang)
     }
 
     /// Generate CSS for syntax highlighting themes
     pub fn generate_theme_css(&self) -> Result<String> {
-        let mut css = String::new();
+        let mut css = String::with_capacity(8192);
 
-        // CSS Variables for theming
         css.push_str(":root {\n");
         css.push_str("  color-scheme: light dark;\n");
         css.push_str("}\n\n");
 
-        // Light theme (default)
-        css.push_str("/* Light theme */\n");
+        // Light theme
         css.push_str("@media (prefers-color-scheme: light) {\n");
         css.push_str("  :root {\n");
-        let light_theme = &self.theme_set.themes["base16-ocean.light"];
-        Self::add_theme_variables(&mut css, light_theme, "    ");
+        css.push_str("    --syntax-bg: #ffffff;\n");
+        css.push_str("    --syntax-fg: #24292e;\n");
+        css.push_str("    --syntax-comment: #6a737d;\n");
+        css.push_str("    --syntax-string: #032f62;\n");
+        css.push_str("    --syntax-keyword: #d73a49;\n");
+        css.push_str("    --syntax-function: #6f42c1;\n");
+        css.push_str("    --syntax-type: #005cc5;\n");
+        css.push_str("    --syntax-constant: #005cc5;\n");
+        css.push_str("    --syntax-variable: #24292e;\n");
+        css.push_str("    --syntax-operator: #d73a49;\n");
+        css.push_str("    --syntax-property: #005cc5;\n");
         css.push_str("  }\n");
         css.push_str("}\n\n");
 
         // Dark theme
-        css.push_str("/* Dark theme */\n");
         css.push_str("@media (prefers-color-scheme: dark) {\n");
         css.push_str("  :root {\n");
-        let dark_theme = &self.theme_set.themes["base16-ocean.dark"];
-        Self::add_theme_variables(&mut css, dark_theme, "    ");
+        css.push_str("    --syntax-bg: #1e1e1e;\n");
+        css.push_str("    --syntax-fg: #d4d4d4;\n");
+        css.push_str("    --syntax-comment: #6a9955;\n");
+        css.push_str("    --syntax-string: #ce9178;\n");
+        css.push_str("    --syntax-keyword: #569cd6;\n");
+        css.push_str("    --syntax-function: #dcdcaa;\n");
+        css.push_str("    --syntax-type: #4ec9b0;\n");
+        css.push_str("    --syntax-constant: #4fc1ff;\n");
+        css.push_str("    --syntax-variable: #9cdcfe;\n");
+        css.push_str("    --syntax-operator: #d4d4d4;\n");
+        css.push_str("    --syntax-property: #9cdcfe;\n");
         css.push_str("  }\n");
         css.push_str("}\n\n");
 
-        // Generate base CSS for syntax classes using dark theme as reference
-        let dark_theme = &self.theme_set.themes["base16-ocean.dark"];
-        let theme_css = css_for_theme_with_class_style(dark_theme, ClassStyle::Spaced)?;
-
-        // Convert to CSS variables
-        css.push_str(&Self::convert_css_to_variables(&theme_css));
-
-        // Add base styles
-        css.push_str("\n.syntax-highlight {\n");
+        // Base styles
+        css.push_str(".syntax-highlight {\n");
         css.push_str("  background-color: var(--syntax-bg);\n");
         css.push_str("  color: var(--syntax-fg);\n");
         css.push_str("  padding: 1em;\n");
         css.push_str("  overflow-x: auto;\n");
         css.push_str("  border-radius: 4px;\n");
         css.push_str("}\n\n");
+
         css.push_str(".syntax-highlight code {\n");
         css.push_str("  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n");
         css.push_str("  font-size: 0.9em;\n");
-        css.push_str("  line-height: 1.2;\n");
-        css.push_str("}\n");
+        css.push_str("  line-height: 1.5;\n");
+        css.push_str("}\n\n");
+
+        // Syntax highlighting classes
+        css.push_str(
+            ".syntax-highlight .comment { color: var(--syntax-comment); font-style: italic; }\n",
+        );
+        css.push_str(".syntax-highlight .string { color: var(--syntax-string); }\n");
+        css.push_str(".syntax-highlight .string.special { color: var(--syntax-string); }\n");
+        css.push_str(
+            ".syntax-highlight .keyword { color: var(--syntax-keyword); font-weight: bold; }\n",
+        );
+        css.push_str(".syntax-highlight .function { color: var(--syntax-function); }\n");
+        css.push_str(".syntax-highlight .function.builtin { color: var(--syntax-function); }\n");
+        css.push_str(".syntax-highlight .type { color: var(--syntax-type); }\n");
+        css.push_str(".syntax-highlight .type.builtin { color: var(--syntax-type); }\n");
+        css.push_str(".syntax-highlight .constant { color: var(--syntax-constant); }\n");
+        css.push_str(".syntax-highlight .variable { color: var(--syntax-variable); }\n");
+        css.push_str(".syntax-highlight .variable.builtin { color: var(--syntax-variable); }\n");
+        css.push_str(".syntax-highlight .variable.parameter { color: var(--syntax-variable); }\n");
+        css.push_str(".syntax-highlight .operator { color: var(--syntax-operator); }\n");
+        css.push_str(".syntax-highlight .property { color: var(--syntax-property); }\n");
+        css.push_str(".syntax-highlight .attribute { color: var(--syntax-property); }\n");
+        css.push_str(".syntax-highlight .tag { color: var(--syntax-keyword); }\n");
+        css.push_str(".syntax-highlight .punctuation { color: var(--syntax-fg); }\n");
+        css.push_str(".syntax-highlight .punctuation.bracket { color: var(--syntax-fg); }\n");
+        css.push_str(".syntax-highlight .punctuation.delimiter { color: var(--syntax-fg); }\n");
 
         Ok(css)
-    }
-
-    fn add_theme_variables(css: &mut String, theme: &Theme, indent: &str) {
-        css.push_str(&format!(
-            "{}--syntax-bg: {};\n",
-            indent,
-            Self::color_to_css(
-                &theme
-                    .settings
-                    .background
-                    .unwrap_or(syntect::highlighting::Color::WHITE)
-            )
-        ));
-        css.push_str(&format!(
-            "{}--syntax-fg: {};\n",
-            indent,
-            Self::color_to_css(
-                &theme
-                    .settings
-                    .foreground
-                    .unwrap_or(syntect::highlighting::Color::BLACK)
-            )
-        ));
-    }
-
-    fn color_to_css(color: &syntect::highlighting::Color) -> String {
-        format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b)
-    }
-
-    fn convert_css_to_variables(css: &str) -> String {
-        // Replace hardcoded colors with CSS variables in the generated CSS
-        // This is a simplified version - we'll use the variables defined above
-        css.replace(
-            "background-color:#",
-            "background-color: var(--syntax-bg); /* #",
-        )
-        .replace("color:#", "color: var(--syntax-fg); /* #")
     }
 
     /// Write syntax highlighting CSS to file
@@ -780,10 +748,7 @@ mod tests {
 
     #[test]
     fn test_resolve_path_parent_dir() {
-        assert_eq!(
-            Renderer::resolve_path("../image.png", "chat"),
-            "/image.png"
-        );
+        assert_eq!(Renderer::resolve_path("../image.png", "chat"), "/image.png");
         assert_eq!(
             Renderer::resolve_path("../../image.png", "chat"),
             "/image.png"
