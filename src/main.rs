@@ -219,6 +219,17 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         post.rendered_html = Some(html);
 
+        post.frontmatter.cover_image = post
+            .frontmatter
+            .cover_image
+            .take()
+            .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
+        post.frontmatter.og_image = post
+            .frontmatter
+            .og_image
+            .take()
+            .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
+
         let mut plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
 
         let navigation = build_post_navigation(&post.slug, &post.category, &metadata, false);
@@ -670,6 +681,17 @@ fn process_post_parallel(
     };
 
     post.rendered_html = Some(html);
+
+    post.frontmatter.cover_image = post
+        .frontmatter
+        .cover_image
+        .take()
+        .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
+    post.frontmatter.og_image = post
+        .frontmatter
+        .og_image
+        .take()
+        .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
 
     let mut plugin_data = std::collections::HashMap::new();
     let navigation = build_post_navigation(&post.slug, &post.category, metadata, false);

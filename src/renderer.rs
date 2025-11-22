@@ -342,7 +342,7 @@ impl Renderer {
         matches!(attr, "src" | "href" | "data" | "poster" | "srcset")
     }
 
-    fn resolve_path(path: &str, category: &str) -> String {
+    pub fn resolve_path(path: &str, base_path: &str) -> String {
         let trimmed = path.trim();
 
         if trimmed.is_empty() {
@@ -374,22 +374,22 @@ impl Renderer {
             let relative_path = relative_path.trim_start_matches('/');
 
             if relative_path.is_empty() {
-                return if category.is_empty() {
+                return if base_path.is_empty() {
                     "/".to_string()
                 } else {
-                    format!("/{}", category)
+                    format!("/{}", base_path)
                 };
             }
 
-            return if category.is_empty() {
+            return if base_path.is_empty() {
                 format!("/{}", relative_path)
             } else {
-                format!("/{}/{}", category, relative_path)
+                format!("/{}/{}", base_path, relative_path)
             };
         }
 
         if trimmed.starts_with("../") {
-            let base_parts: Vec<&str> = category.split('/').filter(|s| !s.is_empty()).collect();
+            let base_parts: Vec<&str> = base_path.split('/').filter(|s| !s.is_empty()).collect();
 
             let mut remaining_path = trimmed;
             let mut up_count = 0;
@@ -424,10 +424,10 @@ impl Renderer {
         }
 
         let trimmed = trimmed.trim_start_matches('/');
-        if category.is_empty() {
+        if base_path.is_empty() {
             format!("/{}", trimmed)
         } else {
-            format!("/{}/{}", category, trimmed)
+            format!("/{}/{}", base_path, trimmed)
         }
     }
 
