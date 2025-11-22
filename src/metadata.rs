@@ -83,6 +83,14 @@ impl MetadataCache {
             .collect()
     }
 
+    pub fn get_posts_by_category_tree(&self, category: &str) -> Vec<&PostMetadata> {
+        let prefix = format!("{}/", category);
+        self.posts
+            .iter()
+            .filter(|p| p.category == category || p.category.starts_with(&prefix))
+            .collect()
+    }
+
     pub fn get_posts_by_tag(&self, tag: &str) -> Vec<&PostMetadata> {
         self.posts
             .iter()

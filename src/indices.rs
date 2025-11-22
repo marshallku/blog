@@ -168,7 +168,7 @@ impl IndexGenerator {
         metadata: &MetadataCache,
         plugin_data: &HashMap<String, JsonValue>,
     ) -> Result<()> {
-        let mut posts = metadata.get_posts_by_category(&category_info.slug);
+        let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
 
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 

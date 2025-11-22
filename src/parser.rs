@@ -27,19 +27,42 @@ impl Parser {
     fn extract_category(path: &Path) -> Result<String> {
         let components: Vec<_> = path.components().collect();
 
+        let mut posts_index = None;
         for i in 0..components.len() {
             if let std::path::Component::Normal(comp) = components[i] {
-                if comp == "posts" && i + 1 < components.len() {
-                    if let std::path::Component::Normal(category) = components[i + 1] {
-                        return category.to_str().map(|s| s.to_string()).ok_or_else(|| {
-                            anyhow::anyhow!("Invalid category name in path: {}", path.display())
-                        });
-                    }
+                if comp == "posts" {
+                    posts_index = Some(i);
+                    break;
                 }
             }
         }
 
-        anyhow::bail!("Could not extract category from path: {}. Expected path format: content/posts/<category>/...", path.display())
+        let posts_idx = posts_index.ok_or_else(|| {
+            anyhow::anyhow!(
+                "Could not find 'posts' in path: {}. Expected format: content/posts/<category>/...",
+                path.display()
+            )
+        })?;
+
+        let category_parts: Vec<&str> = components[posts_idx + 1..components.len() - 1]
+            .iter()
+            .filter_map(|c| {
+                if let std::path::Component::Normal(s) = c {
+                    s.to_str()
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if category_parts.is_empty() {
+            anyhow::bail!(
+                "Could not extract category from path: {}. Expected format: content/posts/<category>/...",
+                path.display()
+            )
+        }
+
+        Ok(category_parts.join("/"))
     }
 
     pub fn parse_page_file(path: &Path) -> Result<Page> {

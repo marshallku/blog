@@ -6,33 +6,7 @@ use crate::types::Category;
 
 pub fn discover_categories(content_dir: &Path) -> Result<Vec<Category>> {
     let mut categories = Vec::new();
-
-    for entry in fs::read_dir(content_dir).with_context(|| {
-        format!(
-            "Failed to read content directory: {}",
-            content_dir.display()
-        )
-    })? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if !path.is_dir() || is_hidden(&path) {
-            continue;
-        }
-
-        if !has_markdown_files(&path)? {
-            continue;
-        }
-
-        let slug = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .ok_or_else(|| anyhow::anyhow!("Invalid directory name: {}", path.display()))?
-            .to_string();
-
-        let category = load_category_metadata(&path, &slug)?;
-        categories.push(category);
-    }
+    discover_categories_recursive(content_dir, content_dir, None, &mut categories)?;
 
     categories.sort_by(|a, b| match a.index.cmp(&b.index) {
         std::cmp::Ordering::Equal => a.name.cmp(&b.name),
@@ -42,7 +16,47 @@ pub fn discover_categories(content_dir: &Path) -> Result<Vec<Category>> {
     Ok(categories)
 }
 
-fn load_category_metadata(dir: &Path, slug: &str) -> Result<Category> {
+fn discover_categories_recursive(
+    base_dir: &Path,
+    current_dir: &Path,
+    parent_category: Option<&Category>,
+    categories: &mut Vec<Category>,
+) -> Result<()> {
+    for entry in fs::read_dir(current_dir).with_context(|| {
+        format!(
+            "Failed to read content directory: {}",
+            current_dir.display()
+        )
+    })? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if !path.is_dir() || is_hidden(&path) {
+            continue;
+        }
+
+        if !has_markdown_files_recursive(&path)? {
+            continue;
+        }
+
+        let slug = path
+            .strip_prefix(base_dir)
+            .map_err(|_| anyhow::anyhow!("Path is not under base directory"))?
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("Invalid directory name: {}", path.display()))?
+            .to_string();
+
+        let category = load_category_metadata(&path, &slug, parent_category)?;
+
+        discover_categories_recursive(base_dir, &path, Some(&category), categories)?;
+
+        categories.push(category);
+    }
+
+    Ok(())
+}
+
+fn load_category_metadata(dir: &Path, slug: &str, parent: Option<&Category>) -> Result<Category> {
     let metadata_path = dir.join(".category.yaml");
 
     let mut category = if metadata_path.exists() {
@@ -55,9 +69,10 @@ fn load_category_metadata(dir: &Path, slug: &str) -> Result<Category> {
         serde_yaml::from_str::<Category>(&content)
             .with_context(|| format!("Failed to parse .category.yaml in '{}'", dir.display()))?
     } else {
+        let name_part = slug.rsplit('/').next().unwrap_or(slug);
         Category {
             slug: slug.to_string(),
-            name: capitalize(slug),
+            name: capitalize(name_part),
             description: String::new(),
             index: 999,
             hidden: false,
@@ -68,6 +83,13 @@ fn load_category_metadata(dir: &Path, slug: &str) -> Result<Category> {
     };
 
     category.slug = slug.to_string();
+
+    // Inherit hidden status from parent if parent is hidden
+    if let Some(parent) = parent {
+        if parent.hidden && !category.hidden {
+            category.hidden = true;
+        }
+    }
 
     Ok(category)
 }
@@ -90,6 +112,24 @@ fn has_markdown_files(dir: &Path) -> Result<bool> {
             }
         }
     }
+    Ok(false)
+}
+
+fn has_markdown_files_recursive(dir: &Path) -> Result<bool> {
+    if has_markdown_files(dir)? {
+        return Ok(true);
+    }
+
+    // Check subdirectories recursively
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.is_dir() && !is_hidden(&path) {
+            if has_markdown_files_recursive(&path)? {
+                return Ok(true);
+            }
+        }
+    }
+
     Ok(false)
 }
 
@@ -143,10 +183,35 @@ index: 0
         "#;
         fs::write(cat_dir.join(".category.yaml"), yaml).unwrap();
 
-        let category = load_category_metadata(&cat_dir, "dev").unwrap();
+        let category = load_category_metadata(&cat_dir, "dev", None).unwrap();
         assert_eq!(category.name, "Development");
         assert_eq!(category.description, "Tech posts");
         assert_eq!(category.index, 0);
+    }
+
+    #[test]
+    fn test_nested_category_hidden_inheritance() {
+        let temp = TempDir::new().unwrap();
+        let content = temp.path();
+
+        // Create parent category with hidden: true
+        let parent_dir = content.join("work");
+        fs::create_dir(&parent_dir).unwrap();
+        fs::write(parent_dir.join(".category.yaml"), "hidden: true").unwrap();
+
+        // Create nested category without its own .category.yaml
+        let nested_dir = parent_dir.join("other");
+        fs::create_dir(&nested_dir).unwrap();
+        fs::write(nested_dir.join("post.md"), "# Test").unwrap();
+
+        let categories = discover_categories(content).unwrap();
+
+        // Both categories should be hidden
+        let work = categories.iter().find(|c| c.slug == "work").unwrap();
+        let work_other = categories.iter().find(|c| c.slug == "work/other").unwrap();
+
+        assert!(work.hidden);
+        assert!(work_other.hidden); // Should inherit hidden from parent
     }
 
     #[test]

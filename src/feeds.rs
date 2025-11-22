@@ -147,7 +147,7 @@ impl FeedGenerator {
 
         for category_slug in categories {
             let mut category_posts: Vec<_> = metadata
-                .get_posts_by_category(&category_slug)
+                .get_posts_by_category_tree(&category_slug)
                 .into_iter()
                 .filter(|p| !p.frontmatter.hidden)
                 .collect();
