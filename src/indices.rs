@@ -42,6 +42,7 @@ struct TemplateConfig<'a> {
     site_title: &'a str,
     site_url: &'a str,
     author: &'a str,
+    description: &'a str,
 }
 
 pub struct IndexGenerator {
@@ -106,6 +107,7 @@ impl IndexGenerator {
             site_title: &self.config.site.title,
             site_url: &self.config.site.url,
             author: &self.config.site.author,
+            description: &self.config.site.description,
         };
 
         let mut context = TeraContext::new();
@@ -155,6 +157,7 @@ impl IndexGenerator {
             site_title: &self.config.site.title,
             site_url: &self.config.site.url,
             author: &self.config.site.author,
+            description: &self.config.site.description,
         };
 
         for page_num in 1..=total_pages {
@@ -231,6 +234,7 @@ impl IndexGenerator {
             site_title: &self.config.site.title,
             site_url: &self.config.site.url,
             author: &self.config.site.author,
+            description: &self.config.site.description,
         };
 
         for page_num in 1..=total_pages {
@@ -297,6 +301,7 @@ impl IndexGenerator {
             site_title: &self.config.site.title,
             site_url: &self.config.site.url,
             author: &self.config.site.author,
+            description: &self.config.site.description,
         };
 
         let mut context = TeraContext::new();

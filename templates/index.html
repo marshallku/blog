@@ -10,9 +10,9 @@
     <div class="post-list">
         {% for post_meta in posts %}
         <article class="post-preview">
-            {% if post_meta.frontmatter.featured_image %}
+            {% if post_meta.frontmatter.cover_image %}
             <a href="/{{ post_meta.category }}/{{ post_meta.slug }}">
-                <img src="{{ post_meta.frontmatter.featured_image }}" alt="{{ post_meta.frontmatter.title }}" class="preview-image">
+                <img src="{{ post_meta.frontmatter.cover_image }}" alt="{{ post_meta.frontmatter.title }}" class="preview-image">
             </a>
             {% endif %}
 

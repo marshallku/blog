@@ -15,6 +15,7 @@ struct TemplateConfig<'a> {
     site_title: &'a str,
     site_url: &'a str,
     author: &'a str,
+    description: &'a str,
 }
 
 pub struct Generator {
@@ -43,6 +44,7 @@ impl Generator {
             site_title: &self.config.site.title,
             site_url: &self.config.site.url,
             author: &self.config.site.author,
+            description: &self.config.site.description,
         };
 
         let mut context = TeraContext::new();
@@ -79,6 +81,7 @@ impl Generator {
             site_title: &self.config.site.title,
             site_url: &self.config.site.url,
             author: &self.config.site.author,
+            description: &self.config.site.description,
         };
 
         let mut context = TeraContext::new();

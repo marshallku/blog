@@ -16,8 +16,8 @@
     {% if post.frontmatter.description %}
     <meta property="og:description" content="{{ post.frontmatter.description }}">
     {% endif %}
-    {% if post.frontmatter.featured_image %}
-    <meta property="og:image" content="{{ config.site_url }}{{ post.frontmatter.featured_image }}">
+    {% if post.frontmatter.cover_image %}
+    <meta property="og:image" content="{{ config.site_url }}{{ post.frontmatter.cover_image }}">
     {% endif %}
     <meta property="article:published_time" content="{{ post.frontmatter.date.posted }}">
     {% if post.frontmatter.date.modified %}
@@ -29,13 +29,13 @@
     <meta property="article:tag" content="{{ tag }}">
     {% endfor %}
 
-    <meta name="twitter:card" content="{% if post.frontmatter.featured_image %}summary_large_image{% else %}summary{% endif %}">
+    <meta name="twitter:card" content="{% if post.frontmatter.cover_image %}summary_large_image{% else %}summary{% endif %}">
     <meta name="twitter:title" content="{{ post.frontmatter.title }}">
     {% if post.frontmatter.description %}
     <meta name="twitter:description" content="{{ post.frontmatter.description }}">
     {% endif %}
-    {% if post.frontmatter.featured_image %}
-    <meta name="twitter:image" content="{{ config.site_url }}{{ post.frontmatter.featured_image }}">
+    {% if post.frontmatter.cover_image %}
+    <meta name="twitter:image" content="{{ config.site_url }}{{ post.frontmatter.cover_image }}">
     {% endif %}
 
     <script type="application/ld+json">
@@ -53,8 +53,8 @@
         {% if post.frontmatter.description %}
         "description": "{{ post.frontmatter.description }}",
         {% endif %}
-        {% if post.frontmatter.featured_image %}
-        "image": "{{ config.site_url }}{{ post.frontmatter.featured_image }}",
+        {% if post.frontmatter.cover_image %}
+        "image": "{{ config.site_url }}{{ post.frontmatter.cover_image }}",
         {% endif %}
         "author": {
             "@type": "Person",
@@ -76,8 +76,8 @@
 {% block content %}
 <article class="post">
     <header class="post-header">
-        {% if post.frontmatter.featured_image %}
-        <img src="{{ post.frontmatter.featured_image }}" alt="{{ post.frontmatter.title }}" class="featured-image">
+        {% if post.frontmatter.cover_image %}
+        <img src="{{ post.frontmatter.cover_image }}" alt="{{ post.frontmatter.title }}" class="featured-image">
         {% endif %}
 
         <h1 class="post-title">{{ post.frontmatter.title }}</h1>

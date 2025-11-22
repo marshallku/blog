@@ -6,6 +6,7 @@ site:
   title: "Marshall Ku's blog"
   url: "https://marshallku.com"
   author: "Marshall K"
+  description: "웹 개발과 관련된 내용을 다룹니다."
 
 # Build configuration
 build:
@@ -16,4 +17,4 @@ build:
   output_dir: "dist"
 
   # Number of posts per page (for pagination)
-  posts_per_page: 10
+  posts_per_page: 9
