@@ -6,6 +6,12 @@ Cargo.lock
 /dist
 /.build-cache
 
+# Node.js
+node_modules/
+packages/*/dist/
+pnpm-lock.yaml
+*.tsbuildinfo
+
 # IDE
 .vscode/
 .idea/
