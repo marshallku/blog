@@ -1,0 +1,25 @@
+@font-face {
+  font-family: "{{name}}";
+  src: url("{{fontsUrl}}{{name}}.woff2") format("woff2"),
+       url("{{fontsUrl}}{{name}}.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+{{selector}} {
+  font-family: "{{name}}" !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+{{#each codepoints}}
+{{../selector}}-{{@key}}::before {
+  content: "\\{{this}}";
+}
+{{/each}}
