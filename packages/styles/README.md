@@ -14,7 +14,7 @@ pnpm lint    # Run stylelint
 
 ### Build Output
 
-- `dist/theme.css` - Minified, autoprefixed CSS bundle
+-   `dist/theme.css` - Minified, auto-prefixed CSS bundle
 
 ### Using in HTML
 
@@ -44,12 +44,12 @@ src/
 
 ## Features
 
-- **PostCSS** - Modern CSS processing
-- **Autoprefixer** - Auto vendor prefixes
-- **postcss-nested** - Sass-like nesting
-- **postcss-import** - Combine CSS files
-- **cssnano** - Production minification
-- **Stylelint** - CSS linting
+-   **PostCSS** - Modern CSS processing
+-   **Autoprefixer** - Auto vendor prefixes
+-   **postcss-nested** - Sass-like nesting
+-   **postcss-import** - Combine CSS files
+-   **cssnano** - Production minification
+-   **Stylelint** - CSS linting
 
 ## CSS Variables
 
@@ -57,10 +57,10 @@ All theme values use CSS custom properties for easy customization:
 
 ```css
 :root {
-  --color-primary: #0066cc;
-  --color-bg: #ffffff;
-  --spacing-md: 1rem;
-  /* etc. */
+    --color-primary: #0066cc;
+    --color-bg: #ffffff;
+    --spacing-md: 1rem;
+    /* etc. */
 }
 ```
 
