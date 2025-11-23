@@ -44,16 +44,6 @@ impl Renderer {
         }
     }
 
-    pub fn render_markdown(&self, markdown: &str) -> String {
-        let options = Options::all();
-        let parser = MdParser::new_ext(markdown, options);
-
-        let mut html_output = String::with_capacity(markdown.len() * 2);
-        html::push_html(&mut html_output, parser);
-
-        self.highlight_code_blocks(&html_output)
-    }
-
     pub fn render_markdown_with_components(
         &self,
         markdown: &str,
@@ -664,6 +654,16 @@ impl Default for Renderer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    impl Renderer {
+        fn render_markdown(&self, markdown: &str) -> String {
+            let options = Options::all();
+            let parser = MdParser::new_ext(markdown, options);
+            let mut html_output = String::with_capacity(markdown.len() * 2);
+            html::push_html(&mut html_output, parser);
+            self.highlight_code_blocks(&html_output)
+        }
+    }
 
     #[test]
     fn test_render_markdown() {
