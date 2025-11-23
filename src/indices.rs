@@ -1,4 +1,4 @@
-use crate::config::SsgConfig;
+use crate::config::{AssetsConfig, SsgConfig};
 use crate::metadata::{MetadataCache, PostMetadata};
 use crate::plugin::{PluginContext, PluginManager};
 use crate::slug;
@@ -44,6 +44,7 @@ struct TemplateConfig<'a> {
     site_url: &'a str,
     author: &'a str,
     description: &'a str,
+    assets: &'a AssetsConfig,
 }
 
 /// Category with its recent posts for homepage tabs
@@ -142,6 +143,7 @@ impl IndexGenerator {
             site_url: &self.config.site.url,
             author: &self.config.site.author,
             description: &self.config.site.description,
+            assets: &self.config.assets,
         };
 
         let mut context = TeraContext::new();
@@ -193,6 +195,7 @@ impl IndexGenerator {
             site_url: &self.config.site.url,
             author: &self.config.site.author,
             description: &self.config.site.description,
+            assets: &self.config.assets,
         };
 
         for page_num in 1..=total_pages {
@@ -270,6 +273,7 @@ impl IndexGenerator {
             site_url: &self.config.site.url,
             author: &self.config.site.author,
             description: &self.config.site.description,
+            assets: &self.config.assets,
         };
 
         for page_num in 1..=total_pages {
@@ -337,6 +341,7 @@ impl IndexGenerator {
             site_url: &self.config.site.url,
             author: &self.config.site.author,
             description: &self.config.site.description,
+            assets: &self.config.assets,
         };
 
         let mut context = TeraContext::new();

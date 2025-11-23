@@ -4,10 +4,10 @@ A blazing-fast, memory-efficient static site generator built in Rust for the mar
 
 This is a **pnpm monorepo** containing:
 
-- **Rust SSG** - Core static site generator (`src/`)
-- **@blog/icon** - Icon font generator (`packages/icon/`)
-- **@blog/scripts** - TypeScript browser scripts (`packages/scripts/`)
-- **@blog/styles** - CSS processing with PostCSS (`packages/styles/`)
+-   **Rust SSG** - Core static site generator (`src/`)
+-   **@blog/icon** - Icon font generator (`packages/icon/`)
+-   **@blog/scripts** - TypeScript browser scripts (`packages/scripts/`)
+-   **@blog/styles** - CSS processing with PostCSS (`packages/styles/`)
 
 ## Quick Start
 
@@ -17,14 +17,14 @@ Create a `config.yaml` file in the project root:
 
 ```yaml
 site:
-  title: "My Blog"
-  url: "https://example.com"
-  author: "Your Name"
+    title: "My Blog"
+    url: "https://example.com"
+    author: "Your Name"
 
 build:
-  content_dir: "content/posts"
-  output_dir: "dist"
-  posts_per_page: 10
+    content_dir: "content/posts"
+    output_dir: "dist"
+    posts_per_page: 10
 ```
 
 If you don't create a config file, blog will use sensible defaults.
@@ -147,8 +147,8 @@ Build all posts in `content/posts/`.
 
 Options:
 
-- `--incremental`, `-i` - Use cache to skip unchanged files
-- `--post <path>`, `-p <path>` - Build only a specific post
+-   `--incremental`, `-i` - Use cache to skip unchanged files
+-   `--post <path>`, `-p <path>` - Build only a specific post
 
 ### `blog new`
 
@@ -181,13 +181,13 @@ blog watch [--port <port>]
 
 Options:
 
-- `--port <port>`, `-p <port>` - Port for dev server (default: 8080)
+-   `--port <port>`, `-p <port>` - Port for dev server (default: 8080)
 
 Watches:
 
-- `content/` - Markdown posts
-- `templates/` - HTML templates
-- `static/` - CSS, JS, images
+-   `content/` - Markdown posts
+-   `templates/` - HTML templates
+-   `static/` - CSS, JS, images
 
 The dev server automatically serves your site while watching for changes.
 
@@ -253,15 +253,57 @@ pnpm lint       # Run stylelint
 
 ### Deploying Assets
 
-After building packages, copy outputs to `static/`:
+Use the automated build script to build, generate manifest, and copy versioned assets:
 
 ```bash
-# Copy built assets to static directory
-cp packages/icon/dist/icons.css static/css/
-cp packages/icon/dist/icons.woff* static/fonts/
-cp packages/scripts/dist/bundle.js static/js/
-cp packages/styles/dist/theme.css static/css/
+# Build all packages, generate manifest.json, and copy to static/
+pnpm build:assets
 ```
+
+This creates versioned directories in `static/`:
+
+```
+static/
+├── styles/0.1.0/theme.css
+├── scripts/0.1.0/bundle.js
+└── icon/0.1.0/icons.css, icons.woff, icons.woff2
+```
+
+### Version Management (Changesets)
+
+Uses `@changesets/cli` for semantic versioning:
+
+```bash
+# Create a changeset for your changes
+pnpm changeset
+
+# Bump versions and update manifest.json
+pnpm version
+
+# Build and deploy new versions
+pnpm build:assets
+```
+
+The Rust SSG reads `manifest.json` and passes asset paths to templates via `config.assets`.
+Templates reference versioned paths like `{{ config.assets.styles.theme }}`.
+
+### Adding New Scripts/Assets
+
+To add new assets without modifying Rust code, update the package's `package.json`:
+
+```json
+{
+    "blog": {
+        "assets": {
+            "bundle": "bundle.js",
+            "search": "search.js",
+            "gallery": "gallery.js"
+        }
+    }
+}
+```
+
+Run `pnpm manifest` to regenerate paths. Templates access via `{{ config.assets.scripts.search }}`.
 
 ## Configuration
 
@@ -271,14 +313,14 @@ The `config.yaml` file controls your site settings and build options:
 
 ```yaml
 site:
-  title: "My Blog"
-  url: "https://example.com"
-  author: "Your Name"
+    title: "My Blog"
+    url: "https://example.com"
+    author: "Your Name"
 
 build:
-  content_dir: "content/posts" # Where your posts are
-  output_dir: "dist" # Where HTML is generated
-  posts_per_page: 10 # Posts per page (pagination)
+    content_dir: "content/posts" # Where your posts are
+    output_dir: "dist" # Where HTML is generated
+    posts_per_page: 10 # Posts per page (pagination)
 ```
 
 **All fields are optional** - blog will use sensible defaults if `config.yaml` doesn't exist or fields are missing.
@@ -309,8 +351,8 @@ Posts require YAML frontmatter at the top of the markdown file:
 ---
 title: "My Post Title"
 date:
-  posted: 2025-11-11T10:00:00Z
-  modified: 2025-11-12T15:30:00Z # optional
+    posted: 2025-11-11T10:00:00Z
+    modified: 2025-11-12T15:30:00Z # optional
 tags: [rust, webdev, 한글태그] # non-ASCII tags supported
 description: "Optional meta description"
 featured_image: "/images/cover.jpg" # optional
@@ -321,25 +363,25 @@ draft: false # optional, default: false
 
 **Required fields**:
 
-- `title` - Post title (displayed in browser, RSS feed)
-- `date.posted` - Publication date (ISO 8601 format)
-- `tags` - Array of tags (can be empty: `[]`)
+-   `title` - Post title (displayed in browser, RSS feed)
+-   `date.posted` - Publication date (ISO 8601 format)
+-   `tags` - Array of tags (can be empty: `[]`)
 
 **Optional fields**:
 
-- `date.modified` - Last modified date
-- `description` - Meta description for SEO
-- `featured_image` - Cover image URL
-- `draft` - If `true`, post is excluded from build
+-   `date.modified` - Last modified date
+-   `description` - Meta description for SEO
+-   `featured_image` - Cover image URL
+-   `draft` - If `true`, post is excluded from build
 
 **Notes**:
 
-- **Category** is not in frontmatter - it's extracted from directory path
-  - `content/posts/dev/file.md` → category: `dev`
-- **Tags** can contain non-ASCII characters (Korean, Japanese, etc.)
-  - They are automatically percent-encoded for tag page URLs
-- **Slug** is generated from filename and percent-encoded for URLs
-  - Use `title` for display, not `slug`
+-   **Category** is not in frontmatter - it's extracted from directory path
+    -   `content/posts/dev/file.md` → category: `dev`
+-   **Tags** can contain non-ASCII characters (Korean, Japanese, etc.)
+    -   They are automatically percent-encoded for tag page URLs
+-   **Slug** is generated from filename and percent-encoded for URLs
+    -   Use `title` for display, not `slug`
 
 ### Backwards Compatibility
 
@@ -369,7 +411,7 @@ tags: [rust, 한글태그]
 
 **How it works**:
 
-- Filenames and tags are **percent-encoded** for URLs (RFC 3986)
-- Browser sends encoded URLs, blog decodes to find files
-- No file renaming required - use your native language!
-- Display uses `title` from frontmatter, not encoded slug
+-   Filenames and tags are **percent-encoded** for URLs (RFC 3986)
+-   Browser sends encoded URLs, blog decodes to find files
+-   No file renaming required - use your native language!
+-   Display uses `title` from frontmatter, not encoded slug

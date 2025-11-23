@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -26,6 +27,12 @@ pub struct SearchConfig {
     #[serde(default = "default_search_enabled")]
     pub enabled: bool,
 }
+
+/// Assets configuration from manifest.json
+/// Dynamic structure: { "package_name": { "asset_key": "path", ... }, ... }
+/// Example: { "styles": { "version": "0.1.0", "theme": "/styles/0.1.0/theme.css" } }
+/// Templates access via: {{ config.assets.styles.theme }}
+pub type AssetsConfig = HashMap<String, HashMap<String, String>>;
 
 impl Default for SearchConfig {
     fn default() -> Self {
@@ -71,6 +78,8 @@ pub struct SsgConfig {
     pub site: SiteConfig,
     #[serde(default)]
     pub build: BuildConfig,
+    #[serde(default)]
+    pub assets: AssetsConfig,
 }
 
 impl Default for SiteConfig {
@@ -104,6 +113,7 @@ impl Default for SsgConfig {
         Self {
             site: SiteConfig::default(),
             build: BuildConfig::default(),
+            assets: AssetsConfig::default(),
         }
     }
 }
@@ -143,14 +153,21 @@ fn default_pagination_window() -> usize {
 pub fn load_config() -> Result<SsgConfig> {
     let config_path = Path::new("config.yaml");
 
-    if !config_path.exists() {
-        return Ok(SsgConfig::default());
+    let mut config = if config_path.exists() {
+        let content = fs::read_to_string(config_path).context("Failed to read config.yaml")?;
+        serde_yaml::from_str(&content).context("Failed to parse config.yaml")?
+    } else {
+        SsgConfig::default()
+    };
+
+    // Load manifest.json if it exists - directly deserialize as HashMap
+    let manifest_path = Path::new("manifest.json");
+    if manifest_path.exists() {
+        let manifest_content =
+            fs::read_to_string(manifest_path).context("Failed to read manifest.json")?;
+        config.assets =
+            serde_json::from_str(&manifest_content).context("Failed to parse manifest.json")?;
     }
-
-    let content = fs::read_to_string(config_path).context("Failed to read config.yaml")?;
-
-    let config: SsgConfig =
-        serde_yaml::from_str(&content).context("Failed to parse config.yaml")?;
 
     Ok(config)
 }

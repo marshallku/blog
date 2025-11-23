@@ -4,4 +4,4 @@ services:
     ports:
       - "8088:80"
     restart: unless-stopped
-    container_name: ssdocs
+    container_name: blog

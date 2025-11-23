@@ -1,36 +1,43 @@
 {
-  "name": "@blog/icon",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Icon font generator for the blog",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@blog/icon",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Icon font generator for the blog",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./icons.css": "./dist/icons.css",
+        "./icons.woff": "./dist/icons.woff",
+        "./icons.woff2": "./dist/icons.woff2"
     },
-    "./icons.css": "./dist/icons.css",
-    "./icons.woff": "./dist/icons.woff",
-    "./icons.woff2": "./dist/icons.woff2"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "pnpm build:icons && pnpm build:minify",
-    "build:icons": "fantasticon",
-    "build:ts": "tsup",
-    "build:minify": "cleancss -o dist/icons.css dist/icons.css",
-    "dev": "fantasticon --watch",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "clean-css-cli": "^5.6.3",
-    "fantasticon": "^3.0.0",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.3"
-  }
+    "files": [
+        "dist"
+    ],
+    "blog": {
+        "assets": {
+            "css": "icons.css",
+            "woff": "icons.woff",
+            "woff2": "icons.woff2"
+        }
+    },
+    "scripts": {
+        "build": "pnpm build:icons && pnpm build:minify",
+        "build:icons": "fantasticon",
+        "build:ts": "tsup",
+        "build:minify": "cleancss -o dist/icons.css dist/icons.css",
+        "dev": "fantasticon --watch",
+        "clean": "rm -rf dist",
+        "typecheck": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "clean-css-cli": "^5.6.3",
+        "fantasticon": "^3.0.0",
+        "tsup": "^8.5.0",
+        "typescript": "^5.9.3"
+    }
 }

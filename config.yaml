@@ -1,20 +1,20 @@
-# ssdocs Configuration File
+# blog Configuration File
 # This file controls site settings and build configuration
 
 # Site metadata
 site:
-  title: "Marshall Ku's blog"
-  url: "https://marshallku.com"
-  author: "Marshall K"
-  description: "웹 개발과 관련된 내용을 다룹니다."
+    title: "Marshall Ku's blog"
+    url: "https://marshallku.com"
+    author: "Marshall K"
+    description: "웹 개발과 관련된 내용을 다룹니다."
 
 # Build configuration
 build:
-  # Content directory (where markdown posts are stored)
-  content_dir: "content/posts"
+    # Content directory (where markdown posts are stored)
+    content_dir: "content/posts"
 
-  # Output directory (where generated HTML goes)
-  output_dir: "dist"
+    # Output directory (where generated HTML goes)
+    output_dir: "dist"
 
-  # Number of posts per page (for pagination)
-  posts_per_page: 9
+    # Number of posts per page (for pagination)
+    posts_per_page: 9

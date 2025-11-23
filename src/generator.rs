@@ -1,4 +1,4 @@
-use crate::config::SsgConfig;
+use crate::config::{AssetsConfig, SsgConfig};
 use crate::slug;
 use crate::types::{Page, Post};
 use anyhow::{Context, Result};
@@ -16,6 +16,7 @@ struct TemplateConfig<'a> {
     site_url: &'a str,
     author: &'a str,
     description: &'a str,
+    assets: &'a AssetsConfig,
 }
 
 pub struct Generator {
@@ -45,6 +46,7 @@ impl Generator {
             site_url: &self.config.site.url,
             author: &self.config.site.author,
             description: &self.config.site.description,
+            assets: &self.config.assets,
         };
 
         let mut context = TeraContext::new();
@@ -82,6 +84,7 @@ impl Generator {
             site_url: &self.config.site.url,
             author: &self.config.site.author,
             description: &self.config.site.description,
+            assets: &self.config.assets,
         };
 
         let mut context = TeraContext::new();

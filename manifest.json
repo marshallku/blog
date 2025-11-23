@@ -1,0 +1,17 @@
+{
+  "icon": {
+    "version": "0.1.0",
+    "css": "/icon/0.1.0/icons.css",
+    "woff": "/icon/0.1.0/icons.woff",
+    "woff2": "/icon/0.1.0/icons.woff2"
+  },
+  "scripts": {
+    "version": "0.1.0",
+    "bundle": "/scripts/0.1.0/bundle.js",
+    "index": "/scripts/0.1.0/index.js"
+  },
+  "styles": {
+    "version": "0.1.0",
+    "theme": "/styles/0.1.0/theme.css"
+  }
+}

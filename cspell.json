@@ -74,6 +74,7 @@
         "target",
         "content",
         "examples",
-        "packages/icon/src/icons"
+        "packages/icon/src/icons",
+        "static"
     ]
 }

@@ -16,8 +16,15 @@
     <meta property="og:site_name" content="{{ config.site_title }}">
     {% endblock %}
 
+    {% if config.assets.styles.theme %}
+    <link rel="stylesheet" href="{{ config.assets.styles.theme }}">
+    {% else %}
     <link rel="stylesheet" href="/css/theme.css">
+    {% endif %}
     <link rel="stylesheet" href="/css/syntax.css">
+    {% if config.assets.icon.css %}
+    <link rel="stylesheet" href="{{ config.assets.icon.css }}">
+    {% endif %}
     {% block extra_css %}
     {# Override this block in child templates to add page-specific CSS #}
     {# Example: <link rel="stylesheet" href="/css/post.css"> #}
@@ -59,9 +66,12 @@
         </div>
     </footer>
 
+    {% if config.assets.scripts.bundle %}
+    <script src="{{ config.assets.scripts.bundle }}" type="module"></script>
+    {% endif %}
     {% block extra_js %}
     {# Override this block in child templates to add page-specific JavaScript #}
-    {# Example: <script src="/js/post.js"></script> #}
+    {# Example: <script src="/js/post.js" type="module"></script> #}
     {% endblock %}
 </body>
 </html>
