@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "components/post-card.html" as macros %}
 
 {% block title %}Tag: {{ tag | urldecode }} - {{ config.site_title }}{% endblock %}
 
@@ -10,28 +11,9 @@
     </header>
 
     {% if posts %}
-    <div class="post-list">
+    <div class="post-grid">
         {% for post_meta in posts %}
-        <article class="post-preview">
-            <h2>
-                <a href="/{{ post_meta.category }}/{{ post_meta.slug }}">
-                    {{ post_meta.frontmatter.title }}
-                </a>
-            </h2>
-
-            <div class="post-meta">
-                <time datetime="{{ post_meta.frontmatter.date.posted }}">
-                    {{ post_meta.frontmatter.date.posted | date(format="%B %d, %Y") }}
-                </time>
-                <span class="category">
-                    <a href="/{{ post_meta.category }}">{{ post_meta.category }}</a>
-                </span>
-            </div>
-
-            {% if post_meta.frontmatter.description %}
-            <p class="description">{{ post_meta.frontmatter.description }}</p>
-            {% endif %}
-        </article>
+        {{ macros::post_card(post=post_meta, show_category=true) }}
         {% endfor %}
     </div>
 

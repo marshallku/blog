@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "components/post-card.html" as macros %}
 
 {% block title %}{{ post.frontmatter.title }} - {{ config.site_title }}{% endblock %}
 
@@ -126,6 +127,17 @@
     </nav>
     {% endif %}
 </article>
+
+{% if related_posts and related_posts | length > 0 %}
+<section class="related-posts">
+    <h2 class="related-posts__title">Related Posts</h2>
+    <div class="post-grid">
+        {% for related in related_posts %}
+        {{ macros::post_card(post=related) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
 {% block comments %}
 {% endblock %}

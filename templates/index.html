@@ -1,52 +1,30 @@
 {% extends "base.html" %}
+{% import "components/post-card.html" as macros %}
 
 {% block title %}{{ config.site_title }}{% endblock %}
 
 {% block content %}
-<div class="homepage">
-    <h1>Recent Posts</h1>
-
-    {% if posts %}
-    <div class="post-list">
-        {% for post_meta in posts %}
-        <article class="post-preview">
-            {% if post_meta.frontmatter.cover_image %}
-            <a href="/{{ post_meta.category }}/{{ post_meta.slug }}">
-                <img src="{{ post_meta.frontmatter.cover_image }}" alt="{{ post_meta.frontmatter.title }}" class="preview-image">
-            </a>
-            {% endif %}
-
-            <h2>
-                <a href="/{{ post_meta.category }}/{{ post_meta.slug }}">
-                    {{ post_meta.frontmatter.title }}
-                </a>
-            </h2>
-
-            <div class="post-meta">
-                <time datetime="{{ post_meta.frontmatter.date.posted }}">
-                    {{ post_meta.frontmatter.date.posted | date(format="%B %d, %Y") }}
-                </time>
-                <span class="category">
-                    <a href="/{{ post_meta.category }}">{{ post_meta.category }}</a>
-                </span>
-            </div>
-
-            {% if post_meta.frontmatter.description %}
-            <p class="description">{{ post_meta.frontmatter.description }}</p>
-            {% endif %}
-
-            {% if post_meta.frontmatter.tags %}
-            <div class="tags">
-                {% for tag in post_meta.frontmatter.tags %}
-                    <a href="/tag/{{ tag }}" class="tag">{{ tag | urldecode }}</a>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </article>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p>No posts yet.</p>
-    {% endif %}
+{# Tabs for category filtering #}
+<div class="tabs">
+    <button data-tab="all">All</button>
+    {% for cat_posts in category_posts %}
+    <button data-tab="{{ cat_posts.category.slug }}">{{ cat_posts.category.name }}</button>
+    {% endfor %}
 </div>
+
+{# All posts tab #}
+<div id="tab-all" class="post-grid">
+    {% for post in posts %}
+    {{ macros::post_card(post=post, show_category=true) }}
+    {% endfor %}
+</div>
+
+{# Per-category tabs #}
+{% for cat_posts in category_posts %}
+<div id="tab-{{ cat_posts.category.slug }}" class="post-grid">
+    {% for post in cat_posts.posts %}
+    {{ macros::post_card(post=post) }}
+    {% endfor %}
+</div>
+{% endfor %}
 {% endblock %}

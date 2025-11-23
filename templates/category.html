@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "components/post-card.html" as macros %}
 
 {% block title %}{{ category.name }} - {{ config.site_title }}{% endblock %}
 
@@ -13,39 +14,9 @@
     </header>
 
     {% if posts %}
-    <div class="post-list">
+    <div class="post-grid">
         {% for post_meta in posts %}
-        <article class="post-preview">
-            {% if post_meta.frontmatter.cover_image %}
-            <a href="/{{ post_meta.category }}/{{ post_meta.slug }}">
-                <img src="{{ post_meta.frontmatter.cover_image }}" alt="{{ post_meta.frontmatter.title }}" class="preview-image">
-            </a>
-            {% endif %}
-
-            <h2>
-                <a href="/{{ post_meta.category }}/{{ post_meta.slug }}">
-                    {{ post_meta.frontmatter.title }}
-                </a>
-            </h2>
-
-            <div class="post-meta">
-                <time datetime="{{ post_meta.frontmatter.date.posted }}">
-                    {{ post_meta.frontmatter.date.posted | date(format="%B %d, %Y") }}
-                </time>
-            </div>
-
-            {% if post_meta.frontmatter.description %}
-            <p class="description">{{ post_meta.frontmatter.description }}</p>
-            {% endif %}
-
-            {% if post_meta.frontmatter.tags %}
-            <div class="tags">
-                {% for tag in post_meta.frontmatter.tags %}
-                    <a href="/tag/{{ tag }}" class="tag">{{ tag | urldecode }}</a>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </article>
+        {{ macros::post_card(post=post_meta) }}
         {% endfor %}
     </div>
 

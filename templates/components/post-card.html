@@ -1,0 +1,34 @@
+{# Post card component macro #}
+{# Usage: {{ macros::post_card(post=post_meta) }} #}
+
+{% macro post_card(post, show_category=false) %}
+<article class="post-card">
+    {% if post.frontmatter.og_image %}
+    <a href="/{{ post.category }}/{{ post.slug }}/">
+        <figure class="post-card__image">
+            <img
+                src="{{ post.frontmatter.og_image }}"
+                alt="{{ post.frontmatter.title }}"
+                loading="lazy"
+            >
+        </figure>
+    </a>
+    {% endif %}
+    <header class="post-card__header">
+        <a href="/{{ post.category }}/{{ post.slug }}/">
+            <h2 class="post-card__title">{{ post.frontmatter.title }}</h2>
+        </a>
+        {% if post.frontmatter.description %}
+        <p class="post-card__description">{{ post.frontmatter.description }}</p>
+        {% endif %}
+        <div class="post-card__meta">
+            <time class="post-card__time" datetime="{{ post.frontmatter.date.posted }}">
+                {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
+            </time>
+            {% if show_category %}
+            <a href="/{{ post.category }}/" class="post-card__category">{{ post.category }}</a>
+            {% endif %}
+        </div>
+    </header>
+</article>
+{% endmacro post_card %}
