@@ -1,8 +1,8 @@
 export default {
-  plugins: {
-    "postcss-import": {},
-    "postcss-nested": {},
-    autoprefixer: {},
-    ...(process.env.NODE_ENV === "production" ? { cssnano: {} } : {}),
-  },
+    plugins: {
+        autoprefixer: {},
+        cssnano: {
+            preset: "default",
+        },
+    },
 };
