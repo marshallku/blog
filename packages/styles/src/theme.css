@@ -1,5 +1,16 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* Main theme stylesheet */
+/* Uses postcss-import to combine all partials */
+
+@import "./base/reset.css";
+@import "./base/variables.css";
+@import "./base/typography.css";
+
+@import "./components/header.css";
+@import "./components/footer.css";
+@import "./components/navigation.css";
+@import "./components/post.css";
+@import "./components/code.css";
+@import "./components/pagination.css";
+@import "./components/post-card.css";
+
+@import "./utilities/utilities.css";

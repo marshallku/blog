@@ -16,8 +16,8 @@
         }
     },
     "scripts": {
-        "build": "postcss src/**/*.css --dir dist --env production",
-        "dev": "postcss src/**/*.css --dir dist --watch",
+        "build": "postcss src/theme.css -o dist/theme.css --env production",
+        "dev": "postcss src/theme.css -o dist/theme.css --watch",
         "clean": "rm -rf dist",
         "lint": "stylelint 'src/**/*.css'"
     },
