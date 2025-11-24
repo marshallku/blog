@@ -4,27 +4,26 @@
 {% block title %}{{ config.site_title }}{% endblock %}
 
 {% block content %}
-{# Tabs for category filtering #}
-<div class="tabs">
-    <button data-tab="all">All</button>
+<section x-data="{ activeTab: 'all' }">
+    <div class="tabs">
+        <button x-on:click="activeTab = 'all'" data-tab="all">All</button>
+        {% for cat_posts in category_posts %}
+        <button x-on:click="activeTab = '{{ cat_posts.category.slug }}'" data-tab="{{ cat_posts.category.slug }}">{{ cat_posts.category.name }}</button>
+        {% endfor %}
+    </div>
+
+    <div x-show="activeTab === 'all'" class="post-grid">
+        {% for post in posts %}
+        {{ macros::post_card(post=post, show_category=true) }}
+        {% endfor %}
+    </div>
+
     {% for cat_posts in category_posts %}
-    <button data-tab="{{ cat_posts.category.slug }}">{{ cat_posts.category.name }}</button>
+    <div x-show="activeTab === '{{ cat_posts.category.slug }}'" class="post-grid">
+        {% for post in cat_posts.posts %}
+        {{ macros::post_card(post=post) }}
+        {% endfor %}
+    </div>
     {% endfor %}
-</div>
-
-{# All posts tab #}
-<div id="tab-all" class="post-grid">
-    {% for post in posts %}
-    {{ macros::post_card(post=post, show_category=true) }}
-    {% endfor %}
-</div>
-
-{# Per-category tabs #}
-{% for cat_posts in category_posts %}
-<div id="tab-{{ cat_posts.category.slug }}" class="post-grid">
-    {% for post in cat_posts.posts %}
-    {{ macros::post_card(post=post) }}
-    {% endfor %}
-</div>
-{% endfor %}
+</section>
 {% endblock %}
