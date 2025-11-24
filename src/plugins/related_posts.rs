@@ -11,7 +11,7 @@ pub struct RelatedPostsPlugin {
 
 impl RelatedPostsPlugin {
     pub fn new() -> Self {
-        Self { limit: 3 }
+        Self { limit: 4 }
     }
 }
 
