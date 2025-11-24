@@ -3,9 +3,9 @@
 @use "./base/palette";
 @use "./base/mixins";
 @use "./base/fonts";
-
 @use "./base/variables";
-@use "./base/typography";
+
+@use "./base/globals";
 
 @use "./components/header";
 @use "./components/footer";

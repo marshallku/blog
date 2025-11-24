@@ -61,30 +61,3 @@
     margin-bottom: var(--spacing-xs);
   }
 }
-
-/* Post list */
-.post-list {
-  display: grid;
-  gap: var(--spacing-xl);
-}
-
-.post-card {
-  padding: var(--spacing-lg);
-  background-color: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
-  transition: box-shadow var(--transition-fast);
-
-  &:hover {
-    box-shadow: var(--shadow-md);
-  }
-}
-
-.post-card__title {
-  font-size: 1.25rem;
-  margin-bottom: var(--spacing-sm);
-}
-
-.post-card__excerpt {
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-}

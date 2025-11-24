@@ -1,0 +1,64 @@
+@use "./palette";
+@use "./mixins";
+@use "sass:meta";
+
+html {
+  @each $key, $value in palette.$light-palette {
+    @if meta.type-of($value) == "map" {
+      @each $child-key, $child-value in $value {
+        --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
+      }
+    } @else {
+      --palette-#{"" + $key}: #{$value};
+    }
+  }
+
+  background-color: palette.get-color(palette.$light-palette, background);
+  color: palette.get-color(palette.$light-palette, text);
+}
+
+html[data-theme="dark"] {
+  @each $key, $value in palette.$dark-palette {
+    @if meta.type-of($value) == "map" {
+      @each $child-key, $child-value in $value {
+        --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
+      }
+    } @else {
+      --palette-#{"" + $key}: #{$value};
+    }
+  }
+
+  background-color: palette.get-color(palette.$dark-palette, background);
+  color: palette.get-color(palette.$dark-palette, text);
+}
+
+html[data-theme="sepia"] {
+  @each $key, $value in palette.$sepia-palette {
+    @if meta.type-of($value) == "map" {
+      @each $child-key, $child-value in $value {
+        --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
+      }
+    } @else {
+      --palette-#{"" + $key}: #{$value};
+    }
+  }
+
+  background-color: palette.get-color(palette.$sepia-palette, background);
+  color: palette.get-color(palette.$sepia-palette, text);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  text-decoration: none;
+  color: palette.color(text);
+
+  @include mixins.supports-hover {
+    &:hover {
+      color: palette.color(highlight);
+    }
+  }
+}

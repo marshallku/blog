@@ -16,7 +16,8 @@
   padding: 0 var(--spacing-sm);
   border-radius: var(--radius-sm);
   color: var(--color-text);
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition: background-color var(--transition-fast),
+    color var(--transition-fast);
 
   &:hover {
     background-color: var(--color-bg-secondary);
