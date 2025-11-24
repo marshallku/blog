@@ -1,1 +1,1 @@
-console.log("Hello, world!");
+function i(t,e){let n;return(...o)=>{clearTimeout(n),n=setTimeout(()=>t(...o),e)}}function u(t,e){let n=0;return(...o)=>{let r=Date.now();r-n>=e&&(n=r,t(...o))}}function m(t){let e=t.getBoundingClientRect();return e.top>=0&&e.left>=0&&e.bottom<=(window.innerHeight||document.documentElement.clientHeight)&&e.right<=(window.innerWidth||document.documentElement.clientWidth)}export{i as debounce,m as isInViewport,u as throttle};
