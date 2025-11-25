@@ -83,24 +83,24 @@ time,
 mark,
 audio,
 video {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  background: 0;
-  border: 0;
-  outline: 0;
-  color: inherit;
-  font: inherit;
-  vertical-align: baseline;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    background: 0;
+    border: 0;
+    outline: 0;
+    color: inherit;
+    font: inherit;
+    vertical-align: baseline;
 }
 
 html,
 input,
 textarea {
-  font-family: "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
-    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji",
-    "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+    font-family: "Pretendard Variable", Pretendard, -apple-system,
+        BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
+        "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 article,
@@ -114,37 +114,37 @@ hgroup,
 menu,
 nav,
 section {
-  display: block;
+    display: block;
 }
 
 body {
-  line-height: 1;
+    line-height: 1;
 }
 
 ol,
 ul {
-  list-style: none;
+    list-style: none;
 }
 
 blockquote,
 q {
-  quotes: none;
+    quotes: none;
 
-  &::before,
-  &::after {
-    content: "";
-    content: none;
-  }
+    &::before,
+    &::after {
+        content: "";
+        content: none;
+    }
 }
 
 table {
-  border-collapse: collapse;
-  border-spacing: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
 }
 
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
-  scrollbar-width: thin;
+    box-sizing: border-box;
+    scrollbar-width: thin;
 }

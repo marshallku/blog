@@ -3,48 +3,48 @@
 @use "sass:string";
 
 $breakpoints: (
-  "small": (
-    min-width: 480px,
-  ),
-  "medium": (
-    min-width: 720px,
-  ),
-  "large": (
-    min-width: 1180px,
-  ),
-  "huge": (
-    min-width: 1300px,
-  ),
+    "small": (
+        min-width: 480px,
+    ),
+    "medium": (
+        min-width: 720px,
+    ),
+    "large": (
+        min-width: 1180px,
+    ),
+    "huge": (
+        min-width: 1300px,
+    ),
 );
 
 @mixin respond-to($breakpoint) {
-  $raw-query: map.get($breakpoints, $breakpoint);
+    $raw-query: map.get($breakpoints, $breakpoint);
 
-  @if $raw-query {
-    $query: if(
-      meta.type-of($raw-query) == "string",
-      string.unquote($raw-query),
-      meta.inspect($raw-query)
-    );
+    @if $raw-query {
+        $query: if(
+            meta.type-of($raw-query) == "string",
+            string.unquote($raw-query),
+            meta.inspect($raw-query)
+        );
 
-    @media screen and (#{$query}) {
-      @content;
-    }
-  } @else {
-    @error 'No value found for `#{$breakpoint}`. '
+        @media screen and (#{$query}) {
+            @content;
+        }
+    } @else {
+        @error 'No value found for `#{$breakpoint}`. '
            + 'Please make sure it is defined in `$breakpoints` map.';
-  }
+    }
 }
 
 @mixin supports-hover {
-  @media (any-hover: hover) and (any-pointer: fine) {
-    @content;
-  }
+    @media (any-hover: hover) and (any-pointer: fine) {
+        @content;
+    }
 }
 
 @mixin limit-line($line) {
-  display: -webkit-box;
-  -webkit-line-clamp: $line;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: $line;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
