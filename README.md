@@ -115,7 +115,10 @@ blog/
 │   ├── indices.rs        # Index page generation
 │   ├── category.rs       # Category discovery
 │   ├── metadata.rs       # Metadata cache
-│   └── cache.rs          # Build cache management
+│   ├── cache.rs          # Build cache management
+│   ├── feeds.rs          # RSS feed generation
+│   ├── search.rs         # Search index generation
+│   └── parallel.rs       # Parallel build processing
 ├── content/
 │   └── posts/            # Your blog posts (by category)
 │       ├── dev/
@@ -143,12 +146,20 @@ blog/
 
 ### `blog build`
 
-Build all posts in `content/posts/`.
+Build all posts in `content/posts/` and generate static HTML files.
 
 Options:
 
 -   `--incremental`, `-i` - Use cache to skip unchanged files
 -   `--post <path>`, `-p <path>` - Build only a specific post
+-   `--parallel` - Enable parallel builds (default: true)
+
+**Output**:
+
+-   Static HTML files in `dist/`
+-   RSS feeds (`dist/feed.xml`, per-category feeds)
+-   Search index (`dist/search-index.json`)
+-   Copied static assets
 
 ### `blog new`
 
