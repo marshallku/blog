@@ -1,6 +1,9 @@
+@use "sass:meta";
+@use "sass:map";
+
 @use "./palette";
 @use "./mixins";
-@use "sass:meta";
+@use "./fonts";
 
 html {
     @each $key, $value in palette.$light-palette {
@@ -60,5 +63,13 @@ a {
         &:hover {
             color: palette.color(highlight);
         }
+    }
+}
+
+// typography
+@each $key, $value in fonts.$typography-size {
+    .typography-#{$key} {
+        font-size: $value;
+        line-height: map.get(fonts.$typography-height, $key);
     }
 }

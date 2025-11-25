@@ -16,10 +16,10 @@
     {% endif %}
     <header class="post-card__header">
         <a href="/{{ post.category }}/{{ post.slug }}/">
-            <h2 class="post-card__title">{{ post.frontmatter.title }}</h2>
+            <h2 class="post-card__title typography-h2">{{ post.frontmatter.title }}</h2>
         </a>
         {% if post.frontmatter.description %}
-        <p class="post-card__description">{{ post.frontmatter.description }}</p>
+        <p class="post-card__description typography-b2">{{ post.frontmatter.description }}</p>
         {% endif %}
         <div class="post-card__meta">
             <time class="post-card__time" datetime="{{ post.frontmatter.date.posted }}">

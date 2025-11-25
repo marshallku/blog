@@ -60,12 +60,10 @@
 
     &__title {
         @include mixins.limit-line(2);
-        @include fonts.typography(h2);
     }
 
     &__description {
         $line-height: map.get(fonts.$typography-height, b2);
-        @include fonts.typography(b2);
         position: relative;
         max-height: 3 * $line-height;
         overflow: hidden;
