@@ -5,6 +5,7 @@
     "private": true,
     "description": "Monorepo for blog SSG and frontend tooling",
     "scripts": {
+        "assets": "node scripts/assets.js",
         "build": "pnpm -r build",
         "dev": "pnpm -r dev",
         "clean": "pnpm -r clean",

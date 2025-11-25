@@ -16,6 +16,10 @@ const rootDir = join(__dirname, "..");
 const packagesDir = join(rootDir, "packages");
 const staticDir = join(rootDir, "static");
 
+// Parse --filter argument (e.g., --filter=styles)
+const filterArg = process.argv.find((arg) => arg.startsWith("--filter="));
+const filter = filterArg ? filterArg.split("=")[1] : null;
+
 function discoverPackages() {
     const packages = [];
 
@@ -78,7 +82,16 @@ function copyPackageAssets(pkg) {
 function main() {
     console.log("📦 Copying assets to static directory...\n");
 
-    const packages = discoverPackages();
+    let packages = discoverPackages();
+
+    // Filter packages if --filter argument provided
+    if (filter) {
+        packages = packages.filter((pkg) => pkg.name === filter);
+        if (packages.length === 0) {
+            console.log(`No package found matching filter: ${filter}`);
+            return;
+        }
+    }
 
     if (packages.length === 0) {
         console.log("No packages with blog.assets found.");
