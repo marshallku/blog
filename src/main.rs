@@ -714,6 +714,14 @@ fn build_post_extra_data(
 ) -> HashMap<String, serde_json::Value> {
     let mut data = HashMap::new();
 
+    if let Some(cat_info) = metadata
+        .category_info
+        .iter()
+        .find(|c| c.slug == post.category)
+    {
+        data.insert("category_info".to_string(), json!(cat_info));
+    }
+
     let navigation = build_post_navigation(&post.slug, &post.category, metadata, true);
     data.insert("prev_post".to_string(), json!(navigation.prev));
     data.insert("next_post".to_string(), json!(navigation.next));

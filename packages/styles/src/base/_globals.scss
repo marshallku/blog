@@ -6,87 +6,92 @@
 @use "./fonts";
 
 html {
-    @each $key, $value in palette.$light-palette {
-        @if meta.type-of($value) == "map" {
-            @each $child-key, $child-value in $value {
-                --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
-            }
-        } @else {
-            --palette-#{"" + $key}: #{$value};
-        }
+  @each $key, $value in palette.$light-palette {
+    @if meta.type-of($value) == "map" {
+      @each $child-key, $child-value in $value {
+        --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
+      }
+    } @else {
+      --palette-#{"" + $key}: #{$value};
     }
+  }
 
-    background-color: palette.get-color(palette.$light-palette, background);
-    color: palette.get-color(palette.$light-palette, text);
+  background-color: palette.get-color(palette.$light-palette, background);
+  color: palette.get-color(palette.$light-palette, text);
 }
 
 html[data-theme="dark"] {
-    @each $key, $value in palette.$dark-palette {
-        @if meta.type-of($value) == "map" {
-            @each $child-key, $child-value in $value {
-                --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
-            }
-        } @else {
-            --palette-#{"" + $key}: #{$value};
-        }
+  @each $key, $value in palette.$dark-palette {
+    @if meta.type-of($value) == "map" {
+      @each $child-key, $child-value in $value {
+        --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
+      }
+    } @else {
+      --palette-#{"" + $key}: #{$value};
     }
+  }
 
-    background-color: palette.get-color(palette.$dark-palette, background);
-    color: palette.get-color(palette.$dark-palette, text);
+  background-color: palette.get-color(palette.$dark-palette, background);
+  color: palette.get-color(palette.$dark-palette, text);
 }
 
 html[data-theme="sepia"] {
-    @each $key, $value in palette.$sepia-palette {
-        @if meta.type-of($value) == "map" {
-            @each $child-key, $child-value in $value {
-                --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
-            }
-        } @else {
-            --palette-#{"" + $key}: #{$value};
-        }
+  @each $key, $value in palette.$sepia-palette {
+    @if meta.type-of($value) == "map" {
+      @each $child-key, $child-value in $value {
+        --palette-#{"" + $key}-#{"" + $child-key}: #{$child-value};
+      }
+    } @else {
+      --palette-#{"" + $key}: #{$value};
     }
+  }
 
-    background-color: palette.get-color(palette.$sepia-palette, background);
-    color: palette.get-color(palette.$sepia-palette, text);
+  background-color: palette.get-color(palette.$sepia-palette, background);
+  color: palette.get-color(palette.$sepia-palette, text);
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 a {
-    text-decoration: none;
-    color: palette.color(text);
+  text-decoration: none;
+  color: palette.color(text);
 
-    @include mixins.supports-hover {
-        &:hover {
-            color: palette.color(highlight);
-        }
+  @include mixins.supports-hover {
+    &:hover {
+      color: palette.color(highlight);
     }
+  }
 }
 
 a,
 button {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 // typography
 @each $key, $value in fonts.$typography-size {
-    .typography-#{$key} {
-        font-size: $value;
-        line-height: map.get(fonts.$typography-height, $key);
-    }
+  .typography-#{$key} {
+    font-size: $value;
+    line-height: map.get(fonts.$typography-height, $key);
+  }
 }
