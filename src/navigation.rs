@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn test_navigation_middle_post() {
         let metadata = create_test_metadata();
-        let nav = build_post_navigation("post-2", "dev", &metadata, false);
+        let nav = build_post_navigation("post-2", "dev", &metadata, true);
 
         assert!(nav.prev.is_some());
         assert_eq!(nav.prev.as_ref().unwrap().slug, "post-1");
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn test_navigation_first_post() {
         let metadata = create_test_metadata();
-        let nav = build_post_navigation("post-3", "dev", &metadata, false);
+        let nav = build_post_navigation("post-3", "dev", &metadata, true);
 
         assert!(nav.prev.is_some());
         assert_eq!(nav.prev.as_ref().unwrap().slug, "post-2");
@@ -179,7 +179,7 @@ mod tests {
     #[test]
     fn test_navigation_last_post() {
         let metadata = create_test_metadata();
-        let nav = build_post_navigation("post-1", "dev", &metadata, false);
+        let nav = build_post_navigation("post-1", "dev", &metadata, true);
 
         assert!(nav.prev.is_none());
         assert!(nav.next.is_some());
@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn test_navigation_url_encoding() {
         let metadata = create_test_metadata();
-        let nav = build_post_navigation("post-2", "dev", &metadata, false);
+        let nav = build_post_navigation("post-2", "dev", &metadata, true);
 
         assert!(nav.prev.is_some());
         assert_eq!(nav.prev.as_ref().unwrap().url, "/dev/post-1/");

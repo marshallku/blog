@@ -9,8 +9,6 @@ mod metadata;
 mod navigation;
 mod parallel;
 mod parser;
-mod plugin;
-mod plugins;
 mod renderer;
 mod search;
 mod shortcodes;
@@ -20,6 +18,8 @@ mod types;
 
 use anyhow::Result;
 use clap::{Parser as ClapParser, Subcommand};
+use serde_json::json;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{mpsc, Arc, Mutex};
 use walkdir::WalkDir;
@@ -36,12 +36,9 @@ use crate::parallel::{
     get_thread_count, BuildProgress, BuildResult, SkipReason, WorkQueue, WorkerPool,
 };
 use crate::parser::Parser;
-use crate::plugin::{PluginContext, PluginManager};
-use crate::plugins::RelatedPostsPlugin;
 use crate::renderer::Renderer;
 use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
-use serde_json::json;
 
 #[derive(ClapParser)]
 #[command(name = "blog")]
@@ -125,7 +122,7 @@ fn build_all(use_cache: bool) -> Result<()> {
 
     let config = load_config()?;
     let renderer = Renderer::new();
-    let mut shortcode_registry = ShortcodeRegistry::new();
+    let shortcode_registry = ShortcodeRegistry::new();
     let generator = Generator::new(config.clone())?;
     let mut cache = if use_cache {
         BuildCache::load()?
@@ -137,17 +134,6 @@ fn build_all(use_cache: bool) -> Result<()> {
     } else {
         MetadataCache::new()
     };
-
-    let mut plugin_manager = PluginManager::new();
-    plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
-    plugin_manager.init_all(&config)?;
-
-    plugin_manager.register_shortcodes(&mut shortcode_registry);
-
-    println!(
-        "🔌 Loaded plugins: {}",
-        plugin_manager.list_plugins().join(", ")
-    );
 
     let posts_dir = Path::new(&config.build.content_dir);
 
@@ -196,26 +182,17 @@ fn build_all(use_cache: bool) -> Result<()> {
             continue;
         }
 
-        let plugin_ctx = PluginContext {
-            config: &config,
-            metadata: &metadata,
-        };
-
-        plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
-
         let processed_content = shortcode_registry.process(&post.content)?;
 
         let base_path = format!("{}/{}", post.category, post.slug);
         let content_dir = Path::new(&config.build.content_dir);
-        let mut html = renderer.render_markdown_with_components_and_images(
+        let html = renderer.render_markdown_with_components_and_images(
             &processed_content,
             generator.get_tera(),
             &base_path,
             config.site.cdn_url.as_deref(),
             Some(content_dir),
         )?;
-
-        plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;
 
         post.rendered_html = Some(html);
 
@@ -230,13 +207,8 @@ fn build_all(use_cache: bool) -> Result<()> {
             .take()
             .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
 
-        let mut plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
-
-        let navigation = build_post_navigation(&post.slug, &post.category, &metadata, false);
-        plugin_data.insert("prev_post".to_string(), json!(navigation.prev));
-        plugin_data.insert("next_post".to_string(), json!(navigation.next));
-
-        let output_path = generator.generate_post(&post, &plugin_data)?;
+        let extra_data = build_post_extra_data(&post, &metadata);
+        let output_path = generator.generate_post(&post, &extra_data)?;
 
         cache.update_entry(
             path,
@@ -288,13 +260,7 @@ fn build_all(use_cache: bool) -> Result<()> {
             )?;
             page.rendered_html = Some(html);
 
-            let plugin_ctx = PluginContext {
-                config: &config,
-                metadata: &metadata,
-            };
-            let plugin_data = plugin_manager.template_context_page(&page, &plugin_ctx)?;
-
-            let output_path = generator.generate_page(&page, &plugin_data)?;
+            let output_path = generator.generate_page(&page, &HashMap::new())?;
             println!("   ✓ {}", output_path.display());
 
             pages_built += 1;
@@ -306,7 +272,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
 
     let index_generator = IndexGenerator::new(config.clone())?;
-    index_generator.generate_all(&metadata, &plugin_manager)?;
+    index_generator.generate_all(&metadata)?;
 
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(
@@ -371,18 +337,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         BuildCache::new()
     }));
 
-    let mut plugin_manager = PluginManager::new();
-    plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
-    plugin_manager.init_all(&config)?;
-
-    let mut shortcode_registry = ShortcodeRegistry::new();
-    plugin_manager.register_shortcodes(&mut shortcode_registry);
-    let shortcode_registry = Arc::new(shortcode_registry);
-
-    println!(
-        "🔌 Loaded plugins: {}",
-        plugin_manager.list_plugins().join(", ")
-    );
+    let shortcode_registry = Arc::new(ShortcodeRegistry::new());
 
     let file_paths: Vec<PathBuf> = WalkDir::new(posts_dir)
         .into_iter()
@@ -549,13 +504,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
             )?;
             page.rendered_html = Some(html);
 
-            let plugin_ctx = PluginContext {
-                config: &config,
-                metadata: &metadata,
-            };
-            let plugin_data = plugin_manager.template_context_page(&page, &plugin_ctx)?;
-
-            let output_path = generator.generate_page(&page, &plugin_data)?;
+            let output_path = generator.generate_page(&page, &HashMap::new())?;
             println!("   ✓ {}", output_path.display());
 
             pages_built += 1;
@@ -567,7 +516,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     }
 
     let index_generator = IndexGenerator::new((*config).clone())?;
-    index_generator.generate_all(&metadata, &plugin_manager)?;
+    index_generator.generate_all(&metadata)?;
 
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(
@@ -693,12 +642,9 @@ fn process_post_parallel(
         .take()
         .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
 
-    let mut plugin_data = std::collections::HashMap::new();
-    let navigation = build_post_navigation(&post.slug, &post.category, metadata, false);
-    plugin_data.insert("prev_post".to_string(), json!(navigation.prev));
-    plugin_data.insert("next_post".to_string(), json!(navigation.next));
+    let extra_data = build_post_extra_data(&post, metadata);
 
-    let output_path = match generator.generate_post(&post, &plugin_data) {
+    let output_path = match generator.generate_post(&post, &extra_data) {
         Ok(p) => p,
         Err(e) => {
             return BuildResult::Error {
@@ -724,15 +670,9 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     let config = load_config()?;
     let renderer = Renderer::new();
-    let mut shortcode_registry = ShortcodeRegistry::new();
+    let shortcode_registry = ShortcodeRegistry::new();
     let generator = Generator::new(config.clone())?;
     let metadata = MetadataCache::load().unwrap_or_else(|_| MetadataCache::new());
-
-    let mut plugin_manager = PluginManager::new();
-    plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
-    plugin_manager.init_all(&config)?;
-
-    plugin_manager.register_shortcodes(&mut shortcode_registry);
 
     let path = Path::new(post_path);
 
@@ -746,18 +686,11 @@ fn build_single_post(post_path: &str) -> Result<()> {
         println!("⚠  This is a hidden post");
     }
 
-    let plugin_ctx = PluginContext {
-        config: &config,
-        metadata: &metadata,
-    };
-
-    plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
-
     let processed_content = shortcode_registry.process(&post.content)?;
 
     let base_path = format!("{}/{}", post.category, post.slug);
     let content_dir = Path::new(&config.build.content_dir);
-    let mut html = renderer.render_markdown_with_components_and_images(
+    let html = renderer.render_markdown_with_components_and_images(
         &processed_content,
         generator.get_tera(),
         &base_path,
@@ -765,21 +698,51 @@ fn build_single_post(post_path: &str) -> Result<()> {
         Some(content_dir),
     )?;
 
-    plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;
-
     post.rendered_html = Some(html);
 
-    let mut plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
-
-    let navigation = build_post_navigation(&post.slug, &post.category, &metadata, false);
-    plugin_data.insert("prev_post".to_string(), json!(navigation.prev));
-    plugin_data.insert("next_post".to_string(), json!(navigation.next));
-
-    let output_path = generator.generate_post(&post, &plugin_data)?;
+    let extra_data = build_post_extra_data(&post, &metadata);
+    let output_path = generator.generate_post(&post, &extra_data)?;
 
     println!("\n✅ Built: {}", output_path.display());
 
     Ok(())
+}
+
+fn build_post_extra_data(
+    post: &crate::types::Post,
+    metadata: &MetadataCache,
+) -> HashMap<String, serde_json::Value> {
+    let mut data = HashMap::new();
+
+    let navigation = build_post_navigation(&post.slug, &post.category, metadata, true);
+    data.insert("prev_post".to_string(), json!(navigation.prev));
+    data.insert("next_post".to_string(), json!(navigation.next));
+
+    let mut related: Vec<_> = metadata
+        .posts
+        .iter()
+        .filter(|p| p.category == post.category && p.slug != post.slug)
+        .collect();
+    related.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+
+    let related_posts: Vec<_> = related
+        .into_iter()
+        .take(4)
+        .map(|p| {
+            let mut frontmatter = p.frontmatter.clone();
+            frontmatter.cover_image = frontmatter
+                .cover_image
+                .map(|img| renderer::Renderer::resolve_path(&img, &p.category));
+            crate::metadata::PostMetadata {
+                slug: p.slug.clone(),
+                category: p.category.clone(),
+                frontmatter,
+            }
+        })
+        .collect();
+    data.insert("related_posts".to_string(), json!(related_posts));
+
+    data
 }
 
 fn create_new_post(category: &str, title: &str) -> Result<()> {
