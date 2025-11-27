@@ -9,10 +9,12 @@
 
 @use "./components/header";
 @use "./components/footer";
-@use "./components/navigation";
 @use "./components/post";
 @use "./components/code";
 @use "./components/pagination";
 @use "./components/post-card";
+@use "./components/prev-next-post";
+@use "./components/button";
+@use "./components/home";
 
 @use "./utilities/utilities";

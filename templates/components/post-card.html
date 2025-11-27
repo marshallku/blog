@@ -25,7 +25,7 @@
         {% if post.frontmatter.tags %}
             <div class="post-card__tags typography-c1">
                 {% for tag in post.frontmatter.tags %}
-                <a href="/tag/{{ tag }}" class="tag typography-c1">{{ tag | urldecode }}</a>
+                <a href="/tag/{{ tag }}/" class="button typography-c1">{{ tag | urldecode }}</a>
                 {% endfor %}
             </div>
         {% endif %}

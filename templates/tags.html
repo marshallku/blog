@@ -4,19 +4,19 @@
 
 {% block content %}
 <div class="tags-page">
-    <h1>All Tags</h1>
+    <h1 class="typography-h1">모든 태그</h1>
 
     {% if tags %}
     <div class="tag-cloud">
         {% for tag_entry in tags %}
-        <a href="/tag/{{ tag_entry.0 }}" class="tag-cloud-item">
+        <a href="/tag/{{ tag_entry.0 }}/" class="tag-cloud-item typography-b2">
             <span class="tag-name">{{ tag_entry.0 | urldecode }}</span>
-            <span class="tag-count">({{ tag_entry.1 }})</span>
+            <span class="tag-count typography-c1">({{ tag_entry.1 }})</span>
         </a>
         {% endfor %}
     </div>
     {% else %}
-    <p>No tags yet.</p>
+    <p class="typography-b1">No tags yet.</p>
     {% endif %}
 </div>
 {% endblock %}

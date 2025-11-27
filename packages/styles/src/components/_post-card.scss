@@ -5,109 +5,108 @@
 @use "../base/fonts";
 
 .post-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 0.75em;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 0.75em;
 }
 
 .post-card {
-    $self: &;
-    display: flex;
-    padding: 16px 20px;
-    flex-direction: column;
+  $self: &;
+  display: flex;
+  padding: 16px 20px;
+  flex-direction: column;
+  transition: transform 0.15s ease-in-out;
+
+  @include mixins.supports-hover {
+    @at-root &:hover {
+      transform: translateY(-5px);
+    }
+  }
+
+  &__image {
+    position: relative;
+    width: 100%;
+    height: 0;
+    margin-bottom: 12px;
+    padding-bottom: 56.25%;
+    flex-shrink: 0;
     transition: transform 0.15s ease-in-out;
+    overflow: hidden;
 
-    @include mixins.supports-hover {
-        @at-root &:hover {
-            transform: translateY(-5px);
+    img {
+      position: absolute;
+      top: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      object-fit: cover;
+      border-radius: 4px;
+      transition: transform 0.15s ease-in-out, filter 0.2s ease-in-out;
+
+      @include mixins.supports-hover {
+        @at-root #{$self}:hover & {
+          transform: scale(1.15);
         }
+      }
     }
+  }
 
-    &__image {
-        position: relative;
-        width: 100%;
-        height: 0;
-        margin-bottom: 12px;
-        padding-bottom: 56.25%;
-        flex-shrink: 0;
-        transition: transform 0.15s ease-in-out;
-        overflow: hidden;
+  &__header {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
 
-        img {
-            position: absolute;
-            top: 0;
-            display: block;
-            width: 100%;
-            height: 100%;
-            left: 0;
-            object-fit: cover;
-            border-radius: 4px;
-            transition: transform 0.15s ease-in-out, filter 0.2s ease-in-out;
+  &__title {
+    @include mixins.limit-line(2);
+  }
 
-            @include mixins.supports-hover {
-                @at-root #{$self}:hover & {
-                    transform: scale(1.15);
-                }
-            }
-        }
+  &__description {
+    $line-height: map.get(fonts.$typography-height, b2);
+    position: relative;
+    max-height: 3 * $line-height;
+    margin-bottom: 12px;
+    overflow: hidden;
+
+    &::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 30%;
+      height: $line-height;
+      background-image: linear-gradient(
+        45deg,
+        palette.color(background-transparent),
+        palette.color(background) 90%
+      );
+      pointer-events: none;
     }
+  }
 
-    &__header {
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1;
-    }
+  &__time {
+    display: block;
+    margin-top: auto;
+    text-align: right;
+  }
 
-    &__title {
-        @include mixins.limit-line(2);
-    }
-
-    &__description {
-        $line-height: map.get(fonts.$typography-height, b2);
-        position: relative;
-        max-height: 3 * $line-height;
-        margin-bottom: 12px;
-        overflow: hidden;
-
-        &::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 30%;
-            height: $line-height;
-            background-image: linear-gradient(
-                45deg,
-                palette.color(background-transparent),
-                palette.color(background) 90%
-            );
-            pointer-events: none;
-        }
-    }
-
-    &__time {
-        display: block;
-        margin-top: auto;
-        text-align: right;
-    }
-
-    &__tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
 }
 
-/* Related posts section */
 .related-posts {
-    margin-top: 2em;
-    padding-top: 1.5em;
-    border-top: 1px solid palette.color(grayscale, 200);
+  margin-top: 2em;
+  padding-top: 1.5em;
+  border-top: 1px solid palette.color(grayscale, 200);
 }
 
 .related-posts__title {
-    margin: 0 0 1.5em;
-    font-size: 1.5em;
-    font-weight: 700;
+  margin: 0 0 1.5em;
+  font-size: 1.5em;
+  font-weight: 700;
 }

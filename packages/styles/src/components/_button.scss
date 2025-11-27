@@ -1,0 +1,104 @@
+@use "../base/palette";
+
+.button {
+  $self: &;
+  display: inline-flex;
+  padding: 5px 11px;
+  border: 1px solid palette.color(grayscale, 300);
+  border-radius: 6px;
+  background-color: palette.color(background);
+  color: palette.color(text);
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+
+  // resizing
+  &--resizing-hug {
+    display: inline-flex;
+  }
+
+  &--resizing-fill {
+    display: flex;
+    width: 100%;
+  }
+
+  // size
+  &--size-large {
+    padding: 13px 21px;
+  }
+
+  &--size-medium {
+    padding: 9px 15px;
+  }
+
+  &--size-small {
+    padding: 5px 11px;
+  }
+
+  // variant
+  &--variant-base {
+    padding: 0;
+    border: none;
+
+    &#{$self}--disabled {
+      color: palette.color(grayscale, 500);
+    }
+  }
+
+  &--variant-text {
+    border-color: transparent;
+
+    &#{$self}--disabled {
+      color: palette.color(grayscale, 500);
+    }
+  }
+
+  &--variant-primary {
+    border-color: palette.color(theme);
+    background-color: palette.color(theme);
+    color: palette.color(comment-2);
+
+    &#{$self}--disabled {
+      border-color: palette.color(grayscale, 200);
+      background-color: palette.color(grayscale, 200);
+      color: palette.color(grayscale, 500);
+    }
+  }
+
+  &--variant-secondary {
+    border-color: palette.color(grayscale, 200);
+    background-color: palette.color(grayscale, 50);
+    color: palette.color(text);
+
+    &#{$self}--disabled {
+      color: palette.color(grayscale, 500);
+    }
+  }
+
+  &--variant-outline {
+    border-color: palette.color(grayscale, 300);
+    background-color: palette.color(background);
+    color: palette.color(text);
+
+    &#{$self}--disabled {
+      color: palette.color(grayscale, 500);
+    }
+  }
+
+  // radius
+  &--radius-square {
+    border-radius: 0;
+  }
+
+  &--radius-rounded {
+    border-radius: 6px;
+  }
+
+  &--radius-capsule {
+    border-radius: 32px;
+  }
+
+  &--radius-circle {
+    border-radius: 50%;
+  }
+}

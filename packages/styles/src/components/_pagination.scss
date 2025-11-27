@@ -1,39 +1,46 @@
-/* Pagination component */
+@use "../base/palette";
+
 .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin-top: var(--spacing-2xl);
-}
+  text-align: center;
 
-.pagination__item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.5rem;
-    height: 2.5rem;
-    padding: 0 var(--spacing-sm);
-    border-radius: var(--radius-sm);
-    color: var(--color-text);
-    transition: background-color var(--transition-fast),
-        color var(--transition-fast);
+  &--gutter {
+    margin-top: 36px;
+  }
 
-    &:hover {
-        background-color: var(--color-bg-secondary);
+  &__page {
+    &--current {
+      color: palette.color(main);
     }
+  }
 
-    &.active {
-        background-color: var(--color-primary);
-        color: white;
+  &__direction {
+    &--invisible {
+      visibility: hidden;
     }
+  }
 
-    &.disabled {
-        opacity: 0.5;
+  > a {
+    display: inline-block;
+    margin: 8px;
+    color: palette.color(text);
+    text-decoration: none;
+
+    &[aria-current="true"] {
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 1.5em;
+        height: 1.5em;
+        background-color: palette.color(main-opacity);
+        transform: translate3d(-50%, -50%, 0);
+        border-radius: 50%;
         pointer-events: none;
+        z-index: -1;
+      }
     }
-}
-
-.pagination__ellipsis {
-    color: var(--color-text-secondary);
+  }
 }

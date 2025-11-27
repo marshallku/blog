@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "components/post-card.html" as macros %}
+{% import "components/prev-next-post.html" as nav_macros %}
 
 {% block title %}{{ post.frontmatter.title }} - {{ config.site_title }}{% endblock %}
 
@@ -81,56 +82,37 @@
         <img src="{{ post.frontmatter.cover_image }}" alt="{{ post.frontmatter.title }}" class="featured-image">
         {% endif %}
 
-        <h1 class="post-title">{{ post.frontmatter.title }}</h1>
+        <h1 class="post-title typography-h1">{{ post.frontmatter.title }}</h1>
 
-        <div class="post-meta">
+        <div class="post-meta typography-c1">
             <time datetime="{{ post.frontmatter.date.posted }}" class="post-date">
-                {{ post.frontmatter.date.posted | date(format="%B %d, %Y") }}
+                {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
             </time>
             <span class="post-category">
-                <a href="/{{ post.category }}">{{ post.category }}</a>
+                <a href="/{{ post.category }}/">{{ post.category }}</a>
             </span>
         </div>
 
         {% if post.frontmatter.tags %}
         <div class="post-tags">
             {% for tag in post.frontmatter.tags %}
-                <a href="/tag/{{ tag }}" class="tag">{{ tag | urldecode }}</a>
+                <a href="/tag/{{ tag }}/" class="tag typography-c1">{{ tag | urldecode }}</a>
             {% endfor %}
         </div>
         {% endif %}
     </header>
 
-    <div class="post-content">
+    <div class="post-content typography-b1">
         {{ content | safe }}
     </div>
-
-    {% if prev_post or next_post %}
-    <nav class="post-navigation">
-        {% if prev_post %}
-        <a href="{{ prev_post.url }}" class="nav-prev">
-            <span class="nav-label">← Previous</span>
-            <span class="nav-title">{{ prev_post.title }}</span>
-        </a>
-        {% else %}
-        <span class="nav-prev nav-empty"></span>
-        {% endif %}
-
-        {% if next_post %}
-        <a href="{{ next_post.url }}" class="nav-next">
-            <span class="nav-label">Next →</span>
-            <span class="nav-title">{{ next_post.title }}</span>
-        </a>
-        {% else %}
-        <span class="nav-next nav-empty"></span>
-        {% endif %}
-    </nav>
-    {% endif %}
 </article>
+
+{# Previous/Next Post Navigation #}
+{{ nav_macros::prev_next_post(prev=prev_post, next=next_post) }}
 
 {% if related_posts and related_posts | length > 0 %}
 <section class="related-posts">
-    <h2 class="related-posts__title">Related Posts</h2>
+    <h2 class="related-posts__title typography-h3">관련 글</h2>
     <div class="post-grid">
         {% for related in related_posts %}
         {{ macros::post_card(post=related) }}

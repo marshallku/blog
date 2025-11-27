@@ -8,16 +8,16 @@
     {{ super() }}
     <meta property="og:title" content="{{ page.title }}">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ config.site_url }}/{{ slug }}">
+    <meta property="og:url" content="{{ config.site_url }}/{{ slug }}/">
 {% endblock %}
 
 {% block content %}
 <article class="page">
     <header class="page-header">
-        <h1 class="page-title">{{ page.title }}</h1>
+        <h1 class="page-title typography-h1">{{ page.title }}</h1>
     </header>
 
-    <div class="page-content">
+    <div class="page-content typography-b1">
         {{ content | safe }}
     </div>
 </article>

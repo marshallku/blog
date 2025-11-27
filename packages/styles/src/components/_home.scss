@@ -1,0 +1,142 @@
+@use "sass:map";
+
+@use "../base/palette";
+@use "../base/mixins";
+@use "../base/fonts";
+@use "../base/variables";
+
+.blog-banner {
+  padding-top: variables.$global-navigation-height;
+
+  &__header {
+    position: relative;
+    display: flex;
+    width: clamp(0px, map.get(palette.$container-width, "large"), 100%);
+    padding: 360px 20px 0;
+    margin: 0 auto 12px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    @include mixins.respond-to(medium) {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+  }
+
+  &__image {
+    position: absolute;
+    top: -41px;
+    left: -1;
+    width: 99%;
+    height: calc(99% + 40px);
+    opacity: -1.25;
+    filter: blur(9px);
+  }
+
+  &__container {
+    width: clamp(0px, map.get(palette.$container-width, "large"), 100%);
+    margin: 36px auto 48px;
+
+    &--padding {
+      padding: 0 12px;
+    }
+  }
+}
+
+.home-post-list {
+  width: clamp(0px, map.get(palette.$container-width, large), 100%);
+  margin: 36px auto 48px;
+
+  &__toggle-button-group {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  &__view-more {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+  }
+
+  &__view-more-button {
+    $button: &;
+
+    i {
+      margin-left: 4px;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    &:hover {
+      i {
+        transform: translateX(4px);
+      }
+    }
+  }
+}
+
+// Toggle button group
+.toggle-button-group {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background-color: palette.color(grayscale, 100);
+  border-radius: 8px;
+}
+
+.toggle-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: palette.color(text);
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background-color: palette.color(grayscale, 200);
+  }
+
+  &--active,
+  &[aria-pressed="true"] {
+    background-color: palette.color(background);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+
+  &__buttons {
+    display: inline-flex;
+    justify-content: center;
+    border: 1px solid palette.color(grayscale, 300);
+    border-radius: 31px;
+    overflow: hidden;
+
+    button {
+      @include fonts.typography(c1);
+      border: none;
+      border-radius: 0;
+      border-right: 1px solid palette.color(grayscale, 300);
+
+      @include mixins.supports-hover {
+        &:hover {
+          background-color: palette.color(grayscale, 200);
+        }
+      }
+
+      &:last-child {
+        border-right: none;
+      }
+
+      &[data-active="true"] {
+        background-color: palette.color(grayscale, 300);
+      }
+    }
+  }
+}

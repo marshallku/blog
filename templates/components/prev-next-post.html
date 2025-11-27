@@ -1,0 +1,32 @@
+{# Previous/Next Post Navigation Component #}
+{# Usage: {{ macros::prev_next_post(prev=prev_post, next=next_post) }} #}
+{# PostLink structure: slug, title, url, category #}
+
+{% macro prev_next_post(prev, next) %}
+{% if prev or next %}
+<nav class="prev-next-post">
+    {% if prev %}
+    <a href="{{ prev.url }}" class="prev-next-post-post prev-next-post-post--previous">
+        <div class="prev-next-post-post__meta">
+            <span class="prev-next-post-post__label typography-c1">
+                <i class="icon-chevron-left"></i>
+                이전 글
+            </span>
+            <span class="prev-next-post-post__title typography-b1">{{ prev.title }}</span>
+        </div>
+    </a>
+    {% endif %}
+    {% if next %}
+    <a href="{{ next.url }}" class="prev-next-post-post">
+        <div class="prev-next-post-post__meta">
+            <span class="prev-next-post-post__label typography-c1">
+                다음 글
+                <i class="icon-chevron-right"></i>
+            </span>
+            <span class="prev-next-post-post__title typography-b1">{{ next.title }}</span>
+        </div>
+    </a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endmacro prev_next_post %}

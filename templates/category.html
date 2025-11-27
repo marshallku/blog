@@ -6,11 +6,11 @@
 {% block content %}
 <div class="category-page">
     <header class="page-header"{% if category.color %} style="border-color: {{ category.color }}"{% endif %}>
-        <h1{% if category.color %} style="color: {{ category.color }}"{% endif %}>{{ category.name }}</h1>
+        <h1 class="typography-h1"{% if category.color %} style="color: {{ category.color }}"{% endif %}>{{ category.name }}</h1>
         {% if category.description %}
-        <p class="category-description">{{ category.description }}</p>
+        <p class="category-description typography-b1">{{ category.description }}</p>
         {% endif %}
-        <p class="post-count">{{ post_count }} posts</p>
+        <p class="post-count typography-c1">{{ post_count }} posts</p>
     </header>
 
     {% if posts %}
@@ -22,41 +22,38 @@
 
     {# Pagination navigation #}
     {% if pagination and pagination.total_pages > 1 %}
-    <nav class="pagination">
-        <div class="pagination-prev">
-            {% if pagination.has_prev %}
-            <a href="{{ pagination.prev_url }}" class="btn-pagination">← Previous</a>
-            {% else %}
-            <span class="btn-pagination disabled">← Previous</span>
-            {% endif %}
-        </div>
+    <nav class="pagination pagination--gutter">
+        {% if pagination.has_prev %}
+        <a href="{{ pagination.prev_url }}" class="pagination__direction">
+            <i class="icon-chevron-left"></i>
+        </a>
+        {% else %}
+        <span class="pagination__direction pagination__direction--invisible">
+            <i class="icon-chevron-left"></i>
+        </span>
+        {% endif %}
 
-        <div class="pagination-numbers">
-            {% for page in pagination.pages %}
-            {% if page.is_current %}
-            <span class="page-number current">{{ page.number }}</span>
-            {% else %}
-            <a href="{{ page.url }}" class="page-number">{{ page.number }}</a>
-            {% endif %}
-            {% endfor %}
-        </div>
+        {% for page in pagination.pages %}
+        <a href="{{ page.url }}"
+           class="pagination__page{% if page.is_current %} pagination__page--current{% endif %}"
+           {% if page.is_current %}aria-current="true"{% endif %}>
+            {{ page.number }}
+        </a>
+        {% endfor %}
 
-        <div class="pagination-next">
-            {% if pagination.has_next %}
-            <a href="{{ pagination.next_url }}" class="btn-pagination">Next →</a>
-            {% else %}
-            <span class="btn-pagination disabled">Next →</span>
-            {% endif %}
-        </div>
+        {% if pagination.has_next %}
+        <a href="{{ pagination.next_url }}" class="pagination__direction">
+            <i class="icon-chevron-right"></i>
+        </a>
+        {% else %}
+        <span class="pagination__direction pagination__direction--invisible">
+            <i class="icon-chevron-right"></i>
+        </span>
+        {% endif %}
     </nav>
-
-    <p class="pagination-info">
-        Page {{ pagination.current_page }} of {{ pagination.total_pages }}
-        ({{ pagination.total_posts }} posts total)
-    </p>
     {% endif %}
     {% else %}
-    <p>No posts in this category yet.</p>
+    <p class="typography-b1">No posts in this category yet.</p>
     {% endif %}
 </div>
 {% endblock %}
