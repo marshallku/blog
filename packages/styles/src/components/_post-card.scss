@@ -66,6 +66,7 @@
         $line-height: map.get(fonts.$typography-height, b2);
         position: relative;
         max-height: 3 * $line-height;
+        margin-bottom: 12px;
         overflow: hidden;
 
         &::after {
@@ -94,6 +95,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        margin-bottom: 12px;
     }
 }
 

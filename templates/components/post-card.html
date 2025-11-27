@@ -21,14 +21,17 @@
         {% if post.frontmatter.description %}
         <p class="post-card__description typography-b2">{{ post.frontmatter.description }}</p>
         {% endif %}
-        <div class="post-card__meta">
-            <time class="post-card__time" datetime="{{ post.frontmatter.date.posted }}">
-                {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
-            </time>
-            {% if show_category %}
-            <a href="/{{ post.category }}/" class="post-card__category">{{ post.category }}</a>
-            {% endif %}
-        </div>
+        <!-- Tag list -->
+        {% if post.frontmatter.tags %}
+            <div class="post-card__tags typography-c1">
+                {% for tag in post.frontmatter.tags %}
+                <a href="/tag/{{ tag }}" class="tag typography-c1">{{ tag | urldecode }}</a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <time class="post-card__time typography-c1" datetime="{{ post.frontmatter.date.posted }}">
+            {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
+        </time>
     </header>
 </article>
 {% endmacro post_card %}
