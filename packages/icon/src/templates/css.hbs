@@ -1,25 +1,29 @@
 @font-face {
   font-family: "{{name}}";
-  src: url("{{fontsUrl}}{{name}}.woff2") format("woff2"),
-       url("{{fontsUrl}}{{name}}.woff") format("woff");
+  src: {{{ fontSrc }}};
   font-weight: normal;
   font-style: normal;
   font-display: block;
 }
 
-[class^="{{prefix}}-"], [class*=" {{prefix}}-"] {
-  font-family: "{{name}}" !important;
-  font-style: normal;
-  font-weight: normal;
-  font-variant: normal;
-  text-transform: none;
-  line-height: 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+i[class*="{{ prefix }}-"] {
+    vertical-align: middle;
 }
 
-{{#each codepoints}}
-{{../selector}}-{{@key}}::before {
-  content: "\\{{this}}";
+i[class*=" {{ prefix }}-"]::before,
+i[class^="{{ prefix }}-"]::before {
+    font-family: {{ name }} !important;
+    font-style: normal;
+    font-weight: 400 !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
-{{/each}}
+
+{{# each codepoints}}
+    i.{{ ../prefix }}-{{ @key }}::before {
+        content: "\\{{ codepoint this }}";
+    }
+{{/ each}}
