@@ -1020,6 +1020,10 @@ fn get_content_type(path: &str) -> &'static str {
         "image/jpeg"
     } else if path.ends_with(".svg") {
         "image/svg+xml"
+    } else if path.ends_with(".woff") {
+        "font/woff"
+    } else if path.ends_with(".woff2") {
+        "font/woff2"
     } else {
         "application/octet-stream"
     }
