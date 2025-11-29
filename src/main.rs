@@ -736,17 +736,7 @@ fn build_post_extra_data(
     let related_posts: Vec<_> = related
         .into_iter()
         .take(4)
-        .map(|p| {
-            let mut frontmatter = p.frontmatter.clone();
-            frontmatter.cover_image = frontmatter
-                .cover_image
-                .map(|img| renderer::Renderer::resolve_path(&img, &p.category));
-            crate::metadata::PostMetadata {
-                slug: p.slug.clone(),
-                category: p.category.clone(),
-                frontmatter,
-            }
-        })
+        .cloned()
         .collect();
     data.insert("related_posts".to_string(), json!(related_posts));
 
