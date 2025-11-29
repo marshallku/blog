@@ -974,6 +974,7 @@ fn start_dev_server(port: u16) -> Result<()> {
 fn serve_file(stream: &mut std::net::TcpStream, path: &str) {
     use std::io::Write;
 
+    let path = path.split('?').next().unwrap_or(path);
     let file_path = if path == "/" {
         "dist/index.html".to_string()
     } else if path.ends_with('/') {
