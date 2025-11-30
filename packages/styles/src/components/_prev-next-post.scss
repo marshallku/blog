@@ -10,7 +10,6 @@
     flex-wrap: wrap;
     justify-content: space-between;
     overflow: hidden;
-    gap: 1px;
     background-color: palette.color(selection);
 
     @include mixins.respond-to(medium) {
@@ -103,7 +102,7 @@
         }
 
         @include mixins.respond-to(medium) {
-            width: calc(50% - 0.5px);
+            width: 50%;
         }
     }
 }

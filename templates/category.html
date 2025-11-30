@@ -6,54 +6,53 @@
 {% block content %}
 <div class="page page--top-padding">
     <header class="page-header"{% if category.color %} style="border-color: {{ category.color }}"{% endif %}>
-        <h1 class="typography-h1"{% if category.color %} style="color: {{ category.color }}"{% endif %}>{{ category.name }}</h1>
-        {% if category.description %}
-        <p class="category-description typography-b1">{{ category.description }}</p>
-        {% endif %}
-        <p class="post-count typography-c1">{{ post_count }} posts</p>
+        <h1 class="typography-h1"{% if category.color %} style="color: {{ category.color }}"{% endif %}>{{ category.name }} 카테고리 글</h1>
+        <p class="post-count typography-c1">총 {{ post_count }}개</p>
     </header>
 
-    {% if posts %}
-    <div class="post-grid">
-        {% for post_meta in posts %}
-        {{ macros::post_card(post=post_meta) }}
-        {% endfor %}
+    <div class="contents">
+        {% if posts %}
+        <div class="post-grid">
+            {% for post_meta in posts %}
+            {{ macros::post_card(post=post_meta) }}
+            {% endfor %}
+        </div>
+
+        {# Pagination navigation #}
+        {% if pagination and pagination.total_pages > 1 %}
+        <nav class="pagination pagination--gutter">
+            {% if pagination.has_prev %}
+            <a href="{{ pagination.prev_url }}" class="pagination__direction">
+                <i class="icon-chevron-left"></i>
+            </a>
+            {% else %}
+            <span class="pagination__direction pagination__direction--invisible">
+                <i class="icon-chevron-left"></i>
+            </span>
+            {% endif %}
+
+            {% for page in pagination.pages %}
+            <a href="{{ page.url }}"
+            class="pagination__page{% if page.is_current %} pagination__page--current{% endif %}"
+            {% if page.is_current %}aria-current="true"{% endif %}>
+                {{ page.number }}
+            </a>
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <a href="{{ pagination.next_url }}" class="pagination__direction">
+                <i class="icon-chevron-right"></i>
+            </a>
+            {% else %}
+            <span class="pagination__direction pagination__direction--invisible">
+                <i class="icon-chevron-right"></i>
+            </span>
+            {% endif %}
+        </nav>
+        {% endif %}
+        {% else %}
+        <p class="typography-b1">No posts in this category yet.</p>
+        {% endif %}
     </div>
-
-    {# Pagination navigation #}
-    {% if pagination and pagination.total_pages > 1 %}
-    <nav class="pagination pagination--gutter">
-        {% if pagination.has_prev %}
-        <a href="{{ pagination.prev_url }}" class="pagination__direction">
-            <i class="icon-chevron-left"></i>
-        </a>
-        {% else %}
-        <span class="pagination__direction pagination__direction--invisible">
-            <i class="icon-chevron-left"></i>
-        </span>
-        {% endif %}
-
-        {% for page in pagination.pages %}
-        <a href="{{ page.url }}"
-           class="pagination__page{% if page.is_current %} pagination__page--current{% endif %}"
-           {% if page.is_current %}aria-current="true"{% endif %}>
-            {{ page.number }}
-        </a>
-        {% endfor %}
-
-        {% if pagination.has_next %}
-        <a href="{{ pagination.next_url }}" class="pagination__direction">
-            <i class="icon-chevron-right"></i>
-        </a>
-        {% else %}
-        <span class="pagination__direction pagination__direction--invisible">
-            <i class="icon-chevron-right"></i>
-        </span>
-        {% endif %}
-    </nav>
-    {% endif %}
-    {% else %}
-    <p class="typography-b1">No posts in this category yet.</p>
-    {% endif %}
 </div>
 {% endblock %}

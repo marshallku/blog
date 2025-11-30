@@ -1,7 +1,15 @@
+@use "sass:map";
+
 @use "../base/variables";
+@use "../base/palette";
 
 .page {
     &--top-padding {
         padding-top: variables.$global-navigation-height;
     }
+}
+
+.contents {
+    width: clamp(0px, map.get(palette.$container-width, large), 100%);
+    margin: 0 auto;
 }

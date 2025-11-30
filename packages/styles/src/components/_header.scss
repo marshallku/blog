@@ -101,12 +101,6 @@
     }
 }
 
-// Spacer to prevent content from being hidden behind fixed header
-.global-navigation-spacer {
-    height: variables.$global-navigation-height;
-}
-
-// Hamburger menu for mobile
 .hamburger {
     display: flex;
     width: 24px;
@@ -161,7 +155,6 @@
     }
 }
 
-// Mobile drawer
 .drawer {
     position: fixed;
     top: variables.$global-navigation-height;
@@ -192,5 +185,19 @@
             color: palette.color(text);
             font-weight: 500;
         }
+    }
+}
+
+.page-header {
+    padding: 24px 0 36px;
+    text-align: center;
+
+    h1 {
+        font-weight: 700;
+    }
+
+    p {
+        @include fonts.typography(c1);
+        margin-top: 8px;
     }
 }
