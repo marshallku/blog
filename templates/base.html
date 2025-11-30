@@ -42,8 +42,9 @@
                     @click="drawerOpen = !drawerOpen"
                     aria-label="Toggle menu"
                 >
-                    <span class="hamburger__icon"></span>
-                    hi
+                    <span class="hamburger__line hamburger__line--top"></span>
+                    <span class="hamburger__line hamburger__line--middle"></span>
+                    <span class="hamburger__line hamburger__line--bottom"></span>
                 </button>
                 <a href="/" class="global-navigation__logo">
                     <svg class="logo logo--hover-animation logo--white" viewBox="0 0 803.2 140.05" height="20">
@@ -64,16 +65,31 @@
                 </a>
             </div>
             <nav class="global-navigation__category">
-                {% if categories %}
-                    {% for category in categories %}
-                    <div class="global-navigation__item">
-                        <a href="/{{ category.slug }}/"
-                           {% if category.color %}style="color: {{ category.color }}"{% endif %}>
-                            {{ category.name }}
-                        </a>
-                    </div>
-                    {% endfor %}
-                {% endif %}
+                <div class="global-navigation__item">
+                    <a href="/dev/">
+                        Dev
+                    </a>
+                </div>
+                <div class="global-navigation__item">
+                    <a href="/chat/">
+                        Chat
+                    </a>
+                </div>
+                <div class="global-navigation__item">
+                    <a href="/gallery/">
+                        Gallery
+                    </a>
+                </div>
+                <div class="global-navigation__item">
+                    <a href="/about/">
+                        About
+                    </a>
+                </div>
+                <div class="global-navigation__item">
+                    <a href="/guestbook/">
+                        Guestbook
+                    </a>
+                </div>
             </nav>
             <div class="global-navigation__right">
                 <button type="button" class="theme-toggle" aria-label="테마 토글" title="테마 토글">
@@ -95,6 +111,7 @@
                 </button>
             </div>
         </div>
+        <div class="global-navigation__background"></div>
     </header>
 
     {# Mobile drawer #}

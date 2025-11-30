@@ -4,6 +4,7 @@
 @use "../base/variables";
 
 .global-navigation {
+    $self: &;
     position: fixed;
     top: 0;
     left: 0;
@@ -59,41 +60,50 @@
         &:not(:last-child) {
             margin-right: 12px;
         }
+    }
 
-        &--has-sub-menu {
-            position: relative;
+    &__background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: palette.color(navigation-background);
+        backdrop-filter: blur(8px) saturate(180%);
+        -webkit-backdrop-filter: blur(8px) saturate(180%);
+        box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.25);
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s variables.$ease-in-out-cubic;
 
-            @include mixins.supports-hover {
-                &:hover {
-                    ul {
-                        display: flex;
-                    }
-                }
-            }
+        #{$self}--scrolled & {
+            opacity: 1;
         }
+    }
+}
 
-        ul {
-            position: absolute;
-            top: variables.$global-navigation-height - 16px;
-            left: 50%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            background-color: palette.color(navigation-background);
-            -webkit-backdrop-filter: blur(8px) saturate(180%);
-            backdrop-filter: blur(8px) saturate(180%);
-            box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.25);
-            transform: translate(-50%, 0);
+.logo {
+    $logo: &;
+    &__text {
+        fill: palette.color(text);
+    }
 
-            li {
-                a {
-                    display: flex;
-                    padding: 8px 16px;
-                    align-items: center;
-                    white-space: nowrap;
+    @include mixins.supports-hover {
+        &--hover-animation {
+            path {
+                transition: transform 0.5s;
+            }
 
-                    i {
-                        margin-right: 8px;
+            &:hover {
+                #{$logo}__image > path {
+                    transform: translate3d(331px, 0, 0);
+                }
+
+                #{$logo}__text > path {
+                    transform: translate3d(0, -600px, 0);
+
+                    &:nth-child(2n) {
+                        transform: translate3d(0, 600px, 0);
                     }
                 }
             }
@@ -102,55 +112,59 @@
 }
 
 .hamburger {
+    $self: &;
+
     display: flex;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    border: none;
+    width: 30px;
+    height: 30px;
     align-items: center;
+    flex-direction: column;
     justify-content: center;
-    background: transparent;
+    transition: opacity 0.35s variables.$ease-in-out-cubic;
 
-    @include mixins.respond-to(medium) {
-        display: none;
+    @include mixins.supports-hover {
+        &:not(&--open):hover &__line {
+            &--top {
+                transform: rotate(45deg) scaleX(0.7)
+                    translate3d(calc(50% - 4px), -2px, 0);
+            }
+
+            &--bottom {
+                transform: rotate(-45deg) scaleX(0.7)
+                    translate3d(calc(50% - 4px), 2px, 0);
+            }
+        }
     }
 
-    &__icon {
-        position: relative;
-        width: 18px;
-        height: 2px;
+    &__line {
         background-color: palette.color(text);
-        transition: background-color 0.2s;
+        width: 20px;
+        height: 3px;
+        border-radius: 5px;
+        transition: background-color 0.35s variables.$ease-in-out-cubic,
+            transform 0.35s variables.$ease-in-out-cubic,
+            opacity 0.35s variables.$ease-in-out-cubic;
 
-        &::before,
-        &::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: palette.color(text);
-            transition: transform 0.2s;
-        }
-
-        &::before {
-            top: -6px;
-        }
-
-        &::after {
-            bottom: -6px;
+        &--middle {
+            margin: 3px 0;
         }
     }
 
-    &--open &__icon {
-        background-color: transparent;
+    &--open &__line,
+    &--open:hover &__line {
+        background-color: #fff;
 
-        &::before {
-            transform: translateY(6px) rotate(45deg);
+        &--top {
+            transform: translate3d(0, 6px, 0) rotate(-135deg);
         }
 
-        &::after {
-            transform: translateY(-6px) rotate(-45deg);
+        &--middle {
+            opacity: 0;
+            transform: rotate(135deg);
+        }
+
+        &--bottom {
+            transform: translate3d(0, -6px, 0) rotate(-45deg);
         }
     }
 }
