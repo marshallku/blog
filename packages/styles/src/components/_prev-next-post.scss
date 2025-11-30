@@ -4,106 +4,106 @@
 @use "../base/mixins";
 
 .prev-next-post {
-  display: flex;
-  width: clamp(0px, map.get(palette.$container-width, small), 100%);
-  margin: 48px auto;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  overflow: hidden;
-  gap: 1px;
-  background-color: palette.color(selection);
-
-  @include mixins.respond-to(medium) {
-    border-radius: 8px;
-  }
-
-  &-post {
-    $post: &;
-
-    position: relative;
     display: flex;
-    width: 100%;
-    margin-left: auto;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    text-align: right;
-    background-color: #000;
-    color: #fff;
-    overflow: hidden;
-    flex-grow: 1;
+    width: clamp(0px, map.get(palette.$container-width, small), 100%);
+    margin: 48px auto;
     flex-wrap: wrap;
-
-    &:hover {
-      color: #fff;
-    }
-
-    &--previous {
-      margin-left: 0;
-      align-items: flex-start;
-      text-align: left;
-    }
-
-    &__meta {
-      position: relative;
-      width: 100%;
-      padding: 24px 16px;
-
-      background: linear-gradient(-90deg, #000c, #0003 80%);
-
-      #{$post}--previous & {
-        background: linear-gradient(90deg, #000c, #0003 80%);
-      }
-    }
-
-    &__label {
-      display: flex;
-      align-items: center;
-      flex-direction: row-reverse;
-
-      i {
-        margin-left: 4px;
-      }
-
-      @at-root #{$post}--previous & {
-        flex-direction: row;
-
-        i {
-          margin-right: 4px;
-          margin-left: 0;
-        }
-      }
-    }
-
-    &__title {
-      display: block;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      margin-top: 4px;
-      font-weight: 700;
-    }
-
-    &__cover {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.25;
-      pointer-events: none;
-      object-fit: cover;
-      transition: transform 0.15s ease-in-out;
-
-      @include mixins.supports-hover {
-        @at-root #{$post}:hover & {
-          transform: scale(1.15);
-        }
-      }
-    }
+    justify-content: space-between;
+    overflow: hidden;
+    gap: 1px;
+    background-color: palette.color(selection);
 
     @include mixins.respond-to(medium) {
-      width: calc(50% - 0.5px);
+        border-radius: 8px;
     }
-  }
+
+    &-post {
+        $post: &;
+
+        position: relative;
+        display: flex;
+        width: 100%;
+        margin-left: auto;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        text-align: right;
+        background-color: #000;
+        color: #fff;
+        overflow: hidden;
+        flex-grow: 1;
+        flex-wrap: wrap;
+
+        &:hover {
+            color: #fff;
+        }
+
+        &--previous {
+            margin-left: 0;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        &__meta {
+            position: relative;
+            width: 100%;
+            padding: 24px 16px;
+
+            background: linear-gradient(-90deg, #000c, #0003 80%);
+
+            #{$post}--previous & {
+                background: linear-gradient(90deg, #000c, #0003 80%);
+            }
+        }
+
+        &__label {
+            display: flex;
+            align-items: center;
+            flex-direction: row-reverse;
+
+            i {
+                margin-left: 4px;
+            }
+
+            @at-root #{$post}--previous & {
+                flex-direction: row;
+
+                i {
+                    margin-right: 4px;
+                    margin-left: 0;
+                }
+            }
+        }
+
+        &__title {
+            display: block;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            margin-top: 4px;
+            font-weight: 700;
+        }
+
+        &__cover {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.25;
+            pointer-events: none;
+            object-fit: cover;
+            transition: transform 0.15s ease-in-out;
+
+            @include mixins.supports-hover {
+                @at-root #{$post}:hover & {
+                    transform: scale(1.15);
+                }
+            }
+        }
+
+        @include mixins.respond-to(medium) {
+            width: calc(50% - 0.5px);
+        }
+    }
 }

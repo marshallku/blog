@@ -6,288 +6,288 @@
 @use "../base/variables";
 
 .post {
-  $banner-height: 128px;
+    $banner-height: 128px;
 
-  &-header {
-    $padding: 36px;
-    padding: variables.$global-navigation-height + $padding
-      variables.$container-padding $padding;
-    text-align: center;
-    background-color: palette.color(background-dimmed);
-
-    &--has-cover {
-      padding-bottom: $banner-height + $padding;
-    }
-
-    &__tags {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-
-      a {
-        color: palette.color(link);
-      }
-    }
-
-    &__title {
-      margin-bottom: 12px;
-      font-weight: 700;
-    }
-  }
-
-  &__cover {
-    width: clamp(0px, map.get(palette.$container-width, large), 100%);
-    margin: -($banner-height - 16px) auto 0;
-    padding: 0 variables.$container-padding;
-
-    img {
-      display: block;
-      width: 100%;
-      height: auto;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      border-radius: 16px;
-      border: 5px solid palette.color(background);
-    }
-  }
-
-  &__meta {
-    width: clamp(0px, map.get(palette.$container-width, small), 100%);
-    margin: 0 auto;
-    padding: 24px variables.$container-padding 0px;
-  }
-
-  &__body {
-    @include fonts.typography(b1);
-
-    width: clamp(0px, map.get(palette.$container-width, small), 100%);
-    margin: 0 auto;
-    padding: 48px variables.$container-padding 12px;
-    -ms-text-size-adjust: 100%;
-    -webkit-text-size-adjust: 100%;
-    word-wrap: break-word;
-
-    @for $i from 1 through 6 {
-      h#{$i} {
-        @include fonts.typography(h#{$i});
-        margin-bottom: 1em - ($i - 1) * 0.2em;
-        font-weight: 700;
-      }
-    }
-
-    p {
-      @include fonts.typography(b1);
-      margin-bottom: 0.65em;
-    }
-
-    ul,
-    ol {
-      margin-bottom: 1em;
-    }
-
-    img,
-    video {
-      max-width: 100%;
-      height: auto;
-    }
-
-    iframe {
-      width: 100%;
-      height: auto;
-    }
-
-    b,
-    strong {
-      font-weight: 600;
-    }
-
-    small {
-      font-size: 90%;
-    }
-
-    sub {
-      bottom: -0.25em;
-    }
-
-    sup {
-      top: -0.5em;
-    }
-
-    a {
-      color: palette.color(link);
-
-      @include mixins.supports-hover {
-        &:hover {
-          color: palette.color(highlight);
-        }
-      }
-    }
-
-    figure {
-      margin-bottom: 1em;
-    }
-
-    code {
-      font-family: "Fira Code", monospace;
-      font-size: 90%;
-      border-radius: 4px;
-      overflow-x: auto;
-      background-color: palette.color(background-dimmed);
-
-      @at-root html:not([data-theme="dark"]) & {
-        &[data-theme*=" "],
-        &[data-theme*=" "] span {
-          color: var(--shiki-light);
-          background-color: var(--shiki-light-bg);
-        }
-      }
-
-      @at-root html[data-theme="dark"] & {
-        &[data-theme*=" "],
-        &[data-theme*=" "] span {
-          color: var(--shiki-dark);
-          background-color: var(--shiki-dark-bg);
-        }
-      }
-
-      @at-root html[data-theme="sepia"] & {
-        &[data-theme*=" "],
-        &[data-theme*=" "] span {
-          color: var(--shiki-sepia);
-          background-color: var(--shiki-sepia-bg);
-        }
-      }
-    }
-
-    pre code {
-      display: block;
-      background-color: inherit;
-    }
-
-    hr {
-      height: 0.25em;
-      margin: 24px 0;
-      border: 0;
-      border-bottom: 1px solid palette.color(sub-opacity);
-      background-color: palette.color(sub);
-    }
-
-    ol {
-      list-style: decimal;
-      margin-left: 1.5em;
-    }
-
-    ul {
-      list-style: disc;
-      margin-left: 1.5em;
-    }
-
-    blockquote {
-      margin: 0 0 1em;
-      padding: 0.5em 1em;
-      border-left: 0.25em solid palette.color(sub-opacity);
-
-      p:last-child {
-        margin-bottom: 0;
-      }
-    }
-
-    table {
-      width: 100%;
-      margin-bottom: 1em;
-      border-collapse: collapse;
-      border-spacing: 0;
-      border: 1px solid palette.color(sub-opacity);
-
-      th,
-      td {
-        padding: 0.5em 1em;
-        border: 1px solid palette.color(sub-opacity);
-      }
-
-      th {
-        font-weight: 700;
-        background-color: palette.color(sub-opacity);
-      }
-    }
-
-    :global(figure.image-block) {
-      figcaption {
-        @include fonts.typography(c1);
+    &-header {
+        $padding: 36px;
+        padding: variables.$global-navigation-height + $padding
+            variables.$container-padding $padding;
         text-align: center;
-        margin-top: 0.2em;
-      }
-    }
+        background-color: palette.color(background-dimmed);
 
-    :global(.table) {
-      overflow-x: auto;
-    }
-
-    :global(.iframe-container) {
-      position: relative;
-      overflow: hidden;
-      padding-top: 56.25%;
-      margin-bottom: 1em;
-
-      iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-      }
-    }
-
-    :global(.iframe-container--ratio-4-3) {
-      padding-top: 75%;
-    }
-
-    :global(.iframe-container--ratio-1-1) {
-      padding-top: 100%;
-    }
-
-    :global(.iframe-container--ratio-9-16) {
-      padding-top: 177.7778%;
-    }
-  }
-
-  &-related-posts {
-    width: clamp(0px, map.get(palette.$container-width, small), 100%);
-    margin: 0 auto;
-    padding-bottom: 32px;
-
-    &__title,
-    &__text,
-    &__more {
-      text-align: center;
-    }
-
-    &__title {
-      margin-bottom: 16px;
-
-      a {
-        text-decoration: underline;
-      }
-    }
-
-    &__text {
-      margin-bottom: 24px;
-    }
-
-    &__more {
-      $more: &;
-
-      i {
-        display: inline-block;
-        transition: transform 0.15s ease-in-out;
-
-        @include mixins.supports-hover {
-          @at-root #{$more} a:hover i {
-            transform: translateX(4px);
-          }
+        &--has-cover {
+            padding-bottom: $banner-height + $padding;
         }
-      }
+
+        &__tags {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+
+            a {
+                color: palette.color(link);
+            }
+        }
+
+        &__title {
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
     }
-  }
+
+    &__cover {
+        width: clamp(0px, map.get(palette.$container-width, large), 100%);
+        margin: -($banner-height - 16px) auto 0;
+        padding: 0 variables.$container-padding;
+
+        img {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 16px;
+            border: 5px solid palette.color(background);
+        }
+    }
+
+    &__meta {
+        width: clamp(0px, map.get(palette.$container-width, small), 100%);
+        margin: 0 auto;
+        padding: 24px variables.$container-padding 0px;
+    }
+
+    &__body {
+        @include fonts.typography(b1);
+
+        width: clamp(0px, map.get(palette.$container-width, small), 100%);
+        margin: 0 auto;
+        padding: 48px variables.$container-padding 12px;
+        -ms-text-size-adjust: 100%;
+        -webkit-text-size-adjust: 100%;
+        word-wrap: break-word;
+
+        @for $i from 1 through 6 {
+            h#{$i} {
+                @include fonts.typography(h#{$i});
+                margin-bottom: 1em - ($i - 1) * 0.2em;
+                font-weight: 700;
+            }
+        }
+
+        p {
+            @include fonts.typography(b1);
+            margin-bottom: 0.65em;
+        }
+
+        ul,
+        ol {
+            margin-bottom: 1em;
+        }
+
+        img,
+        video {
+            max-width: 100%;
+            height: auto;
+        }
+
+        iframe {
+            width: 100%;
+            height: auto;
+        }
+
+        b,
+        strong {
+            font-weight: 600;
+        }
+
+        small {
+            font-size: 90%;
+        }
+
+        sub {
+            bottom: -0.25em;
+        }
+
+        sup {
+            top: -0.5em;
+        }
+
+        a {
+            color: palette.color(link);
+
+            @include mixins.supports-hover {
+                &:hover {
+                    color: palette.color(highlight);
+                }
+            }
+        }
+
+        figure {
+            margin-bottom: 1em;
+        }
+
+        code {
+            font-family: "Fira Code", monospace;
+            font-size: 90%;
+            border-radius: 4px;
+            overflow-x: auto;
+            background-color: palette.color(background-dimmed);
+
+            @at-root html:not([data-theme="dark"]) & {
+                &[data-theme*=" "],
+                &[data-theme*=" "] span {
+                    color: var(--shiki-light);
+                    background-color: var(--shiki-light-bg);
+                }
+            }
+
+            @at-root html[data-theme="dark"] & {
+                &[data-theme*=" "],
+                &[data-theme*=" "] span {
+                    color: var(--shiki-dark);
+                    background-color: var(--shiki-dark-bg);
+                }
+            }
+
+            @at-root html[data-theme="sepia"] & {
+                &[data-theme*=" "],
+                &[data-theme*=" "] span {
+                    color: var(--shiki-sepia);
+                    background-color: var(--shiki-sepia-bg);
+                }
+            }
+        }
+
+        pre code {
+            display: block;
+            background-color: inherit;
+        }
+
+        hr {
+            height: 0.25em;
+            margin: 24px 0;
+            border: 0;
+            border-bottom: 1px solid palette.color(sub-opacity);
+            background-color: palette.color(sub);
+        }
+
+        ol {
+            list-style: decimal;
+            margin-left: 1.5em;
+        }
+
+        ul {
+            list-style: disc;
+            margin-left: 1.5em;
+        }
+
+        blockquote {
+            margin: 0 0 1em;
+            padding: 0.5em 1em;
+            border-left: 0.25em solid palette.color(sub-opacity);
+
+            p:last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        table {
+            width: 100%;
+            margin-bottom: 1em;
+            border-collapse: collapse;
+            border-spacing: 0;
+            border: 1px solid palette.color(sub-opacity);
+
+            th,
+            td {
+                padding: 0.5em 1em;
+                border: 1px solid palette.color(sub-opacity);
+            }
+
+            th {
+                font-weight: 700;
+                background-color: palette.color(sub-opacity);
+            }
+        }
+
+        :global(figure.image-block) {
+            figcaption {
+                @include fonts.typography(c1);
+                text-align: center;
+                margin-top: 0.2em;
+            }
+        }
+
+        :global(.table) {
+            overflow-x: auto;
+        }
+
+        :global(.iframe-container) {
+            position: relative;
+            overflow: hidden;
+            padding-top: 56.25%;
+            margin-bottom: 1em;
+
+            iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        :global(.iframe-container--ratio-4-3) {
+            padding-top: 75%;
+        }
+
+        :global(.iframe-container--ratio-1-1) {
+            padding-top: 100%;
+        }
+
+        :global(.iframe-container--ratio-9-16) {
+            padding-top: 177.7778%;
+        }
+    }
+
+    &-related-posts {
+        width: clamp(0px, map.get(palette.$container-width, small), 100%);
+        margin: 0 auto;
+        padding-bottom: 32px;
+
+        &__title,
+        &__text,
+        &__more {
+            text-align: center;
+        }
+
+        &__title {
+            margin-bottom: 16px;
+
+            a {
+                text-decoration: underline;
+            }
+        }
+
+        &__text {
+            margin-bottom: 24px;
+        }
+
+        &__more {
+            $more: &;
+
+            i {
+                display: inline-block;
+                transition: transform 0.15s ease-in-out;
+
+                @include mixins.supports-hover {
+                    @at-root #{$more} a:hover i {
+                        transform: translateX(4px);
+                    }
+                }
+            }
+        }
+    }
 }

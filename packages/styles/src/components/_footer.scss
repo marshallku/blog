@@ -2,59 +2,59 @@
 @use "../base/fonts";
 
 .footer {
-  margin-top: auto;
-  background-color: palette.color(background-dimmed);
-  text-align: center;
+    margin-top: auto;
+    background-color: palette.color(background-dimmed);
+    text-align: center;
 
-  &__curve {
-    display: block;
-    width: 100%;
-    height: 60px;
+    &__curve {
+        display: block;
+        width: 100%;
+        height: 60px;
 
-    path {
-      fill: palette.color(background);
+        path {
+            fill: palette.color(background);
+        }
     }
-  }
 
-  &__logo {
-    .footer__name-text {
-      fill: palette.color(text);
+    &__logo {
+        .footer__name-text {
+            fill: palette.color(text);
+        }
     }
-  }
 
-  &__content {
-    padding: 24px 48px;
-  }
-
-  &__contact {
-    margin: 16px 0;
-
-    > a,
-    button {
-      display: inline-flex;
-      width: fonts.toRem(32px);
-      height: fonts.toRem(32px);
-      margin: 0 5px;
-      border-radius: 50%;
-      align-items: center;
-      justify-content: center;
-      font-size: fonts.toRem(16px);
-      line-height: fonts.toRem(32px);
-      background: palette.color(background);
-
-      > i {
-        display: inline-flex;
-        width: fonts.toRem(32px);
-        height: fonts.toRem(32px);
-        align-items: center;
-        justify-content: center;
-      }
+    &__content {
+        padding: 24px 48px;
     }
-  }
 
-  &__copyright {
-    @include fonts.typography(c1);
-    color: palette.color(grayscale, 600);
-    margin-top: 16px;
-  }
+    &__contact {
+        margin: 16px 0;
+
+        > a,
+        button {
+            display: inline-flex;
+            width: fonts.toRem(32px);
+            height: fonts.toRem(32px);
+            margin: 0 5px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-size: fonts.toRem(16px);
+            line-height: fonts.toRem(32px);
+            background: palette.color(background);
+
+            > i {
+                display: inline-flex;
+                width: fonts.toRem(32px);
+                height: fonts.toRem(32px);
+                align-items: center;
+                justify-content: center;
+            }
+        }
+    }
+
+    &__copyright {
+        @include fonts.typography(c1);
+        color: palette.color(grayscale, 600);
+        margin-top: 16px;
+    }
 }
