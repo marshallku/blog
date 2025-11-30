@@ -1,5 +1,7 @@
 use anyhow::Result;
-use pulldown_cmark::{html, Options, Parser as MdParser};
+use pulldown_cmark::{
+    CodeBlockKind, CowStr, Event, HeadingLevel, Options, Parser as MdParser, Tag,
+};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -64,14 +66,204 @@ impl Renderer {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);
 
+        // Use custom HTML writer that adds data-md markers to markdown-generated tags
         let mut html_output = String::with_capacity(markdown.len() * 2);
-        html::push_html(&mut html_output, parser);
+        Self::push_html_with_markers(&mut html_output, parser);
 
         // Apply syntax highlighting first
         let highlighted = self.highlight_code_blocks(&html_output);
 
-        // Then apply component templates
+        // Then apply component templates (only to data-md marked tags)
         Self::post_process_components(&highlighted, tera, base_path, cdn_url, content_dir)
+    }
+
+    /// Custom HTML writer that adds `data-md` attribute to markdown-generated tags.
+    /// This allows component templates to distinguish between markdown syntax
+    /// (e.g., `![]()`→`<img>`) and raw HTML tags written directly in markdown.
+    fn push_html_with_markers<'a, I>(output: &mut String, iter: I)
+    where
+        I: Iterator<Item = Event<'a>>,
+    {
+        let mut in_code_block = false;
+
+        for event in iter {
+            match event {
+                Event::Start(tag) => Self::write_start_tag(output, &tag, &mut in_code_block),
+                Event::End(tag) => Self::write_end_tag(output, &tag, &mut in_code_block),
+                Event::Text(text) => {
+                    Self::escape_html(output, &text);
+                }
+                Event::Code(text) => {
+                    output.push_str("<code data-md>");
+                    Self::escape_html(output, &text);
+                    output.push_str("</code>");
+                }
+                Event::Html(html) => {
+                    // Raw HTML passes through unchanged (no marker)
+                    output.push_str(&html);
+                }
+                Event::SoftBreak => output.push('\n'),
+                Event::HardBreak => output.push_str("<br />\n"),
+                Event::Rule => output.push_str("<hr data-md />\n"),
+                Event::FootnoteReference(name) => {
+                    output.push_str("<sup class=\"footnote-reference\" data-md><a href=\"#");
+                    Self::escape_html(output, &name);
+                    output.push_str("\">");
+                    Self::escape_html(output, &name);
+                    output.push_str("</a></sup>");
+                }
+                Event::TaskListMarker(checked) => {
+                    output.push_str("<input type=\"checkbox\" disabled");
+                    if checked {
+                        output.push_str(" checked");
+                    }
+                    output.push_str(" />\n");
+                }
+            }
+        }
+    }
+
+    fn write_start_tag(output: &mut String, tag: &Tag<'_>, in_code_block: &mut bool) {
+        match tag {
+            Tag::Paragraph => output.push_str("<p data-md>"),
+            Tag::Heading(level, id, _classes) => {
+                output.push('<');
+                output.push_str(Self::heading_level_str(*level));
+                output.push_str(" data-md");
+                if let Some(id) = id {
+                    output.push_str(" id=\"");
+                    Self::escape_html(output, id);
+                    output.push('"');
+                }
+                output.push('>');
+            }
+            Tag::BlockQuote => output.push_str("<blockquote data-md>\n"),
+            Tag::CodeBlock(kind) => {
+                *in_code_block = true;
+                output.push_str("<pre data-md>");
+                match kind {
+                    CodeBlockKind::Fenced(info) => {
+                        let lang = info.split(' ').next().unwrap_or("");
+                        if lang.is_empty() {
+                            output.push_str("<code>");
+                        } else {
+                            output.push_str("<code class=\"language-");
+                            Self::escape_html(output, lang);
+                            output.push_str("\">");
+                        }
+                    }
+                    CodeBlockKind::Indented => output.push_str("<code>"),
+                }
+            }
+            Tag::List(Some(start)) => {
+                if *start != 1 {
+                    output.push_str("<ol data-md start=\"");
+                    output.push_str(&start.to_string());
+                    output.push_str("\">\n");
+                } else {
+                    output.push_str("<ol data-md>\n");
+                }
+            }
+            Tag::List(None) => output.push_str("<ul data-md>\n"),
+            Tag::Item => output.push_str("<li data-md>"),
+            Tag::FootnoteDefinition(name) => {
+                output.push_str("<div class=\"footnote-definition\" id=\"");
+                Self::escape_html(output, name);
+                output.push_str("\" data-md><sup class=\"footnote-definition-label\">");
+                Self::escape_html(output, name);
+                output.push_str("</sup>");
+            }
+            Tag::Table(_) => output.push_str("<table data-md>"),
+            Tag::TableHead => output.push_str("<thead data-md><tr data-md>"),
+            Tag::TableRow => output.push_str("<tr data-md>"),
+            Tag::TableCell => output.push_str("<td data-md>"),
+            Tag::Emphasis => output.push_str("<em data-md>"),
+            Tag::Strong => output.push_str("<strong data-md>"),
+            Tag::Strikethrough => output.push_str("<del data-md>"),
+            Tag::Link(_link_type, dest_url, title) => {
+                output.push_str("<a data-md href=\"");
+                Self::escape_href(output, dest_url);
+                if !title.is_empty() {
+                    output.push_str("\" title=\"");
+                    Self::escape_html(output, title);
+                }
+                output.push_str("\">");
+            }
+            Tag::Image(_link_type, dest_url, _title) => {
+                output.push_str("<img data-md src=\"");
+                Self::escape_href(output, dest_url);
+                output.push_str("\" alt=\"");
+                // Alt text will be added by subsequent Text events
+            }
+        }
+    }
+
+    fn write_end_tag(output: &mut String, tag: &Tag<'_>, in_code_block: &mut bool) {
+        match tag {
+            Tag::Paragraph => output.push_str("</p>\n"),
+            Tag::Heading(level, _, _) => {
+                output.push_str("</");
+                output.push_str(Self::heading_level_str(*level));
+                output.push_str(">\n");
+            }
+            Tag::BlockQuote => output.push_str("</blockquote>\n"),
+            Tag::CodeBlock(_) => {
+                *in_code_block = false;
+                output.push_str("</code></pre>\n");
+            }
+            Tag::List(Some(_)) => output.push_str("</ol>\n"),
+            Tag::List(None) => output.push_str("</ul>\n"),
+            Tag::Item => output.push_str("</li>\n"),
+            Tag::FootnoteDefinition(_) => output.push_str("</div>\n"),
+            Tag::Table(_) => output.push_str("</table>\n"),
+            Tag::TableHead => output.push_str("</tr></thead>\n"),
+            Tag::TableRow => output.push_str("</tr>\n"),
+            Tag::TableCell => output.push_str("</td>"),
+            Tag::Emphasis => output.push_str("</em>"),
+            Tag::Strong => output.push_str("</strong>"),
+            Tag::Strikethrough => output.push_str("</del>"),
+            Tag::Link(_, _, _) => output.push_str("</a>"),
+            Tag::Image(_, _, _) => {
+                // Image alt text was accumulated, now close the tag
+                output.push_str("\" />");
+            }
+        }
+    }
+
+    fn heading_level_str(level: HeadingLevel) -> &'static str {
+        match level {
+            HeadingLevel::H1 => "h1",
+            HeadingLevel::H2 => "h2",
+            HeadingLevel::H3 => "h3",
+            HeadingLevel::H4 => "h4",
+            HeadingLevel::H5 => "h5",
+            HeadingLevel::H6 => "h6",
+        }
+    }
+
+    fn escape_html(output: &mut String, text: &str) {
+        for c in text.chars() {
+            match c {
+                '<' => output.push_str("&lt;"),
+                '>' => output.push_str("&gt;"),
+                '&' => output.push_str("&amp;"),
+                '"' => output.push_str("&quot;"),
+                _ => output.push(c),
+            }
+        }
+    }
+
+    fn escape_href(output: &mut String, href: &CowStr<'_>) {
+        for c in href.chars() {
+            match c {
+                '<' => output.push_str("&lt;"),
+                '>' => output.push_str("&gt;"),
+                '&' => output.push_str("&amp;"),
+                '"' => output.push_str("&quot;"),
+                '\'' => output.push_str("&#x27;"),
+                _ => output.push(c),
+            }
+        }
     }
 
     fn post_process_components(
@@ -110,7 +302,11 @@ impl Renderer {
             )?;
         }
 
-        Ok(result)
+        Ok(Self::sanitize(&result))
+    }
+
+    fn sanitize(html: &str) -> String {
+        html.replace(" data-md", "")
     }
 
     fn replace_tag(
@@ -153,9 +349,13 @@ impl Renderer {
                     }
                 }
 
-                if tag_content.starts_with(&format!("<{} ", tag_name))
-                    || tag_content == format!("<{}>", tag_name)
-                {
+                // Only process markdown-generated tags (those with data-md marker)
+                let is_target_tag = tag_content.starts_with(&format!("<{} ", tag_name))
+                    || tag_content == format!("<{}>", tag_name);
+                let has_md_marker =
+                    tag_content.contains(" data-md") || tag_content.contains(" data-md ");
+
+                if is_target_tag && has_md_marker {
                     let attrs = Self::extract_attributes(&tag_content);
                     let mut inner_content = String::new();
 
@@ -200,6 +400,10 @@ impl Renderer {
                     let mut original_src = String::new();
 
                     for (key, value) in &attrs {
+                        // Skip the data-md marker - it's only for internal use
+                        if key == "data-md" {
+                            continue;
+                        }
                         if Self::is_url_attribute(key) {
                             let resolved = Self::resolve_path(value, category);
                             context.insert(key, &resolved);
@@ -660,7 +864,7 @@ mod tests {
             let options = Options::all();
             let parser = MdParser::new_ext(markdown, options);
             let mut html_output = String::with_capacity(markdown.len() * 2);
-            html::push_html(&mut html_output, parser);
+            Self::push_html_with_markers(&mut html_output, parser);
             self.highlight_code_blocks(&html_output)
         }
     }
@@ -671,9 +875,11 @@ mod tests {
         let md = "# Hello\n\nThis is **bold**.";
         let html = renderer.render_markdown(md);
 
-        assert!(html.contains("<h1>"));
+        // Note: render_markdown is internal test helper that doesn't strip data-md markers
+        // The markers are stripped in post_process_components which is called by the public API
+        assert!(html.contains("<h1 data-md>"));
         assert!(html.contains("Hello"));
-        assert!(html.contains("<strong>bold</strong>"));
+        assert!(html.contains("<strong data-md>bold</strong>"));
     }
 
     #[test]
@@ -682,7 +888,7 @@ mod tests {
         let md = "```rust\nfn main() {}\n```";
         let html = renderer.render_markdown(md);
 
-        // Check for class-based highlighting structure
+        // Check for class-based highlighting structure (pre gets data-md, then syntax-highlight replaces it)
         assert!(html.contains("<pre class=\"syntax-highlight\">"));
         assert!(html.contains("<code>"));
         // Check that code content is present (even if wrapped in spans)
@@ -696,8 +902,56 @@ mod tests {
         let md = "[Click here](https://example.com)";
         let html = renderer.render_markdown(md);
 
-        assert!(html.contains("<a href=\"https://example.com\">"));
+        assert!(html.contains("<a data-md href=\"https://example.com\">"));
         assert!(html.contains("Click here"));
+    }
+
+    #[test]
+    fn test_markdown_vs_raw_html_distinction() {
+        let renderer = Renderer::new();
+
+        // Markdown image should have data-md marker
+        let md_image = "![alt text](./image.png)";
+        let html = renderer.render_markdown(md_image);
+        assert!(
+            html.contains("<img data-md"),
+            "Markdown image should have data-md marker"
+        );
+
+        // Raw HTML image should NOT have data-md marker
+        let raw_html_image = r#"<img src="./image.png" alt="raw image">"#;
+        let html = renderer.render_markdown(raw_html_image);
+        assert!(
+            !html.contains("data-md"),
+            "Raw HTML image should NOT have data-md marker"
+        );
+        assert!(
+            html.contains(r#"<img src="./image.png" alt="raw image">"#),
+            "Raw HTML should pass through unchanged"
+        );
+
+        // Markdown link should have data-md marker
+        let md_link = "[link](https://example.com)";
+        let html = renderer.render_markdown(md_link);
+        assert!(
+            html.contains("<a data-md"),
+            "Markdown link should have data-md marker"
+        );
+
+        // Raw HTML link should NOT have data-md marker on the <a> tag itself
+        // Note: It will be wrapped in a markdown <p>, but the <a> itself shouldn't have data-md
+        let raw_html_link = r#"<a href="https://example.com">raw link</a>"#;
+        let html = renderer.render_markdown(raw_html_link);
+        assert!(
+            !html.contains("<a data-md"),
+            "Raw HTML <a> tag should NOT have data-md marker, got: {}",
+            html
+        );
+        // The raw <a> should be preserved as-is (except wrapped in <p>)
+        assert!(
+            html.contains(r#"<a href="https://example.com">raw link</a>"#),
+            "Raw HTML <a> should pass through unchanged"
+        );
     }
 
     #[test]
