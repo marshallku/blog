@@ -4,6 +4,7 @@
 @use "./palette";
 @use "./mixins";
 @use "./fonts";
+@use "./variables";
 
 html {
     @each $key, $value in palette.$light-palette {
@@ -58,6 +59,7 @@ body {
 body {
     display: flex;
     flex-direction: column;
+    padding-top: variables.$global-navigation-height;
 }
 
 a {
