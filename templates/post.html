@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% import "components/post-card.html" as macros %}
-{% import "components/prev-next-post.html" as nav_macros %}
+{% import "macros/post-card.html" as macros %}
+{% import "macros/prev-next-post.html" as nav_macros %}
 
 {% block title %}{{ post.frontmatter.title }} - {{ config.site_title }}{% endblock %}
 
