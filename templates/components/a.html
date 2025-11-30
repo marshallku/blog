@@ -1,0 +1,5 @@
+{% if href is starting_with("http://") or href is starting_with("https://") or href is starting_with("//") -%}
+<a href="{{ href }}" target="_blank" rel="noopener noreferrer">{{ content | safe }}</a>
+{%- else -%}
+<a href="{{ href }}">{{ content | safe }}</a>
+{%- endif %}
