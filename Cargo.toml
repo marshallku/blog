@@ -24,20 +24,14 @@ serde_yaml = "0.9"
 tera = "1.20"
 
 # Syntax highlighting
-tree-sitter = "0.23"
-tree-sitter-highlight = "0.23"
-tree-sitter-rust = "0.23"
-tree-sitter-javascript = "0.23"
-tree-sitter-typescript = "0.23"
-tree-sitter-python = "0.23"
-tree-sitter-go = "0.23"
-tree-sitter-c = "0.23"
-tree-sitter-cpp = "0.23"
-tree-sitter-java = "0.23"
-tree-sitter-json = "0.23"
-tree-sitter-bash = "0.23"
-tree-sitter-html = "0.20"
-tree-sitter-css = "0.23"
+autumnus = { version = "0.7", default-features = false, features = [
+  "lang-rust", "lang-javascript", "lang-typescript", "lang-tsx", "lang-python",
+  "lang-go", "lang-c", "lang-cpp", "lang-java", "lang-json", "lang-bash",
+  "lang-html", "lang-css", "lang-yaml", "lang-dockerfile", "lang-toml",
+  "lang-sql", "lang-markdown", "lang-diff", "lang-elixir", "lang-ruby",
+  "lang-php", "lang-swift", "lang-kotlin", "lang-scala", "lang-lua",
+  "lang-vim", "lang-make", "lang-cmake", "lang-graphql", "lang-scss"
+] }
 
 # Utilities
 anyhow = "1.0"

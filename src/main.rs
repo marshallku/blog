@@ -287,11 +287,6 @@ fn build_all(use_cache: bool) -> Result<()> {
         search_generator.generate(&metadata)?;
     }
 
-    println!("🎨 Generating syntax highlighting CSS...");
-    let css_dir = Path::new(&config.build.output_dir).join("css");
-    std::fs::create_dir_all(&css_dir)?;
-    renderer.write_syntax_css(css_dir.join("syntax.css"))?;
-
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 
@@ -531,13 +526,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         search_generator.generate(&metadata)?;
     }
 
-    println!("🎨 Generating syntax highlighting CSS...");
-    let renderer = Renderer::new();
     let generator = Generator::new((*config).clone())?;
-    let css_dir = Path::new(&config.build.output_dir).join("css");
-    std::fs::create_dir_all(&css_dir)?;
-    renderer.write_syntax_css(css_dir.join("syntax.css"))?;
-
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 

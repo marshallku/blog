@@ -1,0 +1,328 @@
+/* Syntax Highlighting Styles (autumnus/tree-sitter based) */
+/* Uses CSS variables scoped to data-theme for light/sepia/dark modes */
+
+/* Base code block styles are in _code.scss */
+/* This file handles syntax token coloring */
+
+/* Autumnus adds both "athl" and custom class (e.g., "hljs") */
+.hljs,
+.athl {
+    /* Light theme (GitHub Light) - default */
+    --syntax-bg: #ffffff;
+    --syntax-fg: #24292e;
+    --syntax-comment: #6a737d;
+    --syntax-string: #032f62;
+    --syntax-keyword: #d73a49;
+    --syntax-function: #6f42c1;
+    --syntax-type: #005cc5;
+    --syntax-constant: #005cc5;
+    --syntax-variable: #e36209;
+    --syntax-operator: #d73a49;
+    --syntax-punctuation: #24292e;
+    --syntax-property: #005cc5;
+    --syntax-tag: #22863a;
+    --syntax-attribute: #6f42c1;
+    --syntax-number: #005cc5;
+    --syntax-boolean: #005cc5;
+    --syntax-error: #cb2431;
+    --syntax-diff-plus: #22863a;
+    --syntax-diff-minus: #cb2431;
+    --syntax-diff-delta: #6f42c1;
+}
+
+/* Dark theme (Tokyo Night) */
+html[data-theme="dark"] .hljs,
+html[data-theme="dark"] .athl {
+    --syntax-bg: #1a1b26;
+    --syntax-fg: #a9b1d6;
+    --syntax-comment: #565f89;
+    --syntax-string: #9ece6a;
+    --syntax-keyword: #bb9af7;
+    --syntax-function: #7aa2f7;
+    --syntax-type: #2ac3de;
+    --syntax-constant: #ff9e64;
+    --syntax-variable: #c0caf5;
+    --syntax-operator: #89ddff;
+    --syntax-punctuation: #a9b1d6;
+    --syntax-property: #73daca;
+    --syntax-tag: #f7768e;
+    --syntax-attribute: #bb9af7;
+    --syntax-number: #ff9e64;
+    --syntax-boolean: #ff9e64;
+    --syntax-error: #f7768e;
+    --syntax-diff-plus: #9ece6a;
+    --syntax-diff-minus: #f7768e;
+    --syntax-diff-delta: #e0af68;
+}
+
+/* Sepia theme (Solarized Light) */
+html[data-theme="sepia"] .hljs,
+html[data-theme="sepia"] .athl {
+    --syntax-bg: #fdf6e3;
+    --syntax-fg: #657b83;
+    --syntax-comment: #93a1a1;
+    --syntax-string: #2aa198;
+    --syntax-keyword: #859900;
+    --syntax-function: #268bd2;
+    --syntax-type: #b58900;
+    --syntax-constant: #cb4b16;
+    --syntax-variable: #cb4b16;
+    --syntax-operator: #657b83;
+    --syntax-punctuation: #657b83;
+    --syntax-property: #268bd2;
+    --syntax-tag: #268bd2;
+    --syntax-attribute: #b58900;
+    --syntax-number: #d33682;
+    --syntax-boolean: #cb4b16;
+    --syntax-error: #dc322f;
+    --syntax-diff-plus: #859900;
+    --syntax-diff-minus: #dc322f;
+    --syntax-diff-delta: #b58900;
+}
+
+/* Apply theme colors */
+.hljs,
+.athl {
+    background-color: var(--syntax-bg);
+    color: var(--syntax-fg);
+}
+
+/* Comments */
+.hljs .comment,
+.hljs .comment-documentation,
+.hljs .comment-error,
+.hljs .comment-hint,
+.hljs .comment-note,
+.hljs .comment-todo,
+.hljs .comment-warning {
+    color: var(--syntax-comment);
+    font-style: italic;
+}
+
+/* Strings */
+.hljs .string,
+.hljs .string-documentation,
+.hljs .string-escape,
+.hljs .string-plain-css,
+.hljs .string-regexp,
+.hljs .string-special,
+.hljs .string-special-path,
+.hljs .string-special-symbol,
+.hljs .string-special-symbol-ruby,
+.hljs .string-special-url,
+.hljs .string-special-url-html,
+.hljs .character,
+.hljs .character-special {
+    color: var(--syntax-string);
+}
+
+/* Keywords */
+.hljs .keyword,
+.hljs .keyword-conditional,
+.hljs .keyword-conditional-ternary,
+.hljs .keyword-coroutine,
+.hljs .keyword-debug,
+.hljs .keyword-directive,
+.hljs .keyword-directive-css,
+.hljs .keyword-directive-define,
+.hljs .keyword-exception,
+.hljs .keyword-export,
+.hljs .keyword-function,
+.hljs .keyword-import,
+.hljs .keyword-import-c,
+.hljs .keyword-import-cpp,
+.hljs .keyword-modifier,
+.hljs .keyword-operator,
+.hljs .keyword-repeat,
+.hljs .keyword-return,
+.hljs .keyword-type {
+    color: var(--syntax-keyword);
+    font-weight: 600;
+}
+
+/* Functions */
+.hljs .function,
+.hljs .function-builtin,
+.hljs .function-builtin-bash,
+.hljs .function-call,
+.hljs .function-macro,
+.hljs .function-method,
+.hljs .function-method-call,
+.hljs .function-method-call-php,
+.hljs .function-method-php {
+    color: var(--syntax-function);
+}
+
+/* Types */
+.hljs .type,
+.hljs .type-builtin,
+.hljs .type-css,
+.hljs .type-definition,
+.hljs .type-tag-css,
+.hljs .constructor,
+.hljs .constructor-lua,
+.hljs .constructor-python {
+    color: var(--syntax-type);
+}
+
+/* Constants */
+.hljs .constant,
+.hljs .constant-builtin,
+.hljs .constant-java,
+.hljs .constant-macro {
+    color: var(--syntax-constant);
+}
+
+/* Variables */
+.hljs .variable,
+.hljs .variable-builtin,
+.hljs .variable-member,
+.hljs .variable-parameter,
+.hljs .variable-parameter-bash,
+.hljs .variable-parameter-builtin {
+    color: var(--syntax-variable);
+}
+
+/* Operators */
+.hljs .operator {
+    color: var(--syntax-operator);
+}
+
+/* Punctuation */
+.hljs .punctuation-bracket,
+.hljs .punctuation-delimiter,
+.hljs .punctuation-delimiter-regex,
+.hljs .punctuation-special {
+    color: var(--syntax-punctuation);
+}
+
+/* Properties */
+.hljs .property,
+.hljs .property-class-css,
+.hljs .property-css,
+.hljs .property-id-css,
+.hljs .property-json,
+.hljs .property-scss,
+.hljs .property-toml,
+.hljs .property-yaml {
+    color: var(--syntax-property);
+}
+
+/* Tags (HTML/JSX) */
+.hljs .tag,
+.hljs .tag-attribute,
+.hljs .tag-builtin,
+.hljs .tag-delimiter {
+    color: var(--syntax-tag);
+}
+
+/* Attributes */
+.hljs .attribute,
+.hljs .attribute-builtin {
+    color: var(--syntax-attribute);
+}
+
+/* Numbers */
+.hljs .number,
+.hljs .number-css,
+.hljs .number-float {
+    color: var(--syntax-number);
+}
+
+/* Booleans */
+.hljs .boolean {
+    color: var(--syntax-boolean);
+}
+
+/* Errors */
+.hljs .error {
+    color: var(--syntax-error);
+}
+
+/* Diff */
+.hljs .diff-plus {
+    color: var(--syntax-diff-plus);
+}
+
+.hljs .diff-minus {
+    color: var(--syntax-diff-minus);
+}
+
+.hljs .diff-delta {
+    color: var(--syntax-diff-delta);
+}
+
+/* Labels */
+.hljs .label,
+.hljs .label-yaml {
+    color: var(--syntax-property);
+}
+
+/* Imports/Modules */
+.hljs .import,
+.hljs .module,
+.hljs .module-builtin,
+.hljs .namespace {
+    color: var(--syntax-type);
+}
+
+/* Markup (Markdown) */
+.hljs .markup,
+.hljs .markup-environment,
+.hljs .markup-environment-name {
+    color: var(--syntax-fg);
+}
+
+.hljs .markup-heading,
+.hljs .markup-heading-1,
+.hljs .markup-heading-2,
+.hljs .markup-heading-3,
+.hljs .markup-heading-4,
+.hljs .markup-heading-5,
+.hljs .markup-heading-6 {
+    color: var(--syntax-keyword);
+    font-weight: 600;
+}
+
+.hljs .markup-italic {
+    font-style: italic;
+}
+
+.hljs .markup-strong {
+    font-weight: 700;
+}
+
+.hljs .markup-strikethrough {
+    text-decoration: line-through;
+}
+
+.hljs .markup-underline {
+    text-decoration: underline;
+}
+
+.hljs .markup-link,
+.hljs .markup-link-label,
+.hljs .markup-link-label-html,
+.hljs .markup-link-url {
+    color: var(--syntax-string);
+}
+
+.hljs .markup-raw,
+.hljs .markup-raw-block {
+    color: var(--syntax-string);
+}
+
+.hljs .markup-quote {
+    color: var(--syntax-comment);
+    font-style: italic;
+}
+
+.hljs .markup-list,
+.hljs .markup-list-checked,
+.hljs .markup-list-unchecked {
+    color: var(--syntax-punctuation);
+}
+
+.hljs .markup-math {
+    color: var(--syntax-number);
+}

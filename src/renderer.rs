@@ -4,12 +4,11 @@ use pulldown_cmark::{
 };
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fs;
 use std::path::Path;
 use tera::{Context, Tera};
 
 use crate::image::ImageProcessor;
-use crate::syntax_highlighter::TreeSitterHighlighter;
+use crate::syntax_highlighter::SyntaxHighlighter;
 
 const COMPONENT_TAGS: &[&str] = &[
     "img",
@@ -34,14 +33,14 @@ const COMPONENT_TAGS: &[&str] = &[
 ];
 
 pub struct Renderer {
-    highlighter: RefCell<TreeSitterHighlighter>,
+    highlighter: RefCell<SyntaxHighlighter>,
 }
 
 impl Renderer {
     pub fn new() -> Self {
         Self {
             highlighter: RefCell::new(
-                TreeSitterHighlighter::new().expect("Failed to initialize syntax highlighter"),
+                SyntaxHighlighter::new().expect("Failed to initialize syntax highlighter"),
             ),
         }
     }
@@ -844,98 +843,6 @@ impl Renderer {
     pub fn highlight_code(&self, code: &str, lang: &str) -> Result<String> {
         self.highlighter.borrow_mut().highlight(code, lang)
     }
-
-    /// Generate CSS for syntax highlighting themes
-    pub fn generate_theme_css(&self) -> Result<String> {
-        let mut css = String::with_capacity(8192);
-
-        css.push_str(":root {\n");
-        css.push_str("  color-scheme: light dark;\n");
-        css.push_str("}\n\n");
-
-        // Light theme
-        css.push_str("@media (prefers-color-scheme: light) {\n");
-        css.push_str("  :root {\n");
-        css.push_str("    --syntax-bg: #ffffff;\n");
-        css.push_str("    --syntax-fg: #24292e;\n");
-        css.push_str("    --syntax-comment: #6a737d;\n");
-        css.push_str("    --syntax-string: #032f62;\n");
-        css.push_str("    --syntax-keyword: #d73a49;\n");
-        css.push_str("    --syntax-function: #6f42c1;\n");
-        css.push_str("    --syntax-type: #005cc5;\n");
-        css.push_str("    --syntax-constant: #005cc5;\n");
-        css.push_str("    --syntax-variable: #24292e;\n");
-        css.push_str("    --syntax-operator: #d73a49;\n");
-        css.push_str("    --syntax-property: #005cc5;\n");
-        css.push_str("  }\n");
-        css.push_str("}\n\n");
-
-        // Dark theme
-        css.push_str("@media (prefers-color-scheme: dark) {\n");
-        css.push_str("  :root {\n");
-        css.push_str("    --syntax-bg: #1e1e1e;\n");
-        css.push_str("    --syntax-fg: #d4d4d4;\n");
-        css.push_str("    --syntax-comment: #6a9955;\n");
-        css.push_str("    --syntax-string: #ce9178;\n");
-        css.push_str("    --syntax-keyword: #569cd6;\n");
-        css.push_str("    --syntax-function: #dcdcaa;\n");
-        css.push_str("    --syntax-type: #4ec9b0;\n");
-        css.push_str("    --syntax-constant: #4fc1ff;\n");
-        css.push_str("    --syntax-variable: #9cdcfe;\n");
-        css.push_str("    --syntax-operator: #d4d4d4;\n");
-        css.push_str("    --syntax-property: #9cdcfe;\n");
-        css.push_str("  }\n");
-        css.push_str("}\n\n");
-
-        // Base styles
-        css.push_str(".syntax-highlight {\n");
-        css.push_str("  background-color: var(--syntax-bg);\n");
-        css.push_str("  color: var(--syntax-fg);\n");
-        css.push_str("  padding: 1em;\n");
-        css.push_str("  overflow-x: auto;\n");
-        css.push_str("  border-radius: 4px;\n");
-        css.push_str("}\n\n");
-
-        css.push_str(".syntax-highlight code {\n");
-        css.push_str("  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n");
-        css.push_str("  font-size: 0.9em;\n");
-        css.push_str("  line-height: 1.5;\n");
-        css.push_str("}\n\n");
-
-        // Syntax highlighting classes
-        css.push_str(
-            ".syntax-highlight .comment { color: var(--syntax-comment); font-style: italic; }\n",
-        );
-        css.push_str(".syntax-highlight .string { color: var(--syntax-string); }\n");
-        css.push_str(".syntax-highlight .string.special { color: var(--syntax-string); }\n");
-        css.push_str(
-            ".syntax-highlight .keyword { color: var(--syntax-keyword); font-weight: bold; }\n",
-        );
-        css.push_str(".syntax-highlight .function { color: var(--syntax-function); }\n");
-        css.push_str(".syntax-highlight .function.builtin { color: var(--syntax-function); }\n");
-        css.push_str(".syntax-highlight .type { color: var(--syntax-type); }\n");
-        css.push_str(".syntax-highlight .type.builtin { color: var(--syntax-type); }\n");
-        css.push_str(".syntax-highlight .constant { color: var(--syntax-constant); }\n");
-        css.push_str(".syntax-highlight .variable { color: var(--syntax-variable); }\n");
-        css.push_str(".syntax-highlight .variable.builtin { color: var(--syntax-variable); }\n");
-        css.push_str(".syntax-highlight .variable.parameter { color: var(--syntax-variable); }\n");
-        css.push_str(".syntax-highlight .operator { color: var(--syntax-operator); }\n");
-        css.push_str(".syntax-highlight .property { color: var(--syntax-property); }\n");
-        css.push_str(".syntax-highlight .attribute { color: var(--syntax-property); }\n");
-        css.push_str(".syntax-highlight .tag { color: var(--syntax-keyword); }\n");
-        css.push_str(".syntax-highlight .punctuation { color: var(--syntax-fg); }\n");
-        css.push_str(".syntax-highlight .punctuation.bracket { color: var(--syntax-fg); }\n");
-        css.push_str(".syntax-highlight .punctuation.delimiter { color: var(--syntax-fg); }\n");
-
-        Ok(css)
-    }
-
-    /// Write syntax highlighting CSS to file
-    pub fn write_syntax_css<P: AsRef<Path>>(&self, output_path: P) -> Result<()> {
-        let css = self.generate_theme_css()?;
-        fs::write(output_path, css)?;
-        Ok(())
-    }
 }
 
 impl Default for Renderer {
@@ -977,12 +884,15 @@ mod tests {
         let md = "```rust\nfn main() {}\n```";
         let html = renderer.render_markdown(md);
 
-        // Check for class-based highlighting structure (pre gets data-md, then syntax-highlight replaces it)
-        assert!(html.contains("<pre class=\"syntax-highlight\">"));
-        assert!(html.contains("<code>"));
+        // Check for class-based highlighting structure (autumnus adds "athl hljs" classes)
+        assert!(html.contains("hljs"), "HTML should contain hljs class, got: {}", html);
+        assert!(html.contains("<code"));
         // Check that code content is present (even if wrapped in spans)
         assert!(html.contains("fn"));
         assert!(html.contains("main"));
+        // Check that syntax highlighting classes are applied
+        assert!(html.contains("keyword"), "Should have keyword highlighting");
+        assert!(html.contains("function"), "Should have function highlighting");
     }
 
     #[test]
