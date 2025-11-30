@@ -1,0 +1,43 @@
+{# Profile component macro #}
+{# Usage: {{ macros::profile(size, show_content, show_contact) }} #}
+
+{% macro profile(size="small", show_content=true, show_contact=true) %}
+<div class="profile profile--size-{{ size }}">
+    <figure class="profile__figure">
+        <a href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">
+            <img src="/assets/profile.jpg" alt="Marshall Ku" class="profile__image" width="65" height="65">
+        </a>
+    </figure>
+    {% if show_content %}
+    <div class="profile__content">
+        <p>Marshall Ku / 구영표</p>
+        {% if show_contact %}
+        <ul class="profile__contact">
+            <li>
+                <a href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer nofollow">
+                    <i class="icon-github"></i>
+                    <span class="sr-only">GitHub</span>
+                </a>
+            </li>
+            <li>
+                <a
+                    href="https://www.linkedin.com/in/marshallku/"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                >
+                    <i class="icon-linkedin"></i>
+                    <span class="sr-only">LinkedIn</span>
+                </a>
+            </li>
+            <li>
+                <a href="mailto:marshall@kakao.com">
+                    <i class="icon-mail"></i>
+                    <span class="sr-only">marshall@kakao.com</span>
+                </a>
+            </li>
+        </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro profile %}

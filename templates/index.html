@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "components/post-card.html" as macros %}
+{% import "components/profile.html" as profile_macros %}
 
 {% block title %}{{ config.site_title }}{% endblock %}
 
@@ -42,12 +43,15 @@
         </defs>
     </svg>
     <header class="blog-banner__header">
-        <h1 class="blog-banner__title typography-h1">
-            {{ config.site_title }}
-        </h1>
-        <p class="blog-banner__description typography-b2">
-            {{ config.description }}
-        </p>
+        <div class="blog-banner__content">
+            <h1 class="blog-banner__title typography-h1">
+                {{ config.site_title }}
+            </h1>
+            <p class="blog-banner__description typography-b2">
+                {{ config.description }}
+            </p>
+        </div>
+        {{ profile_macros::profile(size="small") }}
     </header>
 </section>
 

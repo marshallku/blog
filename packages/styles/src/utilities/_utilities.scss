@@ -1,39 +1,25 @@
-/* Utility classes */
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Scroll to top button */
 .scroll-to-top {
-  position: fixed;
-  bottom: var(--spacing-lg);
-  right: var(--spacing-lg);
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast),
+        visibility var(--transition-fast);
 
-  &.visible {
-    opacity: 1;
-    visibility: visible;
-  }
+    &.visible {
+        opacity: 1;
+        visibility: visible;
+    }
 
-  &:hover {
-    background-color: var(--color-primary-hover);
-  }
+    &:hover {
+        background-color: var(--color-primary-hover);
+    }
 }
