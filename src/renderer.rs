@@ -66,14 +66,13 @@ impl Renderer {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);
 
-        // Use custom HTML writer that adds data-md markers to markdown-generated tags
         let mut html_output = String::with_capacity(markdown.len() * 2);
         Self::push_html_with_markers(&mut html_output, parser);
 
         // Apply syntax highlighting first
         let highlighted = self.highlight_code_blocks(&html_output);
 
-        // Then apply component templates (only to data-md marked tags)
+        // Apply component templates and resolve paths in raw HTML tags
         Self::post_process_components(&highlighted, tera, base_path, cdn_url, content_dir)
     }
 
@@ -99,7 +98,6 @@ impl Renderer {
                     output.push_str("</code>");
                 }
                 Event::Html(html) => {
-                    // Raw HTML passes through unchanged (no marker)
                     output.push_str(&html);
                 }
                 Event::SoftBreak => output.push('\n'),
@@ -302,11 +300,102 @@ impl Renderer {
             )?;
         }
 
+        result = Self::resolve_raw_html_paths(&result, &category);
+
         Ok(Self::sanitize(&result))
     }
 
     fn sanitize(html: &str) -> String {
         html.replace(" data-md", "")
+    }
+
+    const RAW_HTML_TAGS: &'static [&'static str] = &[
+        "video", "audio", "source", "iframe", "embed", "object", "track",
+    ];
+
+    /// Resolve relative paths in raw HTML tags (video, audio, source, etc.)
+    fn resolve_raw_html_paths(html: &str, category: &str) -> String {
+        let mut result = String::with_capacity(html.len());
+        let mut remaining = html;
+
+        while let Some(tag_start) = remaining.find('<') {
+            result.push_str(&remaining[..tag_start]);
+            remaining = &remaining[tag_start..];
+
+            if let Some(tag_end) = Self::find_tag_end(remaining) {
+                let tag = &remaining[..=tag_end];
+
+                // Skip tags with data-md marker (handled by component system)
+                if tag.contains(" data-md") {
+                    result.push_str(tag);
+                } else {
+                    let tag_lower = tag.to_lowercase();
+                    let needs_processing = Self::RAW_HTML_TAGS
+                        .iter()
+                        .any(|&t| tag_lower.starts_with(&format!("<{} ", t)));
+
+                    if needs_processing {
+                        result.push_str(&Self::resolve_tag_urls(tag, category));
+                    } else {
+                        result.push_str(tag);
+                    }
+                }
+                remaining = &remaining[tag_end + 1..];
+            } else {
+                result.push_str(remaining);
+                break;
+            }
+        }
+        result.push_str(remaining);
+        result
+    }
+
+    fn find_tag_end(s: &str) -> Option<usize> {
+        let mut in_quotes = false;
+        let mut quote_char = ' ';
+
+        for (i, ch) in s.char_indices() {
+            if ch == '"' || ch == '\'' {
+                if in_quotes && ch == quote_char {
+                    in_quotes = false;
+                } else if !in_quotes {
+                    in_quotes = true;
+                    quote_char = ch;
+                }
+            } else if ch == '>' && !in_quotes {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    fn resolve_tag_urls(tag: &str, category: &str) -> String {
+        let mut result = tag.to_string();
+
+        for attr in &["src", "poster", "data"] {
+            for quote in &['"', '\''] {
+                let pattern = format!("{}={}", attr, quote);
+                if let Some(start) = result.find(&pattern) {
+                    let value_start = start + pattern.len();
+                    if let Some(end_offset) = result[value_start..].find(*quote) {
+                        let value_end = value_start + end_offset;
+                        let value = &result[value_start..value_end];
+
+                        if value.starts_with("./") || value.starts_with("../") {
+                            let resolved = Self::resolve_path(value, category);
+                            result = format!(
+                                "{}{}{}{}",
+                                &result[..value_start],
+                                resolved,
+                                quote,
+                                &result[value_end + 1..]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        result
     }
 
     fn replace_tag(
@@ -1058,6 +1147,60 @@ mod tests {
         assert_eq!(
             Renderer::resolve_path("./subdir/image.png", "tutorials"),
             "/tutorials/subdir/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_raw_html_paths_video() {
+        let html = r#"<video autoPlay playsInline muted loop src="./folder/video.mp4"></video>"#;
+        let result = Renderer::resolve_raw_html_paths(html, "dev");
+        assert_eq!(
+            result,
+            r#"<video autoPlay playsInline muted loop src="/dev/folder/video.mp4"></video>"#
+        );
+    }
+
+    #[test]
+    fn test_resolve_raw_html_paths_audio() {
+        let html = r#"<audio src="./audio.mp3"></audio>"#;
+        let result = Renderer::resolve_raw_html_paths(html, "music");
+        assert_eq!(result, r#"<audio src="/music/audio.mp3"></audio>"#);
+    }
+
+    #[test]
+    fn test_resolve_raw_html_paths_source() {
+        let html = r#"<video><source src="./video.webm" type="video/webm"></video>"#;
+        let result = Renderer::resolve_raw_html_paths(html, "dev");
+        assert_eq!(
+            result,
+            r#"<video><source src="/dev/video.webm" type="video/webm"></video>"#
+        );
+    }
+
+    #[test]
+    fn test_resolve_raw_html_paths_absolute_url() {
+        let html = r#"<video src="https://example.com/video.mp4"></video>"#;
+        let result = Renderer::resolve_raw_html_paths(html, "dev");
+        assert_eq!(
+            result,
+            r#"<video src="https://example.com/video.mp4"></video>"#
+        );
+    }
+
+    #[test]
+    fn test_resolve_raw_html_paths_skips_data_md() {
+        let html = r#"<img data-md src="./image.png" />"#;
+        let result = Renderer::resolve_raw_html_paths(html, "dev");
+        assert_eq!(result, r#"<img data-md src="./image.png" />"#);
+    }
+
+    #[test]
+    fn test_resolve_raw_html_paths_poster_attr() {
+        let html = r#"<video src="./video.mp4" poster="./thumb.jpg"></video>"#;
+        let result = Renderer::resolve_raw_html_paths(html, "dev");
+        assert_eq!(
+            result,
+            r#"<video src="/dev/video.mp4" poster="/dev/thumb.jpg"></video>"#
         );
     }
 }
