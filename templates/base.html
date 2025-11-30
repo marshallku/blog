@@ -114,21 +114,51 @@
         <div class="global-navigation__background"></div>
     </header>
 
-    {# Mobile drawer #}
-    <div class="drawer" :class="{ 'drawer--open': drawerOpen }">
-        <div class="drawer__content">
-            <nav class="drawer__nav">
-                {% if categories %}
-                    {% for category in categories %}
-                    <a href="/{{ category.slug }}/"
-                       @click="drawerOpen = false"
-                       {% if category.color %}style="color: {{ category.color }}"{% endif %}>
-                        {{ category.name }}
-                    </a>
-                    {% endfor %}
-                {% endif %}
-            </nav>
-        </div>
+    <!-- Close on outside click  -->
+    <div id="drawer" class="drawer" :class="{ 'drawer--open': drawerOpen }" @click.self="drawerOpen = false">
+        <button
+            class="hamburger"
+            :class="{ 'hamburger--open': drawerOpen }"
+            @click="drawerOpen = !drawerOpen"
+            aria-label="Toggle menu"
+        >
+            <span class="hamburger__line hamburger__line--top"></span>
+            <span class="hamburger__line hamburger__line--middle"></span>
+            <span class="hamburger__line hamburger__line--bottom"></span>
+        </button>
+        <nav class="drawer__content">
+            <ul class="drawer__nav">
+                <li>
+                    <a href="/"><i class="icon-home"></i> Home</a>
+                </li>
+                <li>
+                    <a href="/notice/"><i class="icon-notifications"></i> Notice</a>
+                </li>
+                <li>
+                    <a href="/about/"><i class="icon-edit"></i> About</a>
+                </li>
+                <li>
+                    <a href="/tags/"><i class="icon-tag"></i> Tags</a>
+                </li>
+                <li>
+                    <a href="/guestbook/"><i class="icon-mail"></i> Guestbook</a>
+                </li>
+            </ul>
+            <ul class="drawer__nav">
+                <li>
+                    <a href="/dev/"><i class="icon-code-blocks"></i> Dev</a>
+                </li>
+                <li>
+                    <a href="/chat/"><i class="icon-chat"></i> Chat</a>
+                </li>
+                <li>
+                    <a href="/work/"><i class="icon-package"></i> Work</a>
+                </li>
+                <li>
+                    <a href="/gallery/"><i class="icon-image"></i> Gallery</a>
+                </li>
+            </ul>
+        </nav>
     </div>
 
     <main class="site-main">
