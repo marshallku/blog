@@ -59,7 +59,6 @@ body {
 body {
     display: flex;
     flex-direction: column;
-    padding-top: variables.$global-navigation-height;
 }
 
 a {
@@ -90,7 +89,6 @@ button {
     border-width: 0;
 }
 
-// typography
 @each $key, $value in fonts.$typography-size {
     .typography-#{$key} {
         font-size: $value;

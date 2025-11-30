@@ -1,0 +1,7 @@
+@use "../base/variables";
+
+.page {
+    &--top-padding {
+        padding-top: variables.$global-navigation-height;
+    }
+}
