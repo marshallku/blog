@@ -26,7 +26,11 @@
     {% block extra_css %}
     {# Override this block in child templates to add page-specific CSS #}
     {% endblock %}
+    <script>!function(){function e(e){document.documentElement.dataset.theme=e,document.documentElement.style.colorScheme=e==='dark'?e:'light'}function t(e=!1){return e?"dark":"light"}const n=window.matchMedia("(prefers-color-scheme: dark)");e(localStorage.getItem("theme")||t(n.matches)),n.addEventListener("change",(n=>{e(t(n.matches))}))}()</script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {% if config.assets.scripts.index %}
+    <script type="module" src="{{ config.assets.scripts.index | safe }}"></script>
+    {% endif %}
 </head>
 <body x-data="{ drawerOpen: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 10">
     <header class="global-navigation" :class="{ 'global-navigation--drawer-open': drawerOpen }">
