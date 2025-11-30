@@ -18,8 +18,6 @@
 
     {% if config.assets.styles.theme %}
     <link rel="stylesheet" href="{{ config.assets.styles.theme | safe }}">
-    {% else %}
-    <link rel="stylesheet" href="/css/theme.css">
     {% endif %}
     <link rel="stylesheet" href="/css/syntax.css">
     {% if config.assets.icon.css %}
