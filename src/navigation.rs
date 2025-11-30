@@ -14,6 +14,7 @@ pub struct PostLink {
     pub title: String,
     pub url: String,
     pub category: String,
+    pub cover_image: Option<String>,
 }
 
 pub fn build_post_navigation(
@@ -51,6 +52,7 @@ pub fn build_post_navigation(
                         slug::encode_for_url(&p.slug)
                     ),
                     category: p.category.clone(),
+                    cover_image: p.frontmatter.cover_image.clone(),
                 })
             } else {
                 None
@@ -67,6 +69,7 @@ pub fn build_post_navigation(
                         slug::encode_for_url(&p.slug)
                     ),
                     category: p.category.clone(),
+                    cover_image: p.frontmatter.cover_image.clone(),
                 })
             } else {
                 None

@@ -58,7 +58,6 @@ body {
 body {
     display: flex;
     flex-direction: column;
-    @include fonts.typography(b1);
 }
 
 a {

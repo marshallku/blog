@@ -84,10 +84,15 @@
     </div>
 
     {% for cat_posts in category_posts %}
-    <div x-show="activeTab === '{{ cat_posts.category.slug }}'" class="post-grid">
-        {% for post in cat_posts.posts %}
-        {{ macros::post_card(post=post) }}
-        {% endfor %}
+    <div x-show="activeTab === '{{ cat_posts.category.slug }}'">
+        <section class="post-grid">
+            {% for post in cat_posts.posts %}
+            {{ macros::post_card(post=post) }}
+            {% endfor %}
+        </section>
+        <div class="post-grid__more">
+            <a href="/{{ cat_posts.category.slug }}/" class="button button--radius-rounded typography-b2">{{ cat_posts.category.name }} 카테고리 글 더 보기 <i class="icon-arrow-forward"></i></a>
+        </div>
     </div>
     {% endfor %}
 </section>

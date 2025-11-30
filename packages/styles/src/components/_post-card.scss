@@ -8,6 +8,16 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 0.75em;
+
+  &__more {
+    margin-top: 12px;
+    text-align: center;
+
+    button > i,
+    a > i {
+      margin-left: 4px;
+    }
+  }
 }
 
 .post-card {
@@ -30,6 +40,7 @@
     margin-bottom: 12px;
     padding-bottom: 56.25%;
     flex-shrink: 0;
+    border-radius: 4px;
     transition: transform 0.15s ease-in-out;
     overflow: hidden;
 
@@ -41,8 +52,7 @@
       height: 100%;
       left: 0;
       object-fit: cover;
-      border-radius: 4px;
-      transition: transform 0.15s ease-in-out, filter 0.2s ease-in-out;
+      transition: transform 0.15s ease-in-out;
 
       @include mixins.supports-hover {
         @at-root #{$self}:hover & {
@@ -60,6 +70,7 @@
 
   &__title {
     @include mixins.limit-line(2);
+    font-weight: 700;
   }
 
   &__description {

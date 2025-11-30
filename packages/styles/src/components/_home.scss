@@ -7,6 +7,7 @@
 
 .blog-banner {
     padding-top: variables.$global-navigation-height;
+    position: relative;
 
     &__header {
         position: relative;
@@ -27,13 +28,28 @@
     }
 
     &__image {
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
         position: absolute;
-        top: -41px;
-        left: -1;
-        width: 99%;
-        height: calc(99% + 40px);
-        opacity: -1.25;
+        top: -40px;
+        left: 0;
+        width: 100%;
+        height: calc(100% + 40px);
+        opacity: 0.25;
         filter: blur(9px);
+        pointer-events: none;
+
+        circle {
+            opacity: 0;
+            animation: 1s ease-in-out forwards fade-in;
+        }
     }
 
     &__container {
@@ -43,6 +59,10 @@
         &--padding {
             padding: 0 12px;
         }
+    }
+
+    &__title {
+        font-weight: 700;
     }
 }
 
@@ -75,35 +95,6 @@
                 transform: translateX(4px);
             }
         }
-    }
-}
-
-// Toggle button group
-.toggle-button-group {
-    display: inline-flex;
-    gap: 4px;
-    padding: 4px;
-    background-color: palette.color(grayscale, 100);
-    border-radius: 8px;
-}
-
-.toggle-button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    background-color: transparent;
-    color: palette.color(text);
-    font-weight: 500;
-    transition: background-color 0.2s, color 0.2s;
-
-    &:hover {
-        background-color: palette.color(grayscale, 200);
-    }
-
-    &--active,
-    &[aria-pressed="true"] {
-        background-color: palette.color(background);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 }
 
