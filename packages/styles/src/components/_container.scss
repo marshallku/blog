@@ -13,3 +13,7 @@
     width: clamp(0px, map.get(palette.$container-width, large), 100%);
     margin: 0 auto;
 }
+
+#main {
+    margin-bottom: 32px;
+}
