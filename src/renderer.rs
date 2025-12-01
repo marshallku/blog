@@ -273,11 +273,9 @@ impl Renderer {
         let mut result = html.to_string();
 
         let category = base_path
-            .split('/')
-            .next()
-            .unwrap_or("")
-            .trim_matches('/')
-            .to_string();
+            .rsplit_once('/')
+            .map(|(cat, _slug)| cat)
+            .unwrap_or(base_path);
 
         let image_processor = cdn_url.map(|url| ImageProcessor::new(Some(url.to_string())));
 
@@ -293,13 +291,13 @@ impl Renderer {
                 tag_name,
                 tera,
                 &template_name,
-                &category,
+                category,
                 image_processor.as_ref(),
                 content_dir,
             )?;
         }
 
-        result = Self::resolve_raw_html_paths(&result, &category);
+        result = Self::resolve_raw_html_paths(&result, category);
 
         Ok(Self::sanitize(&result))
     }
@@ -885,14 +883,21 @@ mod tests {
         let html = renderer.render_markdown(md);
 
         // Check for class-based highlighting structure (autumnus adds "athl hljs" classes)
-        assert!(html.contains("hljs"), "HTML should contain hljs class, got: {}", html);
+        assert!(
+            html.contains("hljs"),
+            "HTML should contain hljs class, got: {}",
+            html
+        );
         assert!(html.contains("<code"));
         // Check that code content is present (even if wrapped in spans)
         assert!(html.contains("fn"));
         assert!(html.contains("main"));
         // Check that syntax highlighting classes are applied
         assert!(html.contains("keyword"), "Should have keyword highlighting");
-        assert!(html.contains("function"), "Should have function highlighting");
+        assert!(
+            html.contains("function"),
+            "Should have function highlighting"
+        );
     }
 
     #[test]
@@ -1057,6 +1062,29 @@ mod tests {
         assert_eq!(
             Renderer::resolve_path("./subdir/image.png", "tutorials"),
             "/tutorials/subdir/image.png"
+        );
+    }
+
+    #[test]
+    fn test_resolve_path_nested_category() {
+        // For nested categories, category is passed (without slug)
+        // e.g., for post at work/web-application/my-post, category is "work/web-application"
+        assert_eq!(
+            Renderer::resolve_path("./my-post/image.png", "work/web-application"),
+            "/work/web-application/my-post/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("./image.png", "dev/tutorials"),
+            "/dev/tutorials/image.png"
+        );
+        // Parent traversal from nested category
+        assert_eq!(
+            Renderer::resolve_path("../image.png", "work/apps"),
+            "/work/image.png"
+        );
+        assert_eq!(
+            Renderer::resolve_path("../../image.png", "work/apps"),
+            "/image.png"
         );
     }
 
