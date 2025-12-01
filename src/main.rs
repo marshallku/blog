@@ -155,6 +155,29 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
     metadata.set_category_info(categories);
 
+    for entry in WalkDir::new(posts_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+    {
+        if let Ok(mut post) = Parser::parse_file(entry.path()) {
+            if !post.frontmatter.hidden {
+                post.frontmatter.cover_image = post
+                    .frontmatter
+                    .cover_image
+                    .take()
+                    .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
+                post.frontmatter.og_image = post
+                    .frontmatter
+                    .og_image
+                    .take()
+                    .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
+
+                metadata.upsert_post(post.slug, post.category, post.frontmatter);
+            }
+        }
+    }
+
     let mut built_count = 0;
     let mut skipped_count = 0;
 
@@ -342,8 +365,20 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         .collect();
 
     for path in &file_paths {
-        if let Ok(post) = Parser::parse_file(path) {
+        if let Ok(mut post) = Parser::parse_file(path) {
             if !post.frontmatter.hidden {
+                // Resolve cover_image and og_image paths so navigation has correct URLs
+                post.frontmatter.cover_image = post
+                    .frontmatter
+                    .cover_image
+                    .take()
+                    .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
+                post.frontmatter.og_image = post
+                    .frontmatter
+                    .og_image
+                    .take()
+                    .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
+
                 metadata.upsert_post(post.slug, post.category, post.frontmatter);
             }
         }
@@ -722,11 +757,7 @@ fn build_post_extra_data(
         .collect();
     related.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-    let related_posts: Vec<_> = related
-        .into_iter()
-        .take(4)
-        .cloned()
-        .collect();
+    let related_posts: Vec<_> = related.into_iter().take(4).cloned().collect();
     data.insert("related_posts".to_string(), json!(related_posts));
 
     data
