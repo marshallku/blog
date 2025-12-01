@@ -52,7 +52,12 @@ pub fn build_post_navigation(
                         slug::encode_for_url(&p.slug)
                     ),
                     category: p.category.clone(),
-                    cover_image: p.frontmatter.cover_image.clone(),
+                    cover_image: p
+                        .frontmatter
+                        .cover_image
+                        .clone()
+                        .or(p.frontmatter.og_image.clone())
+                        .clone(),
                 })
             } else {
                 None
@@ -69,7 +74,12 @@ pub fn build_post_navigation(
                         slug::encode_for_url(&p.slug)
                     ),
                     category: p.category.clone(),
-                    cover_image: p.frontmatter.cover_image.clone(),
+                    cover_image: p
+                        .frontmatter
+                        .cover_image
+                        .clone()
+                        .or(p.frontmatter.og_image.clone())
+                        .clone(),
                 })
             } else {
                 None
