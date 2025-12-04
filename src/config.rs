@@ -72,7 +72,7 @@ pub struct BuildConfig {
 }
 
 /// Complete config.yaml structure
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SsgConfig {
     #[serde(default)]
     pub site: SiteConfig,
@@ -80,6 +80,27 @@ pub struct SsgConfig {
     pub build: BuildConfig,
     #[serde(default)]
     pub assets: AssetsConfig,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TemplateConfig<'a> {
+    pub site_title: &'a str,
+    pub site_url: &'a str,
+    pub author: &'a str,
+    pub description: &'a str,
+    pub assets: &'a AssetsConfig,
+}
+
+impl SsgConfig {
+    pub fn to_template_config(&self) -> TemplateConfig<'_> {
+        TemplateConfig {
+            site_title: &self.site.title,
+            site_url: &self.site.url,
+            author: &self.site.author,
+            description: &self.site.description,
+            assets: &self.assets,
+        }
+    }
 }
 
 impl Default for SiteConfig {
@@ -104,16 +125,6 @@ impl Default for BuildConfig {
             homepage_posts_limit: None,
             encode_filenames: false,
             search: SearchConfig::default(),
-        }
-    }
-}
-
-impl Default for SsgConfig {
-    fn default() -> Self {
-        Self {
-            site: SiteConfig::default(),
-            build: BuildConfig::default(),
-            assets: AssetsConfig::default(),
         }
     }
 }

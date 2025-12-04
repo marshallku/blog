@@ -44,7 +44,12 @@ impl BuildCache {
         Ok(())
     }
 
-    pub fn needs_rebuild(&self, path: &Path, current_hash: &str, current_template_hash: &str) -> bool {
+    pub fn needs_rebuild(
+        &self,
+        path: &Path,
+        current_hash: &str,
+        current_template_hash: &str,
+    ) -> bool {
         let path_str = path.to_string_lossy();
 
         match self.entries.get(path_str.as_ref()) {

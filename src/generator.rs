@@ -1,23 +1,12 @@
-use crate::config::{AssetsConfig, SsgConfig};
+use crate::config::SsgConfig;
 use crate::slug;
 use crate::types::{Page, Post};
 use anyhow::{Context, Result};
-use serde::Serialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context as TeraContext, Tera, Value};
-
-/// Flattened config for template context (backward compatibility)
-#[derive(Debug, Clone, Serialize)]
-struct TemplateConfig<'a> {
-    site_title: &'a str,
-    site_url: &'a str,
-    author: &'a str,
-    description: &'a str,
-    assets: &'a AssetsConfig,
-}
 
 pub struct Generator {
     tera: Tera,
@@ -41,20 +30,12 @@ impl Generator {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Post not rendered: {}", post.slug))?;
 
-        let template_config = TemplateConfig {
-            site_title: &self.config.site.title,
-            site_url: &self.config.site.url,
-            author: &self.config.site.author,
-            description: &self.config.site.description,
-            assets: &self.config.assets,
-        };
-
         let mut context = TeraContext::new();
         context.insert("post", post);
         context.insert("slug", &post.slug);
         context.insert("category", &post.category);
         context.insert("content", html);
-        context.insert("config", &template_config);
+        context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
             context.insert(key, value);
@@ -79,19 +60,11 @@ impl Generator {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Page not rendered: {}", page.slug))?;
 
-        let template_config = TemplateConfig {
-            site_title: &self.config.site.title,
-            site_url: &self.config.site.url,
-            author: &self.config.site.author,
-            description: &self.config.site.description,
-            assets: &self.config.assets,
-        };
-
         let mut context = TeraContext::new();
         context.insert("page", &page.frontmatter);
         context.insert("slug", &page.slug);
         context.insert("content", html);
-        context.insert("config", &template_config);
+        context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
             context.insert(key, value);

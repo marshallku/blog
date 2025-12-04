@@ -10,7 +10,7 @@ pub enum BuildResult {
         path: PathBuf,
         slug: String,
         category: String,
-        frontmatter: Frontmatter,
+        frontmatter: Box<Frontmatter>,
         file_hash: String,
         template_hash: String,
         output_path: String,
@@ -68,11 +68,12 @@ impl Default for BuildProgress {
     }
 }
 
-/// Get optimal number of worker threads
+const DEFAULT_THREAD_FALLBACK: usize = 4;
+
 pub fn get_thread_count() -> usize {
     std::thread::available_parallelism()
         .map(|n| n.get())
-        .unwrap_or(4)
+        .unwrap_or(DEFAULT_THREAD_FALLBACK)
 }
 
 /// Channel-based work queue for distributing tasks to workers

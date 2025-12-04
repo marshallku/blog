@@ -1,4 +1,4 @@
-use crate::config::{AssetsConfig, SsgConfig};
+use crate::config::SsgConfig;
 use crate::metadata::{MetadataCache, PostMetadata};
 use crate::slug;
 use crate::types::Category;
@@ -9,7 +9,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context as TeraContext, Tera, Value};
 
-/// Pagination context for templates
 #[derive(Debug, Clone, Serialize)]
 struct PaginationContext {
     current_page: usize,
@@ -27,22 +26,11 @@ struct PaginationContext {
     pages: Vec<PageLink>,
 }
 
-/// Individual page link for navigation
 #[derive(Debug, Clone, Serialize)]
 struct PageLink {
     number: usize,
     url: String,
     is_current: bool,
-}
-
-/// Flattened config for template context (backward compatibility)
-#[derive(Debug, Clone, Serialize)]
-struct TemplateConfig<'a> {
-    site_title: &'a str,
-    site_url: &'a str,
-    author: &'a str,
-    description: &'a str,
-    assets: &'a AssetsConfig,
 }
 
 /// Category with its recent posts for homepage tabs
@@ -122,19 +110,11 @@ impl IndexGenerator {
             })
             .collect();
 
-        let template_config = TemplateConfig {
-            site_title: &self.config.site.title,
-            site_url: &self.config.site.url,
-            author: &self.config.site.author,
-            description: &self.config.site.description,
-            assets: &self.config.assets,
-        };
-
         let mut context = TeraContext::new();
         context.insert("posts", &all_recent_posts);
         context.insert("category_posts", &category_posts);
         context.insert("categories", &visible_categories);
-        context.insert("config", &template_config);
+        context.insert("config", &self.config.to_template_config());
 
         let output = self.tera.render("index.html", &context)?;
         let output_path = PathBuf::from(&self.config.build.output_dir).join("index.html");
@@ -158,7 +138,7 @@ impl IndexGenerator {
         let total_pages = if total_posts == 0 {
             1
         } else {
-            (total_posts + posts_per_page - 1) / posts_per_page
+            total_posts.div_ceil(posts_per_page)
         };
 
         let base_url = format!("/{}/", category_info.slug);
@@ -169,13 +149,7 @@ impl IndexGenerator {
             .filter(|c| !c.hidden)
             .collect();
 
-        let template_config = TemplateConfig {
-            site_title: &self.config.site.title,
-            site_url: &self.config.site.url,
-            author: &self.config.site.author,
-            description: &self.config.site.description,
-            assets: &self.config.assets,
-        };
+        let template_config = self.config.to_template_config();
 
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
@@ -227,7 +201,7 @@ impl IndexGenerator {
         let total_pages = if total_posts == 0 {
             1
         } else {
-            (total_posts + posts_per_page - 1) / posts_per_page
+            total_posts.div_ceil(posts_per_page)
         };
 
         let base_url = format!("/tag/{}/", tag);
@@ -238,13 +212,7 @@ impl IndexGenerator {
             .filter(|c| !c.hidden)
             .collect();
 
-        let template_config = TemplateConfig {
-            site_title: &self.config.site.title,
-            site_url: &self.config.site.url,
-            author: &self.config.site.author,
-            description: &self.config.site.description,
-            assets: &self.config.assets,
-        };
+        let template_config = self.config.to_template_config();
 
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
@@ -298,18 +266,10 @@ impl IndexGenerator {
             .filter(|c| !c.hidden)
             .collect();
 
-        let template_config = TemplateConfig {
-            site_title: &self.config.site.title,
-            site_url: &self.config.site.url,
-            author: &self.config.site.author,
-            description: &self.config.site.description,
-            assets: &self.config.assets,
-        };
-
         let mut context = TeraContext::new();
         context.insert("tags", &tags_with_counts);
         context.insert("categories", &visible_categories);
-        context.insert("config", &template_config);
+        context.insert("config", &self.config.to_template_config());
 
         let output = self.tera.render("tags.html", &context)?;
         let output_path = PathBuf::from(&self.config.build.output_dir)
@@ -332,7 +292,7 @@ impl IndexGenerator {
         let total_pages = if total_posts == 0 {
             1
         } else {
-            (total_posts + posts_per_page - 1) / posts_per_page
+            total_posts.div_ceil(posts_per_page)
         };
 
         let first_url = base_url.to_string();

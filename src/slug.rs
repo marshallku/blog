@@ -1,4 +1,3 @@
-use blake3;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 
 // Define characters that should NOT be percent-encoded
@@ -27,7 +26,7 @@ pub fn encode_for_url(input: &str) -> String {
 pub fn decode_from_url(input: &str) -> String {
     percent_encoding::percent_decode_str(input)
         .decode_utf8()
-        .unwrap_or_else(|_| std::borrow::Cow::Borrowed(input))
+        .unwrap_or(std::borrow::Cow::Borrowed(input))
         .to_string()
 }
 

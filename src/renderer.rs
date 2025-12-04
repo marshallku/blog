@@ -32,6 +32,14 @@ const COMPONENT_TAGS: &[&str] = &[
     "del",
 ];
 
+struct TagReplacementContext<'a> {
+    tera: &'a Tera,
+    template_name: &'a str,
+    category: &'a str,
+    image_processor: Option<&'a ImageProcessor>,
+    content_dir: Option<&'a Path>,
+}
+
 pub struct Renderer {
     highlighter: RefCell<SyntaxHighlighter>,
 }
@@ -68,10 +76,7 @@ impl Renderer {
         let mut html_output = String::with_capacity(markdown.len() * 2);
         Self::push_html_with_markers(&mut html_output, parser);
 
-        // Apply syntax highlighting first
         let highlighted = self.highlight_code_blocks(&html_output);
-
-        // Apply component templates and resolve paths in raw HTML tags
         Self::post_process_components(&highlighted, tera, base_path, cdn_url, content_dir)
     }
 
@@ -286,15 +291,14 @@ impl Renderer {
                 continue;
             }
 
-            result = Self::replace_tag(
-                &result,
-                tag_name,
+            let ctx = TagReplacementContext {
                 tera,
-                &template_name,
+                template_name: &template_name,
                 category,
-                image_processor.as_ref(),
+                image_processor: image_processor.as_ref(),
                 content_dir,
-            )?;
+            };
+            result = Self::replace_tag(&result, tag_name, &ctx)?;
         }
 
         result = Self::resolve_raw_html_paths(&result, category);
@@ -395,15 +399,7 @@ impl Renderer {
         result
     }
 
-    fn replace_tag(
-        html: &str,
-        tag_name: &str,
-        tera: &Tera,
-        template_name: &str,
-        category: &str,
-        image_processor: Option<&ImageProcessor>,
-        content_dir: Option<&Path>,
-    ) -> Result<String> {
+    fn replace_tag(html: &str, tag_name: &str, ctx: &TagReplacementContext) -> Result<String> {
         let mut result = String::with_capacity(html.len() + html.len() / 10);
         let mut chars = html.chars().peekable();
 
@@ -486,12 +482,11 @@ impl Renderer {
                     let mut original_src = String::new();
 
                     for (key, value) in &attrs {
-                        // Skip the data-md marker - it's only for internal use
                         if key == "data-md" {
                             continue;
                         }
                         if Self::is_url_attribute(key) {
-                            let resolved = Self::resolve_path(value, category);
+                            let resolved = Self::resolve_path(value, ctx.category);
                             context.insert(key, &resolved);
                             if key == "src" {
                                 original_src = value.clone();
@@ -501,12 +496,12 @@ impl Renderer {
                         }
                     }
 
-                    // Process image for CDN srcset if this is an img tag
                     if tag_name == "img" {
                         if let (Some(processor), Some(content_path)) =
-                            (image_processor, content_dir)
+                            (ctx.image_processor, ctx.content_dir)
                         {
-                            let post_content_dir = content_path.join(category.trim_matches('/'));
+                            let post_content_dir =
+                                content_path.join(ctx.category.trim_matches('/'));
 
                             if let Ok(Some(metadata)) =
                                 processor.process_image(&original_src, &post_content_dir)
@@ -529,7 +524,7 @@ impl Renderer {
                         context.insert("content", &inner_content);
                     }
 
-                    if let Ok(rendered) = tera.render(template_name, &context) {
+                    if let Ok(rendered) = ctx.tera.render(ctx.template_name, &context) {
                         result.truncate(tag_start_pos);
                         result.push_str(&rendered);
                         continue;
@@ -643,12 +638,11 @@ impl Renderer {
             return trimmed.to_string();
         }
 
-        if trimmed.starts_with("./") {
-            let mut relative_path = &trimmed[2..];
+        if let Some(stripped) = trimmed.strip_prefix("./") {
+            let mut relative_path = stripped;
 
-            // Strip any additional ./ patterns (e.g., "././image.png")
-            while relative_path.starts_with("./") {
-                relative_path = &relative_path[2..];
+            while let Some(next) = relative_path.strip_prefix("./") {
+                relative_path = next;
             }
 
             let relative_path = relative_path.trim_start_matches('/');
@@ -801,11 +795,9 @@ impl Renderer {
         // Extract language from class attribute
         let lang = if let Some(class_start) = content.find("class=\"language-") {
             let lang_start = class_start + "class=\"language-".len();
-            if let Some(quote_end) = content[lang_start..].find('"') {
-                Some(&content[lang_start..lang_start + quote_end])
-            } else {
-                None
-            }
+            content[lang_start..]
+                .find('"')
+                .map(|quote_end| &content[lang_start..lang_start + quote_end])
         } else {
             None
         };

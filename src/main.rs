@@ -26,7 +26,7 @@ use walkdir::WalkDir;
 
 use crate::cache::{hash_directory, hash_file, BuildCache};
 use crate::category::{discover_categories, validate_category};
-use crate::config::load_config;
+use crate::config::{load_config, SsgConfig};
 use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
 use crate::indices::IndexGenerator;
@@ -39,6 +39,31 @@ use crate::parser::Parser;
 use crate::renderer::Renderer;
 use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
+use crate::types::Post;
+
+fn resolve_post_images(post: &mut Post) {
+    post.frontmatter.cover_image = post
+        .frontmatter
+        .cover_image
+        .take()
+        .map(|cover| Renderer::resolve_path(&cover, &post.category));
+    post.frontmatter.og_image = post
+        .frontmatter
+        .og_image
+        .take()
+        .map(|og| Renderer::resolve_path(&og, &post.category));
+}
+
+struct PostProcessingContext<'a> {
+    renderer: &'a Renderer,
+    generator: &'a Generator,
+    shortcode_registry: &'a ShortcodeRegistry,
+    config: &'a SsgConfig,
+    cache: &'a Arc<Mutex<BuildCache>>,
+    template_hash: &'a str,
+    metadata: &'a MetadataCache,
+    use_cache: bool,
+}
 
 #[derive(ClapParser)]
 #[command(name = "blog")]
@@ -158,21 +183,11 @@ fn build_all(use_cache: bool) -> Result<()> {
     for entry in WalkDir::new(posts_dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
     {
         if let Ok(mut post) = Parser::parse_file(entry.path()) {
             if !post.frontmatter.hidden {
-                post.frontmatter.cover_image = post
-                    .frontmatter
-                    .cover_image
-                    .take()
-                    .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
-                post.frontmatter.og_image = post
-                    .frontmatter
-                    .og_image
-                    .take()
-                    .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
-
+                resolve_post_images(&mut post);
                 metadata.upsert_post(post.slug, post.category, post.frontmatter);
             }
         }
@@ -184,7 +199,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     for entry in WalkDir::new(posts_dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
     {
         let path = entry.path();
         let file_hash = hash_file(path)?;
@@ -218,17 +233,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         )?;
 
         post.rendered_html = Some(html);
-
-        post.frontmatter.cover_image = post
-            .frontmatter
-            .cover_image
-            .take()
-            .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
-        post.frontmatter.og_image = post
-            .frontmatter
-            .og_image
-            .take()
-            .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
+        resolve_post_images(&mut post);
 
         let extra_data = build_post_extra_data(&post, &metadata);
         let output_path = generator.generate_post(&post, &extra_data)?;
@@ -262,7 +267,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         for entry in WalkDir::new(pages_dir)
             .into_iter()
             .filter_map(|e| e.ok())
-            .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
         {
             let path = entry.path();
             println!("🔨 Building page: {}", path.display());
@@ -360,25 +365,15 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     let file_paths: Vec<PathBuf> = WalkDir::new(posts_dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
         .map(|e| e.path().to_path_buf())
         .collect();
 
     for path in &file_paths {
         if let Ok(mut post) = Parser::parse_file(path) {
             if !post.frontmatter.hidden {
-                // Resolve cover_image and og_image paths so navigation has correct URLs
-                post.frontmatter.cover_image = post
-                    .frontmatter
-                    .cover_image
-                    .take()
-                    .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
-                post.frontmatter.og_image = post
-                    .frontmatter
-                    .og_image
-                    .take()
-                    .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
-
+                // Resolve paths so navigation has correct URLs
+                resolve_post_images(&mut post);
                 metadata.upsert_post(post.slug, post.category, post.frontmatter);
             }
         }
@@ -388,12 +383,10 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     let progress = Arc::new(BuildProgress::new());
 
-    // Set up work queue and results channel
     let work_queue = WorkQueue::new();
     let work_rx = work_queue.get_receiver();
     let (result_tx, result_rx) = mpsc::channel();
 
-    // Send all work to queue
     for path in file_paths {
         work_queue.send(path)?;
     }
@@ -432,17 +425,17 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                     None => break,
                 };
 
-                let result = process_post_parallel(
-                    &path,
-                    &renderer,
-                    &generator,
-                    &shortcode_registry,
-                    &config,
-                    &cache,
-                    &template_hash,
-                    &metadata_for_nav,
+                let ctx = PostProcessingContext {
+                    renderer: &renderer,
+                    generator: &generator,
+                    shortcode_registry: &shortcode_registry,
+                    config: &config,
+                    cache: &cache,
+                    template_hash: &template_hash,
+                    metadata: &metadata_for_nav,
                     use_cache,
-                );
+                };
+                let result = process_post_parallel(&path, &ctx);
 
                 match &result {
                     BuildResult::Success { .. } => progress.increment_built(),
@@ -477,7 +470,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                 output_path,
             } => {
                 println!("🔨 Built: {}", path.display());
-                metadata.upsert_post(slug, category, frontmatter);
+                metadata.upsert_post(slug, category, *frontmatter);
                 cache
                     .lock()
                     .unwrap()
@@ -503,7 +496,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     }
     metadata.save()?;
 
-    // Build pages (sequential)
     let pages_dir = Path::new("content/pages");
     if pages_dir.exists() {
         println!("\n📄 Building pages...");
@@ -514,7 +506,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         for entry in WalkDir::new(pages_dir)
             .into_iter()
             .filter_map(|e| e.ok())
-            .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
         {
             let path = entry.path();
             println!("🔨 Building page: {}", path.display());
@@ -577,17 +569,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     Ok(())
 }
 
-fn process_post_parallel(
-    path: &Path,
-    renderer: &Renderer,
-    generator: &Generator,
-    shortcode_registry: &ShortcodeRegistry,
-    config: &crate::config::SsgConfig,
-    cache: &Arc<Mutex<BuildCache>>,
-    template_hash: &str,
-    metadata: &MetadataCache,
-    use_cache: bool,
-) -> BuildResult {
+fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResult {
     let file_hash = match hash_file(path) {
         Ok(h) => h,
         Err(e) => {
@@ -598,9 +580,9 @@ fn process_post_parallel(
         }
     };
 
-    if use_cache {
-        let cache = cache.lock().unwrap();
-        if !cache.needs_rebuild(path, &file_hash, template_hash) {
+    if ctx.use_cache {
+        let cache = ctx.cache.lock().unwrap();
+        if !cache.needs_rebuild(path, &file_hash, ctx.template_hash) {
             return BuildResult::Skipped {
                 path: path.to_path_buf(),
                 reason: SkipReason::Cached,
@@ -625,7 +607,7 @@ fn process_post_parallel(
         };
     }
 
-    let processed_content = match shortcode_registry.process(&post.content) {
+    let processed_content = match ctx.shortcode_registry.process(&post.content) {
         Ok(c) => c,
         Err(e) => {
             return BuildResult::Error {
@@ -636,12 +618,12 @@ fn process_post_parallel(
     };
 
     let base_path = format!("{}/{}", post.category, post.slug);
-    let content_dir = Path::new(&config.build.content_dir);
-    let html = match renderer.render_markdown_with_components_and_images(
+    let content_dir = Path::new(&ctx.config.build.content_dir);
+    let html = match ctx.renderer.render_markdown_with_components_and_images(
         &processed_content,
-        generator.get_tera(),
+        ctx.generator.get_tera(),
         &base_path,
-        config.site.cdn_url.as_deref(),
+        ctx.config.site.cdn_url.as_deref(),
         Some(content_dir),
     ) {
         Ok(h) => h,
@@ -654,21 +636,11 @@ fn process_post_parallel(
     };
 
     post.rendered_html = Some(html);
+    resolve_post_images(&mut post);
 
-    post.frontmatter.cover_image = post
-        .frontmatter
-        .cover_image
-        .take()
-        .map(|cover| renderer::Renderer::resolve_path(&cover, &post.category));
-    post.frontmatter.og_image = post
-        .frontmatter
-        .og_image
-        .take()
-        .map(|og| renderer::Renderer::resolve_path(&og, &post.category));
+    let extra_data = build_post_extra_data(&post, ctx.metadata);
 
-    let extra_data = build_post_extra_data(&post, metadata);
-
-    let output_path = match generator.generate_post(&post, &extra_data) {
+    let output_path = match ctx.generator.generate_post(&post, &extra_data) {
         Ok(p) => p,
         Err(e) => {
             return BuildResult::Error {
@@ -682,9 +654,9 @@ fn process_post_parallel(
         path: path.to_path_buf(),
         slug: post.slug,
         category: post.category,
-        frontmatter: post.frontmatter,
+        frontmatter: Box::new(post.frontmatter),
         file_hash,
-        template_hash: template_hash.to_string(),
+        template_hash: ctx.template_hash.to_string(),
         output_path: output_path.to_string_lossy().to_string(),
     }
 }
@@ -876,14 +848,12 @@ fn watch_mode(port: u16) -> Result<()> {
     build_all(true)?;
     println!();
 
-    // Start file server in background thread
     let server_thread = std::thread::spawn(move || {
         if let Err(e) = start_dev_server(port) {
             eprintln!("Dev server error: {}", e);
         }
     });
 
-    // Set up file watcher
     let (tx, rx) = channel();
 
     let mut watcher = notify::recommended_watcher(move |res: NotifyResult<Event>| {

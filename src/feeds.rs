@@ -32,7 +32,7 @@ impl FeedGenerator {
             .filter_map(|e| e.ok())
         {
             let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "md") {
+            if path.extension().is_some_and(|ext| ext == "md") {
                 if let Some(stem) = path.file_stem() {
                     let slug = stem.to_string_lossy().to_string();
                     map.insert(slug, path.to_path_buf());

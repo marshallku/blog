@@ -123,10 +123,8 @@ fn has_markdown_files_recursive(dir: &Path) -> Result<bool> {
     // Check subdirectories recursively
     for entry in fs::read_dir(dir)? {
         let path = entry?.path();
-        if path.is_dir() && !is_hidden(&path) {
-            if has_markdown_files_recursive(&path)? {
-                return Ok(true);
-            }
+        if path.is_dir() && !is_hidden(&path) && has_markdown_files_recursive(&path)? {
+            return Ok(true);
         }
     }
 
@@ -143,11 +141,6 @@ fn capitalize(s: &str) -> String {
 
 pub fn validate_category(slug: &str, categories: &[Category]) -> bool {
     categories.iter().any(|c| c.slug == slug)
-}
-
-#[allow(dead_code)]
-pub fn get_category_by_slug<'a>(slug: &str, categories: &'a [Category]) -> Option<&'a Category> {
-    categories.iter().find(|c| c.slug == slug)
 }
 
 #[cfg(test)]

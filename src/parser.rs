@@ -28,9 +28,9 @@ impl Parser {
         let components: Vec<_> = path.components().collect();
 
         let mut posts_index = None;
-        for i in 0..components.len() {
-            if let std::path::Component::Normal(comp) = components[i] {
-                if comp == "posts" {
+        for (i, component) in components.iter().enumerate() {
+            if let std::path::Component::Normal(comp) = component {
+                if *comp == "posts" {
                     posts_index = Some(i);
                     break;
                 }

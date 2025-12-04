@@ -1,4 +1,4 @@
-use crate::metadata::MetadataCache;
+use crate::metadata::{MetadataCache, PostMetadata};
 use crate::slug;
 use serde::Serialize;
 
@@ -17,6 +17,24 @@ pub struct PostLink {
     pub cover_image: Option<String>,
 }
 
+fn create_post_link(post: &PostMetadata) -> PostLink {
+    PostLink {
+        slug: post.slug.clone(),
+        title: post.frontmatter.title.clone(),
+        url: format!(
+            "/{}/{}/",
+            slug::encode_for_url(&post.category),
+            slug::encode_for_url(&post.slug)
+        ),
+        category: post.category.clone(),
+        cover_image: post
+            .frontmatter
+            .cover_image
+            .clone()
+            .or_else(|| post.frontmatter.og_image.clone()),
+    }
+}
+
 pub fn build_post_navigation(
     current_slug: &str,
     current_category: &str,
@@ -26,68 +44,23 @@ pub fn build_post_navigation(
     let mut posts: Vec<_> = metadata
         .posts
         .iter()
-        .filter(|p| {
-            if same_category {
-                p.category == current_category
-            } else {
-                true
-            }
-        })
+        .filter(|p| !same_category || p.category == current_category)
         .collect();
 
     posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-    let current_index = posts.iter().position(|p| p.slug == current_slug);
+    let Some(index) = posts.iter().position(|p| p.slug == current_slug) else {
+        return PostNavigation {
+            prev: None,
+            next: None,
+        };
+    };
 
-    let (prev, next) = match current_index {
-        Some(index) => {
-            let prev = if index < posts.len() - 1 {
-                let p = &posts[index + 1];
-                Some(PostLink {
-                    slug: p.slug.clone(),
-                    title: p.frontmatter.title.clone(),
-                    url: format!(
-                        "/{}/{}/",
-                        slug::encode_for_url(&p.category),
-                        slug::encode_for_url(&p.slug)
-                    ),
-                    category: p.category.clone(),
-                    cover_image: p
-                        .frontmatter
-                        .cover_image
-                        .clone()
-                        .or(p.frontmatter.og_image.clone())
-                        .clone(),
-                })
-            } else {
-                None
-            };
-
-            let next = if index > 0 {
-                let p = &posts[index - 1];
-                Some(PostLink {
-                    slug: p.slug.clone(),
-                    title: p.frontmatter.title.clone(),
-                    url: format!(
-                        "/{}/{}/",
-                        slug::encode_for_url(&p.category),
-                        slug::encode_for_url(&p.slug)
-                    ),
-                    category: p.category.clone(),
-                    cover_image: p
-                        .frontmatter
-                        .cover_image
-                        .clone()
-                        .or(p.frontmatter.og_image.clone())
-                        .clone(),
-                })
-            } else {
-                None
-            };
-
-            (prev, next)
-        }
-        None => (None, None),
+    let prev = posts.get(index + 1).map(|p| create_post_link(p));
+    let next = if index > 0 {
+        posts.get(index - 1).map(|p| create_post_link(p))
+    } else {
+        None
     };
 
     PostNavigation { prev, next }
@@ -96,7 +69,6 @@ pub fn build_post_navigation(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::metadata::PostMetadata;
     use crate::types::{Frontmatter, PostDate};
     use chrono::Utc;
     use std::collections::HashMap;
