@@ -50,6 +50,36 @@ impl Generator {
         Ok(output_path)
     }
 
+    pub fn generate_post_partial(
+        &self,
+        post: &Post,
+        plugin_data: &HashMap<String, JsonValue>,
+    ) -> Result<PathBuf> {
+        let html = post
+            .rendered_html
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Post not rendered: {}", post.slug))?;
+
+        let mut context = TeraContext::new();
+        context.insert("post", post);
+        context.insert("slug", &post.slug);
+        context.insert("category", &post.category);
+        context.insert("content", html);
+        context.insert("config", &self.config.to_template_config());
+
+        for (key, value) in plugin_data {
+            context.insert(key, value);
+        }
+
+        let output = self.tera.render("partials/post.html", &context)?;
+
+        let output_path = self.get_post_partial_path(post);
+        fs::create_dir_all(output_path.parent().unwrap())?;
+        fs::write(&output_path, output)?;
+
+        Ok(output_path)
+    }
+
     pub fn generate_page(
         &self,
         page: &Page,
@@ -79,6 +109,39 @@ impl Generator {
         Ok(output_path)
     }
 
+    pub fn generate_page_partial(
+        &self,
+        page: &Page,
+        plugin_data: &HashMap<String, JsonValue>,
+    ) -> Result<PathBuf> {
+        let html = page
+            .rendered_html
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Page not rendered: {}", page.slug))?;
+
+        let mut context = TeraContext::new();
+        context.insert("page", &page.frontmatter);
+        context.insert("slug", &page.slug);
+        context.insert("content", html);
+        context.insert("config", &self.config.to_template_config());
+
+        for (key, value) in plugin_data {
+            context.insert(key, value);
+        }
+
+        let output = self.tera.render("partials/page.html", &context)?;
+
+        let output_path = self.get_page_partial_path(page);
+        fs::create_dir_all(output_path.parent().unwrap())?;
+        fs::write(&output_path, output)?;
+
+        Ok(output_path)
+    }
+
+    pub fn should_generate_partials(&self) -> bool {
+        self.config.build.generate_partials
+    }
+
     pub fn get_tera(&self) -> &Tera {
         &self.tera
     }
@@ -93,10 +156,30 @@ impl Generator {
             .join("index.html")
     }
 
+    fn get_post_partial_path(&self, post: &Post) -> PathBuf {
+        let category = self.maybe_encode(&post.category);
+        let slug = self.maybe_encode(&post.slug);
+
+        PathBuf::from(&self.config.build.output_dir)
+            .join(&self.config.build.partial_dir)
+            .join(category)
+            .join(slug)
+            .join("index.html")
+    }
+
     fn get_page_path(&self, page: &Page) -> PathBuf {
         let slug = self.maybe_encode(&page.slug);
 
         PathBuf::from(&self.config.build.output_dir)
+            .join(slug)
+            .join("index.html")
+    }
+
+    fn get_page_partial_path(&self, page: &Page) -> PathBuf {
+        let slug = self.maybe_encode(&page.slug);
+
+        PathBuf::from(&self.config.build.output_dir)
+            .join(&self.config.build.partial_dir)
             .join(slug)
             .join("index.html")
     }

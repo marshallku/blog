@@ -41,6 +41,62 @@ use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
 use crate::types::Post;
 
+const RELATED_POSTS_COUNT: usize = 4;
+const DEV_SERVER_BUFFER_SIZE: usize = 1024;
+
+fn build_pages(
+    shortcode_registry: &ShortcodeRegistry,
+    renderer: &Renderer,
+    generator: &Generator,
+) -> Result<usize> {
+    let pages_dir = Path::new("content/pages");
+    if !pages_dir.exists() {
+        return Ok(0);
+    }
+
+    println!("\n📄 Building pages...");
+    let mut pages_built = 0;
+
+    for entry in WalkDir::new(pages_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
+    {
+        let path = entry.path();
+        println!("🔨 Building page: {}", path.display());
+
+        let mut page = Parser::parse_page_file(path)?;
+
+        if page.frontmatter.hidden {
+            println!("   ⚠  Hidden - skipping output");
+            continue;
+        }
+
+        let processed_content = shortcode_registry.process(&page.content)?;
+        let html = renderer.render_markdown_with_components(
+            &processed_content,
+            generator.get_tera(),
+            &page.slug,
+        )?;
+        page.rendered_html = Some(html);
+
+        let output_path = generator.generate_page(&page, &HashMap::new())?;
+        println!("   ✓ {}", output_path.display());
+
+        if generator.should_generate_partials() {
+            generator.generate_page_partial(&page, &HashMap::new())?;
+        }
+
+        pages_built += 1;
+    }
+
+    if pages_built > 0 {
+        println!("✅ Built {} page(s)", pages_built);
+    }
+
+    Ok(pages_built)
+}
+
 fn resolve_post_images(post: &mut Post) {
     post.frontmatter.cover_image = post
         .frontmatter
@@ -118,25 +174,21 @@ fn main() -> Result<()> {
             parallel,
         } => {
             if let Some(post_path) = post {
-                build_single_post(&post_path)?;
-            } else if parallel {
-                if incremental {
-                    println!("Note: Incremental build uses cache to skip unchanged files");
-                }
-                build_all_parallel(incremental)?;
-            } else if incremental {
+                return build_single_post(&post_path);
+            }
+
+            if incremental {
                 println!("Note: Incremental build uses cache to skip unchanged files");
-                build_all(true)?;
+            }
+
+            if parallel {
+                build_all_parallel(incremental)?;
             } else {
-                build_all(false)?;
+                build_all(incremental)?;
             }
         }
-        Commands::Watch { port } => {
-            watch_mode(port)?;
-        }
-        Commands::New { category, title } => {
-            create_new_post(&category, &title)?;
-        }
+        Commands::Watch { port } => watch_mode(port)?,
+        Commands::New { category, title } => create_new_post(&category, &title)?,
     }
 
     Ok(())
@@ -238,6 +290,10 @@ fn build_all(use_cache: bool) -> Result<()> {
         let extra_data = build_post_extra_data(&post, &metadata);
         let output_path = generator.generate_post(&post, &extra_data)?;
 
+        if generator.should_generate_partials() {
+            generator.generate_post_partial(&post, &extra_data)?;
+        }
+
         cache.update_entry(
             path,
             file_hash,
@@ -259,48 +315,11 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
     metadata.save()?;
 
-    let pages_dir = Path::new("content/pages");
-    if pages_dir.exists() {
-        println!("\n📄 Building pages...");
-        let mut pages_built = 0;
-
-        for entry in WalkDir::new(pages_dir)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
-        {
-            let path = entry.path();
-            println!("🔨 Building page: {}", path.display());
-
-            let mut page = Parser::parse_page_file(path)?;
-
-            if page.frontmatter.hidden {
-                println!("   ⚠  Hidden - skipping output");
-                continue;
-            }
-
-            let processed_content = shortcode_registry.process(&page.content)?;
-
-            let html = renderer.render_markdown_with_components(
-                &processed_content,
-                generator.get_tera(),
-                &page.slug,
-            )?;
-            page.rendered_html = Some(html);
-
-            let output_path = generator.generate_page(&page, &HashMap::new())?;
-            println!("   ✓ {}", output_path.display());
-
-            pages_built += 1;
-        }
-
-        if pages_built > 0 {
-            println!("✅ Built {} page(s)", pages_built);
-        }
-    }
+    build_pages(&shortcode_registry, &renderer, &generator)?;
 
     let index_generator = IndexGenerator::new(config.clone())?;
     index_generator.generate_all(&metadata)?;
+    index_generator.generate_all_partials(&metadata)?;
 
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(
@@ -372,7 +391,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     for path in &file_paths {
         if let Ok(mut post) = Parser::parse_file(path) {
             if !post.frontmatter.hidden {
-                // Resolve paths so navigation has correct URLs
                 resolve_post_images(&mut post);
                 metadata.upsert_post(post.slug, post.category, post.frontmatter);
             }
@@ -496,49 +514,13 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     }
     metadata.save()?;
 
-    let pages_dir = Path::new("content/pages");
-    if pages_dir.exists() {
-        println!("\n📄 Building pages...");
-        let renderer = Renderer::new();
-        let generator = Generator::new((*config).clone())?;
-        let mut pages_built = 0;
-
-        for entry in WalkDir::new(pages_dir)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
-        {
-            let path = entry.path();
-            println!("🔨 Building page: {}", path.display());
-
-            let mut page = Parser::parse_page_file(path)?;
-
-            if page.frontmatter.hidden {
-                println!("   ⚠  Hidden - skipping output");
-                continue;
-            }
-
-            let processed_content = shortcode_registry.process(&page.content)?;
-            let html = renderer.render_markdown_with_components(
-                &processed_content,
-                generator.get_tera(),
-                &page.slug,
-            )?;
-            page.rendered_html = Some(html);
-
-            let output_path = generator.generate_page(&page, &HashMap::new())?;
-            println!("   ✓ {}", output_path.display());
-
-            pages_built += 1;
-        }
-
-        if pages_built > 0 {
-            println!("✅ Built {} page(s)", pages_built);
-        }
-    }
+    let renderer = Renderer::new();
+    let generator = Generator::new((*config).clone())?;
+    build_pages(&shortcode_registry, &renderer, &generator)?;
 
     let index_generator = IndexGenerator::new((*config).clone())?;
     index_generator.generate_all(&metadata)?;
+    index_generator.generate_all_partials(&metadata)?;
 
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(
@@ -553,7 +535,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         search_generator.generate(&metadata)?;
     }
 
-    let generator = Generator::new((*config).clone())?;
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 
@@ -569,16 +550,22 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     Ok(())
 }
 
-fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResult {
-    let file_hash = match hash_file(path) {
-        Ok(h) => h,
-        Err(e) => {
-            return BuildResult::Error {
-                path: path.to_path_buf(),
-                error: e.to_string(),
+macro_rules! try_or_error {
+    ($path:expr, $result:expr) => {
+        match $result {
+            Ok(v) => v,
+            Err(e) => {
+                return BuildResult::Error {
+                    path: $path.to_path_buf(),
+                    error: e.to_string(),
+                }
             }
         }
     };
+}
+
+fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResult {
+    let file_hash = try_or_error!(path, hash_file(path));
 
     if ctx.use_cache {
         let cache = ctx.cache.lock().unwrap();
@@ -590,15 +577,7 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
         }
     }
 
-    let mut post = match Parser::parse_file(path) {
-        Ok(p) => p,
-        Err(e) => {
-            return BuildResult::Error {
-                path: path.to_path_buf(),
-                error: e.to_string(),
-            }
-        }
-    };
+    let mut post = try_or_error!(path, Parser::parse_file(path));
 
     if post.frontmatter.hidden {
         return BuildResult::Skipped {
@@ -607,48 +586,35 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
         };
     }
 
-    let processed_content = match ctx.shortcode_registry.process(&post.content) {
-        Ok(c) => c,
-        Err(e) => {
-            return BuildResult::Error {
-                path: path.to_path_buf(),
-                error: e.to_string(),
-            }
-        }
-    };
+    let processed_content = try_or_error!(path, ctx.shortcode_registry.process(&post.content));
 
     let base_path = format!("{}/{}", post.category, post.slug);
     let content_dir = Path::new(&ctx.config.build.content_dir);
-    let html = match ctx.renderer.render_markdown_with_components_and_images(
-        &processed_content,
-        ctx.generator.get_tera(),
-        &base_path,
-        ctx.config.site.cdn_url.as_deref(),
-        Some(content_dir),
-    ) {
-        Ok(h) => h,
-        Err(e) => {
-            return BuildResult::Error {
-                path: path.to_path_buf(),
-                error: e.to_string(),
-            }
-        }
-    };
+    let html = try_or_error!(
+        path,
+        ctx.renderer.render_markdown_with_components_and_images(
+            &processed_content,
+            ctx.generator.get_tera(),
+            &base_path,
+            ctx.config.site.cdn_url.as_deref(),
+            Some(content_dir),
+        )
+    );
 
     post.rendered_html = Some(html);
     resolve_post_images(&mut post);
 
     let extra_data = build_post_extra_data(&post, ctx.metadata);
+    let output_path = try_or_error!(path, ctx.generator.generate_post(&post, &extra_data));
 
-    let output_path = match ctx.generator.generate_post(&post, &extra_data) {
-        Ok(p) => p,
-        Err(e) => {
-            return BuildResult::Error {
-                path: path.to_path_buf(),
-                error: e.to_string(),
-            }
-        }
-    };
+    if ctx.generator.should_generate_partials() {
+        try_or_error!(
+            path,
+            ctx.generator
+                .generate_post_partial(&post, &extra_data)
+                .map_err(|e| anyhow::anyhow!("Failed to generate partial: {}", e))
+        );
+    }
 
     BuildResult::Success {
         path: path.to_path_buf(),
@@ -729,7 +695,11 @@ fn build_post_extra_data(
         .collect();
     related.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-    let related_posts: Vec<_> = related.into_iter().take(4).cloned().collect();
+    let related_posts: Vec<_> = related
+        .into_iter()
+        .take(RELATED_POSTS_COUNT)
+        .cloned()
+        .collect();
     data.insert("related_posts".to_string(), json!(related_posts));
 
     data
@@ -931,7 +901,7 @@ fn start_dev_server(port: u16) -> Result<()> {
             }
         };
 
-        let mut buffer = [0; 1024];
+        let mut buffer = [0; DEV_SERVER_BUFFER_SIZE];
         if stream.read(&mut buffer).is_err() {
             continue;
         }

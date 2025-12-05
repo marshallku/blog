@@ -1,0 +1,28 @@
+{# Tags overview partial - content only, no base layout #}
+
+<div class="partial-content"
+     data-page-title="All Tags - {{ config.site_title }}"
+     data-page-url="{{ config.site_url }}/tags/">
+
+<div class="page page--top-padding">
+    <header class="page-header">
+        <h1 class="typography-h1">모든 태그</h1>
+    </header>
+
+    <div class="contents">
+        {% if tags %}
+        <div class="tag-cloud">
+            {% for tag_entry in tags %}
+            <a href="/tag/{{ tag_entry.0 }}/" class="tag-cloud-item typography-b2">
+                <span class="tag-name">{{ tag_entry.0 | urldecode }}</span>
+                <span class="tag-count typography-c1">({{ tag_entry.1 }})</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="typography-b1">No tags yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+</div>

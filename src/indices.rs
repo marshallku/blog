@@ -75,6 +75,33 @@ impl IndexGenerator {
         Ok(())
     }
 
+    pub fn generate_all_partials(&self, metadata: &MetadataCache) -> Result<()> {
+        if !self.config.build.generate_partials {
+            return Ok(());
+        }
+
+        println!("\n📄 Generating index partials...");
+
+        self.generate_homepage_partial(metadata)?;
+
+        let category_count = metadata.get_category_info().len();
+        for category in metadata.get_category_info() {
+            self.generate_category_partial(category, metadata)?;
+        }
+
+        for tag in metadata.get_tags() {
+            self.generate_tag_partial(&tag, metadata)?;
+        }
+
+        self.generate_tags_overview_partial(metadata)?;
+
+        println!("   ✓ Homepage partial");
+        println!("   ✓ {} category partials", category_count);
+        println!("   ✓ {} tag partials", metadata.get_tags().len());
+
+        Ok(())
+    }
+
     fn generate_homepage(&self, metadata: &MetadataCache) -> Result<()> {
         let posts_limit = self
             .config
@@ -280,6 +307,202 @@ impl IndexGenerator {
         fs::write(&output_path, output)?;
 
         Ok(())
+    }
+
+    fn generate_homepage_partial(&self, metadata: &MetadataCache) -> Result<()> {
+        let posts_limit = self
+            .config
+            .build
+            .homepage_posts_limit
+            .unwrap_or(self.config.build.posts_per_page);
+
+        let mut visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
+        visible_categories.sort_by_key(|c| c.index);
+
+        let visible_category_slugs: HashSet<_> =
+            visible_categories.iter().map(|c| c.slug.as_str()).collect();
+
+        let all_recent_posts: Vec<_> = metadata
+            .get_recent_posts(posts_limit)
+            .into_iter()
+            .filter(|p| visible_category_slugs.contains(p.category.as_str()))
+            .collect();
+
+        let category_posts: Vec<CategoryPosts> = visible_categories
+            .iter()
+            .map(|cat| {
+                let mut posts = metadata.get_posts_by_category(&cat.slug);
+                posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+                CategoryPosts {
+                    category: cat,
+                    posts: posts.into_iter().take(posts_limit).collect(),
+                }
+            })
+            .collect();
+
+        let mut context = TeraContext::new();
+        context.insert("posts", &all_recent_posts);
+        context.insert("category_posts", &category_posts);
+        context.insert("categories", &visible_categories);
+        context.insert("config", &self.config.to_template_config());
+
+        let output = self.tera.render("partials/index.html", &context)?;
+        let output_path = self.get_partial_path("index.html");
+
+        fs::create_dir_all(output_path.parent().unwrap())?;
+        fs::write(&output_path, output)?;
+
+        Ok(())
+    }
+
+    fn generate_category_partial(
+        &self,
+        category_info: &crate::types::Category,
+        metadata: &MetadataCache,
+    ) -> Result<()> {
+        let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
+        posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+
+        let total_posts = posts.len();
+        let posts_per_page = self.config.build.posts_per_page;
+        let total_pages = if total_posts == 0 {
+            1
+        } else {
+            total_posts.div_ceil(posts_per_page)
+        };
+
+        let base_url = format!("/{}/", category_info.slug);
+
+        let visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
+
+        let template_config = self.config.to_template_config();
+
+        for page_num in 1..=total_pages {
+            let start_idx = (page_num - 1) * posts_per_page;
+            let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
+            let page_posts = &posts[start_idx..end_idx];
+
+            let mut context = TeraContext::new();
+            context.insert("category", category_info);
+            context.insert("posts", &page_posts);
+            context.insert("post_count", &total_posts);
+            context.insert("categories", &visible_categories);
+            context.insert("config", &template_config);
+
+            if total_pages > 1 {
+                let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
+                context.insert("pagination", &pagination);
+            }
+
+            let output = self.tera.render("partials/category.html", &context)?;
+
+            let category_slug = self.maybe_encode(&category_info.slug);
+
+            let output_path = if page_num == 1 {
+                self.get_partial_path(&format!("{}/index.html", category_slug))
+            } else {
+                self.get_partial_path(&format!("{}/page/{}/index.html", category_slug, page_num))
+            };
+
+            fs::create_dir_all(output_path.parent().unwrap())?;
+            fs::write(&output_path, output)?;
+        }
+
+        Ok(())
+    }
+
+    fn generate_tag_partial(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
+        let mut posts = metadata.get_posts_by_tag(tag);
+        posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+
+        let total_posts = posts.len();
+        let posts_per_page = self.config.build.posts_per_page;
+        let total_pages = if total_posts == 0 {
+            1
+        } else {
+            total_posts.div_ceil(posts_per_page)
+        };
+
+        let base_url = format!("/tag/{}/", tag);
+
+        let visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
+
+        let template_config = self.config.to_template_config();
+
+        for page_num in 1..=total_pages {
+            let start_idx = (page_num - 1) * posts_per_page;
+            let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
+            let page_posts = &posts[start_idx..end_idx];
+
+            let mut context = TeraContext::new();
+            context.insert("tag", tag);
+            context.insert("posts", &page_posts);
+            context.insert("post_count", &total_posts);
+            context.insert("categories", &visible_categories);
+            context.insert("config", &template_config);
+
+            if total_pages > 1 {
+                let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
+                context.insert("pagination", &pagination);
+            }
+
+            let output = self.tera.render("partials/tag.html", &context)?;
+
+            let encoded_tag = self.maybe_encode(tag);
+
+            let output_path = if page_num == 1 {
+                self.get_partial_path(&format!("tag/{}/index.html", encoded_tag))
+            } else {
+                self.get_partial_path(&format!("tag/{}/page/{}/index.html", encoded_tag, page_num))
+            };
+
+            fs::create_dir_all(output_path.parent().unwrap())?;
+            fs::write(&output_path, output)?;
+        }
+
+        Ok(())
+    }
+
+    fn generate_tags_overview_partial(&self, metadata: &MetadataCache) -> Result<()> {
+        let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
+        tags_with_counts.sort_by(|a, b| b.1.cmp(a.1));
+
+        let visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
+
+        let mut context = TeraContext::new();
+        context.insert("tags", &tags_with_counts);
+        context.insert("categories", &visible_categories);
+        context.insert("config", &self.config.to_template_config());
+
+        let output = self.tera.render("partials/tags.html", &context)?;
+        let output_path = self.get_partial_path("tags/index.html");
+
+        fs::create_dir_all(output_path.parent().unwrap())?;
+        fs::write(&output_path, output)?;
+
+        Ok(())
+    }
+
+    fn get_partial_path(&self, relative: &str) -> PathBuf {
+        PathBuf::from(&self.config.build.output_dir)
+            .join(&self.config.build.partial_dir)
+            .join(relative)
     }
 
     fn build_pagination_context(

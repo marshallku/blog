@@ -1,9 +1,11 @@
+import { initSpa } from "./spa";
 import { fit, throttle } from "./utils";
 
 document.addEventListener("DOMContentLoaded", () => {
     initGlobalNavigation();
     initScrollToTop();
     initCodeCopy();
+    initSpa();
 });
 
 function initGlobalNavigation(): void {

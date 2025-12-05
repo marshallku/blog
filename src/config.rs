@@ -69,6 +69,12 @@ pub struct BuildConfig {
     /// Search index configuration
     #[serde(default)]
     pub search: SearchConfig,
+    /// Generate partial HTML files for SPA navigation (default: false)
+    #[serde(default)]
+    pub generate_partials: bool,
+    /// Directory name for partial files (default: "html")
+    #[serde(default = "default_partial_dir")]
+    pub partial_dir: String,
 }
 
 /// Complete config.yaml structure
@@ -125,6 +131,8 @@ impl Default for BuildConfig {
             homepage_posts_limit: None,
             encode_filenames: false,
             search: SearchConfig::default(),
+            generate_partials: false,
+            partial_dir: default_partial_dir(),
         }
     }
 }
@@ -159,6 +167,10 @@ fn default_posts_per_page() -> usize {
 
 fn default_pagination_window() -> usize {
     5
+}
+
+fn default_partial_dir() -> String {
+    "html".to_string()
 }
 
 pub fn load_config() -> Result<SsgConfig> {

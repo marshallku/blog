@@ -18,3 +18,9 @@ build:
 
     # Number of posts per page (for pagination)
     posts_per_page: 9
+
+    # Generate partial HTML files for SPA navigation
+    generate_partials: true
+
+    # Directory name for partial files (relative to output_dir)
+    partial_dir: "html"
