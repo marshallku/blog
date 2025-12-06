@@ -1,0 +1,94 @@
+{% import "macros/post-card.html" as macros %}
+{% import "macros/profile.html" as profile_macros %}
+
+<section class="blog-banner">
+    <svg
+        width="1200"
+        height="400"
+        viewBox="0 0 1200 400"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid slice"
+        class="blog-banner__image"
+        x-init="
+            const gradients = ['gradient1', 'gradient2', 'gradient3'];
+            for (let i = 0; i < 15; i++) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', Math.random() * 1200);
+                circle.setAttribute('cy', Math.random() * 400);
+                circle.setAttribute('r', Math.random() * 40 + 60);
+                circle.setAttribute('fill', `url(#${gradients[Math.floor(Math.random() * 3)]})`);
+                circle.setAttribute('class', 'blog-banner__circle');
+                circle.style.animationDelay = `${i * 0.1}s`;
+                $el.appendChild(circle);
+            }
+        "
+    >
+        <defs>
+            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color: rgb(79, 70, 229); stop-opacity: 0.7;"></stop>
+                <stop offset="100%" style="stop-color: rgb(124, 58, 237); stop-opacity: 0.5;"></stop>
+            </linearGradient>
+            <linearGradient id="gradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color: rgb(37, 99, 235); stop-opacity: 0.6;"></stop>
+                <stop offset="100%" style="stop-color: rgb(79, 70, 229); stop-opacity: 0.4;"></stop>
+            </linearGradient>
+            <radialGradient id="gradient3" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                <stop offset="0%" style="stop-color: rgb(99, 102, 241); stop-opacity: 0.6;"></stop>
+                <stop offset="100%" style="stop-color: rgb(59, 130, 246); stop-opacity: 0.3;"></stop>
+            </radialGradient>
+        </defs>
+    </svg>
+    <header class="blog-banner__header">
+        <div class="blog-banner__content">
+            <h1 class="blog-banner__title typography-h1">
+                {{ config.site_title }}
+            </h1>
+            <p class="blog-banner__description typography-b2">
+                {{ config.description }}
+            </p>
+        </div>
+        {{ profile_macros::profile(size="small") }}
+    </header>
+</section>
+
+<section class="home-post-list" x-data="{ activeTab: 'all' }">
+    <div class="tabs">
+        <div class="tabs__buttons">
+            <button
+                x-on:click="activeTab = 'all'"
+                :data-active="activeTab === 'all'"
+                class="button typography-b2"
+            >
+                전체
+            </button>
+            {% for cat_posts in category_posts %}
+            <button
+                x-on:click="activeTab = '{{ cat_posts.category.slug }}'"
+                :data-active="activeTab === '{{ cat_posts.category.slug }}'"
+                class="button typography-b2"
+            >
+                {{ cat_posts.category.name }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div x-show="activeTab === 'all'" class="post-grid">
+        {% for post in posts %}
+        {{ macros::post_card(post=post, show_category=true) }}
+        {% endfor %}
+    </div>
+
+    {% for cat_posts in category_posts %}
+    <div x-show="activeTab === '{{ cat_posts.category.slug }}'">
+        <section class="post-grid">
+            {% for post in cat_posts.posts %}
+            {{ macros::post_card(post=post) }}
+            {% endfor %}
+        </section>
+        <div class="post-grid__more">
+            <a href="/{{ cat_posts.category.slug }}/" class="button button--radius-rounded typography-b2">{{ cat_posts.category.name }} 카테고리 글 더 보기 <i class="icon-arrow-forward"></i></a>
+        </div>
+    </div>
+    {% endfor %}
+</section>

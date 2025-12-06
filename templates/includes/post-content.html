@@ -1,0 +1,60 @@
+{% import "macros/post-card.html" as macros %}
+{% import "macros/prev-next-post.html" as nav_macros %}
+
+<article class="post">
+    <header class="post-header {% if post.frontmatter.cover_image %}post-header--has-cover{% endif %}">
+        {% if post.frontmatter.tags %}
+        <div class="post-header__tags">
+            {% for tag in post.frontmatter.tags %}
+            <a href="/tag/{{ tag }}/" class="typography-c1"># {{ tag | urldecode }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <h1 class="post-header__title typography-h1">{{ post.frontmatter.title }}</h1>
+        <div class="post-header__meta typography-c1">
+            <span class="post-header__category">
+                <a href="/{{ post.category }}/">{{ category_info.name | default(value=post.category) }}</a>
+            </span>
+            <span> • </span>
+            <time datetime="{{ post.frontmatter.date.posted }}" class="post-header__date">
+                {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
+            </time>
+        </div>
+    </header>
+
+    {% if post.frontmatter.cover_image %}
+    <figure class="post__cover">
+        <img src="{{ post.frontmatter.cover_image }}" alt="{{ post.frontmatter.title }}" class="featured-image">
+    </figure>
+    {% endif %}
+
+    {% if post.frontmatter.date.modified %}
+    <div class="post__meta typography-c1">
+        <time datetime="{{ post.frontmatter.date.modified }}">
+            최종 수정일: {{ post.frontmatter.date.modified | date(format="%Y년 %m월 %d일") }}
+        </time>
+    </div>
+    {% endif %}
+
+    <div class="post__body typography-b1">
+        {{ content | safe }}
+    </div>
+</article>
+
+{{ nav_macros::prev_next_post(prev=prev_post, next=next_post) }}
+
+{% if related_posts and related_posts | length > 0 %}
+<section class="post-related-posts">
+    <h2 class="post-related-posts__title typography-h3">
+        <a href="/{{ post.category }}/">{{ category_info.name | default(value=post.category) }} 카테고리</a> 관련 글
+    </h2>
+    <p class="post-related-posts__text typography-b1">
+        위 글이 유용하셨다면, 아래 글도 읽어보세요!
+    </p>
+    <div class="post-related-posts__posts post-grid">
+        {% for related in related_posts %}
+        {{ macros::post_card(post=related) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
