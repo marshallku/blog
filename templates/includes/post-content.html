@@ -1,5 +1,6 @@
 {% import "macros/post-card.html" as macros %}
 {% import "macros/prev-next-post.html" as nav_macros %}
+{% import "macros/cdn-image.html" as cdn_macros %}
 
 <article class="post">
     <header class="post-header {% if post.frontmatter.cover_image %}post-header--has-cover{% endif %}">
@@ -24,7 +25,11 @@
 
     {% if post.frontmatter.cover_image %}
     <figure class="post__cover">
+        {% if cover_image_metadata %}
+        {{ cdn_macros::cdn_picture_full(metadata=cover_image_metadata, alt=post.frontmatter.title, class="featured-image") }}
+        {% else %}
         <img src="{{ post.frontmatter.cover_image }}" alt="{{ post.frontmatter.title }}" class="featured-image">
+        {% endif %}
     </figure>
     {% endif %}
 

@@ -29,3 +29,5 @@ Thumbs.db
 /content
 /*.md
 
+# Config
+config.yaml

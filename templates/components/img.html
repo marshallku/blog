@@ -1,14 +1,30 @@
 <figure class="image-block">
     {% if has_srcset %}
     <picture>
-        <source type="image/webp" srcset="{{ webp_srcset }}">
-        <source srcset="{{ srcset }}">
+        {# WebP sources with media queries #}
+        {% for source in webp_sources %}
+        {% if source.width == 4294967295 %}
+        <source type="image/webp" srcset="{{ source.url }}">
+        {% else %}
+        <source type="image/webp" srcset="{{ source.url }}" media="(max-width: {{ source.width }}px)">
+        {% endif %}
+        {% endfor %}
+        {# Original format sources with media queries #}
+        {% for source in sources %}
+        {% if source.width == 4294967295 %}
+        <source srcset="{{ source.url }}">
+        {% else %}
+        <source srcset="{{ source.url }}" media="(max-width: {{ source.width }}px)">
+        {% endif %}
+        {% endfor %}
         <img
             src="{{ cdn_src }}"
             alt="{{ alt }}"
             loading="lazy"
+            crossorigin="anonymous"
             {% if width %}width="{{ width }}"{% endif %}
             {% if height %}height="{{ height }}"{% endif %}
+            style="background-image: url('{{ lqip }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;"
         >
     </picture>
     {% else %}

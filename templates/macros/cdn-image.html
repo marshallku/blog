@@ -1,0 +1,51 @@
+{# CDN Image Macros #}
+{# Usage: {% import "macros/cdn-image.html" as cdn_macros %} #}
+{# Then: {{ cdn_macros::cdn_picture_full(metadata=cover_image_metadata, alt=title) }} #}
+
+{# Full responsive picture element (for cover images) #}
+{% macro cdn_picture_full(metadata, alt, class="") %}
+{% if metadata %}
+<picture{% if class %} class="{{ class }}"{% endif %}>
+    {# WebP sources with media queries #}
+    {% for source in metadata.webp_sources %}
+    {% if source.width == 4294967295 %}
+    <source type="image/webp" srcset="{{ source.url }}">
+    {% else %}
+    <source type="image/webp" srcset="{{ source.url }}" media="(max-width: {{ source.width }}px)">
+    {% endif %}
+    {% endfor %}
+    {# Original format sources with media queries #}
+    {% for source in metadata.sources %}
+    {% if source.width == 4294967295 %}
+    <source srcset="{{ source.url }}">
+    {% else %}
+    <source srcset="{{ source.url }}" media="(max-width: {{ source.width }}px)">
+    {% endif %}
+    {% endfor %}
+    <img
+        src="{{ metadata.src }}"
+        alt="{{ alt }}"
+        loading="lazy"
+        crossorigin="anonymous"
+        {% if metadata.width %}width="{{ metadata.width }}"{% endif %}
+        {% if metadata.height %}height="{{ metadata.height }}"{% endif %}
+        style="background-image: url('{{ metadata.lqip }}'); background-size: cover; background-position: center center; background-repeat: no-repeat;"
+    >
+</picture>
+{% endif %}
+{% endmacro cdn_picture_full %}
+
+{# Thumbnail picture element (for post cards and navigation, 500px) #}
+{% macro cdn_picture_thumbnail(metadata, alt, class="") %}
+{% if metadata %}
+<picture{% if class %} class="{{ class }}"{% endif %}>
+    <source type="image/webp" srcset="{{ metadata.webp_src }}">
+    <source srcset="{{ metadata.src }}">
+    <img
+        src="{{ metadata.src }}"
+        alt="{{ alt }}"
+        loading="lazy"
+    >
+</picture>
+{% endif %}
+{% endmacro cdn_picture_thumbnail %}

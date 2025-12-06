@@ -1,6 +1,6 @@
 {# Previous/Next Post Navigation Component #}
 {# Usage: {{ macros::prev_next_post(prev=prev_post, next=next_post) }} #}
-{# PostLink structure: slug, title, url, category #}
+{# PostLink structure: slug, title, url, category, cover_image, thumbnail_metadata #}
 
 {% macro prev_next_post(prev, next) %}
 {% if prev or next %}
@@ -13,7 +13,13 @@
                 이전 글
             </span>
             <h4 class="prev-next-post-post__title typography-h4">{{ prev.title }}</h4>
-            {% if prev.cover_image %}
+            {% if prev.thumbnail_metadata %}
+            <picture class="prev-next-post-post__cover">
+                <source type="image/webp" srcset="{{ prev.thumbnail_metadata.webp_src }}">
+                <source srcset="{{ prev.thumbnail_metadata.src }}">
+                <img src="{{ prev.thumbnail_metadata.src }}" alt="{{ prev.title }}" loading="lazy">
+            </picture>
+            {% elif prev.cover_image %}
             <img src="{{ prev.cover_image }}" alt="{{ prev.title }}" class="prev-next-post-post__cover">
             {% endif %}
         </div>
@@ -27,7 +33,13 @@
                 다음 글
             </span>
             <h4 class="prev-next-post-post__title typography-h4">{{ next.title }}</h4>
-            {% if next.cover_image %}
+            {% if next.thumbnail_metadata %}
+            <picture class="prev-next-post-post__cover">
+                <source type="image/webp" srcset="{{ next.thumbnail_metadata.webp_src }}">
+                <source srcset="{{ next.thumbnail_metadata.src }}">
+                <img src="{{ next.thumbnail_metadata.src }}" alt="{{ next.title }}" loading="lazy">
+            </picture>
+            {% elif next.cover_image %}
             <img src="{{ next.cover_image }}" alt="{{ next.title }}" class="prev-next-post-post__cover">
             {% endif %}
         </div>

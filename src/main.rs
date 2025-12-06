@@ -31,7 +31,8 @@ use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
-use crate::navigation::build_post_navigation;
+use crate::image::ImageProcessor;
+use crate::navigation::{build_post_navigation, build_post_navigation_with_cdn};
 use crate::parallel::{
     get_thread_count, BuildProgress, BuildResult, SkipReason, WorkQueue, WorkerPool,
 };
@@ -274,7 +275,7 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         let processed_content = shortcode_registry.process(&post.content)?;
 
-        let base_path = format!("{}/{}", post.category, post.slug);
+        let base_path = post.category.clone();
         let content_dir = Path::new(&config.build.content_dir);
         let html = renderer.render_markdown_with_components_and_images(
             &processed_content,
@@ -285,9 +286,21 @@ fn build_all(use_cache: bool) -> Result<()> {
         )?;
 
         post.rendered_html = Some(html);
+
+        // Capture original paths before resolution for CDN processing
+        let original_paths = OriginalImagePaths {
+            cover_image: post.frontmatter.cover_image.clone(),
+            og_image: post.frontmatter.og_image.clone(),
+        };
         resolve_post_images(&mut post);
 
-        let extra_data = build_post_extra_data(&post, &metadata);
+        let extra_data = build_post_extra_data(
+            &post,
+            &metadata,
+            config.site.cdn_url.as_deref(),
+            content_dir,
+            Some(&original_paths),
+        );
         let output_path = generator.generate_post(&post, &extra_data)?;
 
         if generator.should_generate_partials() {
@@ -588,7 +601,7 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
 
     let processed_content = try_or_error!(path, ctx.shortcode_registry.process(&post.content));
 
-    let base_path = format!("{}/{}", post.category, post.slug);
+    let base_path = post.category.clone();
     let content_dir = Path::new(&ctx.config.build.content_dir);
     let html = try_or_error!(
         path,
@@ -602,9 +615,21 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
     );
 
     post.rendered_html = Some(html);
+
+    // Capture original paths before resolution for CDN processing
+    let original_paths = OriginalImagePaths {
+        cover_image: post.frontmatter.cover_image.clone(),
+        og_image: post.frontmatter.og_image.clone(),
+    };
     resolve_post_images(&mut post);
 
-    let extra_data = build_post_extra_data(&post, ctx.metadata);
+    let extra_data = build_post_extra_data(
+        &post,
+        ctx.metadata,
+        ctx.config.site.cdn_url.as_deref(),
+        content_dir,
+        Some(&original_paths),
+    );
     let output_path = try_or_error!(path, ctx.generator.generate_post(&post, &extra_data));
 
     if ctx.generator.should_generate_partials() {
@@ -650,7 +675,7 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     let processed_content = shortcode_registry.process(&post.content)?;
 
-    let base_path = format!("{}/{}", post.category, post.slug);
+    let base_path = post.category.clone();
     let content_dir = Path::new(&config.build.content_dir);
     let html = renderer.render_markdown_with_components_and_images(
         &processed_content,
@@ -662,7 +687,20 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     post.rendered_html = Some(html);
 
-    let extra_data = build_post_extra_data(&post, &metadata);
+    // Capture original paths before resolution for CDN processing
+    let original_paths = OriginalImagePaths {
+        cover_image: post.frontmatter.cover_image.clone(),
+        og_image: post.frontmatter.og_image.clone(),
+    };
+    resolve_post_images(&mut post);
+
+    let extra_data = build_post_extra_data(
+        &post,
+        &metadata,
+        config.site.cdn_url.as_deref(),
+        content_dir,
+        Some(&original_paths),
+    );
     let output_path = generator.generate_post(&post, &extra_data)?;
 
     println!("\n✅ Built: {}", output_path.display());
@@ -670,9 +708,17 @@ fn build_single_post(post_path: &str) -> Result<()> {
     Ok(())
 }
 
+struct OriginalImagePaths {
+    cover_image: Option<String>,
+    og_image: Option<String>,
+}
+
 fn build_post_extra_data(
     post: &crate::types::Post,
     metadata: &MetadataCache,
+    cdn_url: Option<&str>,
+    content_dir: &Path,
+    original_paths: Option<&OriginalImagePaths>,
 ) -> HashMap<String, serde_json::Value> {
     let mut data = HashMap::new();
 
@@ -684,9 +730,47 @@ fn build_post_extra_data(
         data.insert("category_info".to_string(), json!(cat_info));
     }
 
-    let navigation = build_post_navigation(&post.slug, &post.category, metadata, true);
+    // Build navigation with or without CDN processing
+    let navigation = if let Some(url) = cdn_url {
+        let image_processor = ImageProcessor::new(Some(url.to_string()));
+        build_post_navigation_with_cdn(
+            &post.slug,
+            &post.category,
+            metadata,
+            true,
+            &image_processor,
+            content_dir,
+        )
+    } else {
+        build_post_navigation(&post.slug, &post.category, metadata, true)
+    };
     data.insert("prev_post".to_string(), json!(navigation.prev));
     data.insert("next_post".to_string(), json!(navigation.next));
+
+    // Process cover image for CDN if available
+    if let (Some(url), Some(paths)) = (cdn_url, original_paths) {
+        let image_processor = ImageProcessor::new(Some(url.to_string()));
+        let base_path = post.category.clone();
+        let post_content_dir = content_dir.join(&post.category);
+
+        // Process cover image (full responsive)
+        if let Some(ref cover_src) = paths.cover_image {
+            if let Ok(Some(metadata)) =
+                image_processor.process_image(cover_src, &post_content_dir, &base_path)
+            {
+                data.insert("cover_image_metadata".to_string(), json!(metadata));
+            }
+        }
+
+        // Process og_image for post card thumbnails
+        if let Some(ref og_src) = paths.og_image {
+            if let Ok(Some(metadata)) =
+                image_processor.process_thumbnail(og_src, &post_content_dir, &base_path)
+            {
+                data.insert("og_image_metadata".to_string(), json!(metadata));
+            }
+        }
+    }
 
     let mut related: Vec<_> = metadata
         .posts

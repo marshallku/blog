@@ -3,10 +3,11 @@
 
 # Site metadata
 site:
-    title: "Marshall Ku's blog"
-    url: "https://marshallku.com"
-    author: "Marshall K"
-    description: "웹 개발과 관련된 내용을 다룹니다."
+    title: "Example Blog"
+    url: "https://example.com"
+    author: "Example Author"
+    description: "Example blog"
+    cdn_url: "https://cdn.example.com"
 
 # Build configuration
 build:

@@ -41,6 +41,7 @@ struct TagReplacementContext<'a> {
     tera: &'a Tera,
     template_name: &'a str,
     category: &'a str,
+    base_path: &'a str,
     image_processor: Option<&'a ImageProcessor>,
     content_dir: Option<&'a Path>,
 }
@@ -300,6 +301,7 @@ impl Renderer {
                 tera,
                 template_name: &template_name,
                 category,
+                base_path,
                 image_processor: image_processor.as_ref(),
                 content_dir,
             };
@@ -506,11 +508,12 @@ impl Renderer {
                                 content_path.join(ctx.category.trim_matches('/'));
 
                             if let Ok(Some(metadata)) =
-                                processor.process_image(&original_src, &post_content_dir)
+                                processor.process_image(&original_src, &post_content_dir, ctx.base_path)
                             {
                                 context.insert("cdn_src", &metadata.src);
-                                context.insert("srcset", &metadata.srcset);
-                                context.insert("webp_srcset", &metadata.webp_srcset);
+                                context.insert("lqip", &metadata.lqip);
+                                context.insert("sources", &metadata.sources);
+                                context.insert("webp_sources", &metadata.webp_sources);
                                 context.insert("width", &metadata.width);
                                 context.insert("height", &metadata.height);
                                 context.insert("has_srcset", &true);

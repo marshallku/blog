@@ -1,6 +1,8 @@
+use crate::image::{ImageProcessor, ThumbnailMetadata};
 use crate::metadata::{MetadataCache, PostMetadata};
 use crate::slug;
 use serde::Serialize;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PostNavigation {
@@ -15,6 +17,7 @@ pub struct PostLink {
     pub url: String,
     pub category: String,
     pub cover_image: Option<String>,
+    pub thumbnail_metadata: Option<ThumbnailMetadata>,
 }
 
 fn create_post_link(post: &PostMetadata) -> PostLink {
@@ -32,7 +35,56 @@ fn create_post_link(post: &PostMetadata) -> PostLink {
             .cover_image
             .clone()
             .or_else(|| post.frontmatter.og_image.clone()),
+        thumbnail_metadata: None,
     }
+}
+
+fn create_post_link_with_cdn(
+    post: &PostMetadata,
+    image_processor: &ImageProcessor,
+    content_dir: &Path,
+) -> PostLink {
+    let mut link = create_post_link(post);
+
+    // Try to generate thumbnail metadata for cover image
+    if link.cover_image.is_some() {
+        // Get cover image path - it's already resolved to absolute path like /chat/slug/image.png
+        let resolved_src = post
+            .frontmatter
+            .cover_image
+            .as_ref()
+            .or(post.frontmatter.og_image.as_ref());
+
+        if let Some(src) = resolved_src {
+            // Convert resolved path back to relative path for CDN processing
+            // Resolved paths look like: /chat/post-slug/image.png
+            // We need: ./post-slug/image.png relative to content_dir/category
+            let relative_src = if src.starts_with('/') {
+                // Strip leading slash and category prefix
+                let without_leading_slash = src.trim_start_matches('/');
+                // The path is: category/rest-of-path, we need ./rest-of-path
+                if let Some(rest) = without_leading_slash.strip_prefix(&post.category) {
+                    format!(".{}", rest)
+                } else {
+                    // Fallback: use path as-is with ./ prefix
+                    format!("./{}", without_leading_slash)
+                }
+            } else {
+                src.clone()
+            };
+
+            let post_content_dir = content_dir.join(&post.category);
+            let base_path = post.category.clone();
+
+            if let Ok(Some(metadata)) =
+                image_processor.process_thumbnail(&relative_src, &post_content_dir, &base_path)
+            {
+                link.thumbnail_metadata = Some(metadata);
+            }
+        }
+    }
+
+    link
 }
 
 pub fn build_post_navigation(
@@ -59,6 +111,43 @@ pub fn build_post_navigation(
     let prev = posts.get(index + 1).map(|p| create_post_link(p));
     let next = if index > 0 {
         posts.get(index - 1).map(|p| create_post_link(p))
+    } else {
+        None
+    };
+
+    PostNavigation { prev, next }
+}
+
+pub fn build_post_navigation_with_cdn(
+    current_slug: &str,
+    current_category: &str,
+    metadata: &MetadataCache,
+    same_category: bool,
+    image_processor: &ImageProcessor,
+    content_dir: &Path,
+) -> PostNavigation {
+    let mut posts: Vec<_> = metadata
+        .posts
+        .iter()
+        .filter(|p| !same_category || p.category == current_category)
+        .collect();
+
+    posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+
+    let Some(index) = posts.iter().position(|p| p.slug == current_slug) else {
+        return PostNavigation {
+            prev: None,
+            next: None,
+        };
+    };
+
+    let prev = posts
+        .get(index + 1)
+        .map(|p| create_post_link_with_cdn(p, image_processor, content_dir));
+    let next = if index > 0 {
+        posts
+            .get(index - 1)
+            .map(|p| create_post_link_with_cdn(p, image_processor, content_dir))
     } else {
         None
     };
