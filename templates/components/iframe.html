@@ -1,0 +1,3 @@
+<div class="iframe-container" style="--aspect-w: {{ width | default(value=16) }}; --aspect-h: {{ height | default(value=9) }};">
+    <iframe src="{{ src }}"{% if width %} width="{{ width }}"{% endif %}{% if height %} height="{{ height }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}{% if allow %} allow="{{ allow }}"{% endif %}{% if allowfullscreen %} allowfullscreen{% endif %}{% if frameborder %} frameborder="{{ frameborder }}"{% endif %}></iframe>
+</div>

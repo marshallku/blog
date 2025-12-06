@@ -30,6 +30,11 @@ const COMPONENT_TAGS: &[&str] = &[
     "strong",
     "em",
     "del",
+    "iframe",
+];
+
+const RAW_HTML_TAGS: &'static [&'static str] = &[
+    "video", "audio", "source", "iframe", "embed", "object", "track",
 ];
 
 struct TagReplacementContext<'a> {
@@ -310,10 +315,6 @@ impl Renderer {
         html.replace(" data-md", "")
     }
 
-    const RAW_HTML_TAGS: &'static [&'static str] = &[
-        "video", "audio", "source", "iframe", "embed", "object", "track",
-    ];
-
     /// Resolve relative paths in raw HTML tags (video, audio, source, etc.)
     fn resolve_raw_html_paths(html: &str, category: &str) -> String {
         let mut result = String::with_capacity(html.len());
@@ -331,7 +332,7 @@ impl Renderer {
                     result.push_str(tag);
                 } else {
                     let tag_lower = tag.to_lowercase();
-                    let needs_processing = Self::RAW_HTML_TAGS
+                    let needs_processing = RAW_HTML_TAGS
                         .iter()
                         .any(|&t| tag_lower.starts_with(&format!("<{} ", t)));
 
@@ -431,13 +432,14 @@ impl Renderer {
                     }
                 }
 
-                // Only process markdown-generated tags (those with data-md marker)
+                // Process markdown-generated tags (data-md marker) or raw HTML tags
                 let is_target_tag = tag_content.starts_with(&format!("<{} ", tag_name))
                     || tag_content == format!("<{}>", tag_name);
                 let has_md_marker =
                     tag_content.contains(" data-md") || tag_content.contains(" data-md ");
+                let is_raw_html_tag = RAW_HTML_TAGS.contains(&tag_name);
 
-                if is_target_tag && has_md_marker {
+                if is_target_tag && (has_md_marker || is_raw_html_tag) {
                     let attrs = Self::extract_attributes(&tag_content);
                     let mut inner_content = String::new();
 
