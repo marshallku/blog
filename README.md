@@ -1,10 +1,11 @@
-# blog - Static Site Generator
+# blog - Static Site Generator & Backend
 
-A blazing-fast, memory-efficient static site generator built in Rust for the marshallku blog.
+A blazing-fast, memory-efficient static site generator and REST API backend built in Rust for the marshallku blog.
 
-This is a **pnpm monorepo** containing:
+This is a **Cargo workspace + pnpm monorepo** containing:
 
--   **Rust SSG** - Core static site generator (`src/`)
+-   **blog-ssg** - Static site generator (`crates/ssg/`) - binary: `blog`
+-   **blog-backend** - REST API backend (`crates/backend/`) - binary: `blog-api`
 -   **@blog/icon** - Icon font generator (`packages/icon/`)
 -   **@blog/scripts** - TypeScript browser scripts (`packages/scripts/`)
 -   **@blog/styles** - CSS processing with PostCSS (`packages/styles/`)
@@ -32,7 +33,12 @@ If you don't create a config file, blog will use sensible defaults.
 ### 2. Build the project
 
 ```bash
+# Build all crates
 cargo build --release
+
+# Build specific crate
+cargo build -p blog-ssg --release
+cargo build -p blog-backend --release
 ```
 
 ### 3. Create your content structure
@@ -49,13 +55,13 @@ mkdir -p content/posts/tutorials
 
 ```bash
 # Full build
-cargo run --release -- build
+cargo run -p blog-ssg --release -- build
 
 # Incremental build (uses cache)
-cargo run --release -- build --incremental
+cargo run -p blog-ssg --release -- build --incremental
 
 # Build specific post
-cargo run --release -- build --post content/posts/dev/my-post.md
+cargo run -p blog-ssg --release -- build --post content/posts/dev/my-post.md
 ```
 
 ### 5. Development with watch mode
@@ -64,10 +70,10 @@ Watch mode automatically rebuilds when files change and serves your site:
 
 ```bash
 # Start watch mode (default port 8080)
-cargo run --release -- watch
+cargo run -p blog-ssg --release -- watch
 
 # Use custom port
-cargo run --release -- watch --port 3000
+cargo run -p blog-ssg --release -- watch --port 3000
 ```
 
 Then visit `http://localhost:8080` to view your site. Edit any file in `content/`, `templates/`, or `static/` and it will automatically rebuild!
@@ -88,13 +94,45 @@ miniserve dist
 
 ```
 blog/
+├── Cargo.toml             # Cargo workspace root
+├── Cargo.lock             # Shared lock file
 ├── package.json           # pnpm workspace root
 ├── pnpm-workspace.yaml    # Workspace configuration
 ├── tsconfig.base.json     # Shared TypeScript config
-├── Cargo.toml             # Rust dependencies
 ├── config.yaml            # Site configuration (optional)
+├── docker-compose.yml     # Docker services (database, redis, api)
+├── .env.example           # Backend environment template
 │
-├── packages/              # Frontend tooling packages
+├── crates/                # Rust crates (Cargo workspace)
+│   ├── ssg/               # blog-ssg - Static site generator
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── main.rs        # CLI (build, watch, new)
+│   │       ├── config.rs      # Configuration loading
+│   │       ├── types.rs       # Core types (Post, Category, etc.)
+│   │       ├── parser.rs      # Markdown + frontmatter parsing
+│   │       ├── renderer.rs    # Markdown → HTML rendering
+│   │       ├── generator.rs   # Template application
+│   │       ├── indices.rs     # Index page generation
+│   │       ├── category.rs    # Category discovery
+│   │       ├── metadata.rs    # Metadata cache
+│   │       ├── cache.rs       # Build cache management
+│   │       ├── feeds.rs       # RSS feed generation
+│   │       ├── search.rs      # Search index generation
+│   │       └── parallel.rs    # Parallel build processing
+│   └── backend/           # blog-backend - REST API
+│       ├── Cargo.toml
+│       └── src/
+│           ├── main.rs        # Server entry point
+│           ├── database.rs    # MongoDB connection
+│           ├── auth/          # Authentication (JWT, guards)
+│           ├── controllers/   # HTTP handlers
+│           ├── models/        # Data models (User, Comment)
+│           ├── env/           # Environment config
+│           ├── utils/         # Utilities (encryption, webhook)
+│           └── constants/     # Constants
+│
+├── packages/              # Frontend tooling packages (pnpm)
 │   ├── icon/              # @blog/icon - Icon font generator
 │   │   ├── src/icons/     # SVG source files
 │   │   └── dist/          # Generated fonts + CSS
@@ -105,41 +143,31 @@ blog/
 │       ├── src/           # CSS source (PostCSS)
 │       └── dist/          # Minified CSS
 │
-├── src/                   # Rust source code
-│   ├── main.rs           # CLI and build logic
-│   ├── config.rs         # Configuration loading
-│   ├── types.rs          # Core types (Post, Category, etc.)
-│   ├── parser.rs         # Markdown + frontmatter parsing
-│   ├── renderer.rs       # Markdown → HTML rendering
-│   ├── generator.rs      # Template application
-│   ├── indices.rs        # Index page generation
-│   ├── category.rs       # Category discovery
-│   ├── metadata.rs       # Metadata cache
-│   ├── cache.rs          # Build cache management
-│   ├── feeds.rs          # RSS feed generation
-│   ├── search.rs         # Search index generation
-│   └── parallel.rs       # Parallel build processing
+├── docker/
+│   └── backend/
+│       └── Dockerfile     # Backend Docker build
+│
 ├── content/
-│   └── posts/            # Your blog posts (by category)
+│   └── posts/             # Your blog posts (by category)
 │       ├── dev/
 │       │   ├── .category.yaml  # Category metadata (optional)
 │       │   └── *.md
 │       ├── chat/
 │       ├── gallery/
 │       └── tutorials/
-├── templates/            # Tera HTML templates
-│   ├── base.html         # Base layout
-│   ├── post.html         # Post page
-│   ├── index.html        # Homepage
-│   ├── category.html     # Category pages
-│   ├── tag.html          # Tag pages
-│   ├── tags.html         # Tags overview
-│   └── components/       # Reusable components
-├── static/               # Static assets (CSS, JS, images)
+├── templates/             # Tera HTML templates
+│   ├── base.html          # Base layout
+│   ├── post.html          # Post page
+│   ├── index.html         # Homepage
+│   ├── category.html      # Category pages
+│   ├── tag.html           # Tag pages
+│   ├── tags.html          # Tags overview
+│   └── components/        # Reusable components
+├── static/                # Static assets (CSS, JS, images)
 │   ├── css/
 │   ├── js/
 │   └── icons/
-└── dist/                 # Build output (gitignored)
+└── dist/                  # Build output (gitignored)
 ```
 
 ## Commands
@@ -201,6 +229,58 @@ Watches:
 -   `static/` - CSS, JS, images
 
 The dev server automatically serves your site while watching for changes.
+
+## Backend API
+
+The backend provides a REST API for comments, authentication, and dynamic features.
+
+### Running the Backend
+
+```bash
+# Copy environment template and configure
+cp .env.example .env
+# Edit .env with your settings
+
+# Run locally (requires MongoDB)
+cargo run -p blog-backend --release
+
+# Or use Docker Compose
+docker-compose up -d database redis
+cargo run -p blog-backend --release
+
+# Or run everything in Docker
+docker-compose up --build api
+```
+
+### Environment Variables
+
+| Variable                | Required | Description                       |
+| ----------------------- | -------- | --------------------------------- |
+| `PORT`                  | Yes      | Server port (default: 8080)       |
+| `HOST`                  | Yes      | Server host (default: 127.0.0.1)  |
+| `JWT_SECRET`            | Yes      | JWT signing secret                |
+| `COOKIE_DOMAIN`         | Yes      | Domain for auth cookies           |
+| `MONGO_HOST`            | Yes      | MongoDB host                      |
+| `MONGO_PORT`            | Yes      | MongoDB port                      |
+| `MONGO_USERNAME`        | Yes      | MongoDB username                  |
+| `MONGO_PASSWORD`        | Yes      | MongoDB password                  |
+| `MONGO_CONNECTION_NAME` | Yes      | Database name                     |
+| `TRUSTED_DOMAINS`       | Yes      | CORS allowed origins              |
+| `DISCORD_WEBHOOK_URL`   | No       | Discord webhook for notifications |
+
+### API Endpoints
+
+| Method   | Path                      | Description                |
+| -------- | ------------------------- | -------------------------- |
+| `GET`    | `/health`                 | Health check               |
+| `POST`   | `/api/v2/auth/signin`     | Login with name/password   |
+| `POST`   | `/api/v2/auth/signup`     | Register new user          |
+| `GET`    | `/api/v2/auth/status`     | Verify current session     |
+| `POST`   | `/api/v2/comment/create`  | Create comment             |
+| `GET`    | `/api/v2/comment/list`    | List comments for post     |
+| `DELETE` | `/api/v2/comment/:id`     | Delete comment (root only) |
+| `GET`    | `/api/v2/recent`          | Recent comments            |
+| `GET`    | `/api/v2/thumbnail/*path` | Dynamic SVG thumbnail      |
 
 ## Frontend Tooling
 
