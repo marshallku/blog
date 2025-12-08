@@ -9,8 +9,8 @@ mod metadata;
 mod navigation;
 mod parallel;
 mod parser;
-mod renderer;
 mod recent;
+mod renderer;
 mod search;
 mod shortcodes;
 mod slug;
@@ -30,16 +30,16 @@ use crate::category::{discover_categories, validate_category};
 use crate::config::{load_config, SsgConfig};
 use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
+use crate::image::ImageProcessor;
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
-use crate::image::ImageProcessor;
 use crate::navigation::{build_post_navigation, build_post_navigation_with_cdn};
 use crate::parallel::{
     get_thread_count, BuildProgress, BuildResult, SkipReason, WorkQueue, WorkerPool,
 };
 use crate::parser::Parser;
-use crate::renderer::Renderer;
 use crate::recent::RecentGenerator;
+use crate::renderer::Renderer;
 use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
 use crate::types::Post;

@@ -130,10 +130,22 @@ impl ImageProcessor {
 
         let (filename, ext) = self.parse_image_path(src);
 
-        let src_url =
-            self.build_cdn_url(cdn_url, base_path, &filename, Some(THUMBNAIL_SIZE), &ext, false);
-        let webp_src =
-            self.build_cdn_url(cdn_url, base_path, &filename, Some(THUMBNAIL_SIZE), &ext, true);
+        let src_url = self.build_cdn_url(
+            cdn_url,
+            base_path,
+            &filename,
+            Some(THUMBNAIL_SIZE),
+            &ext,
+            false,
+        );
+        let webp_src = self.build_cdn_url(
+            cdn_url,
+            base_path,
+            &filename,
+            Some(THUMBNAIL_SIZE),
+            &ext,
+            true,
+        );
 
         Ok(Some(ThumbnailMetadata {
             src: src_url,
@@ -207,7 +219,6 @@ impl ImageProcessor {
 
         sources
     }
-
 }
 
 #[cfg(test)]
@@ -254,10 +265,7 @@ mod tests {
             "png",
             false,
         );
-        assert_eq!(
-            url,
-            "https://cdn.example.com/images/dev/my-post/photo.png"
-        );
+        assert_eq!(url, "https://cdn.example.com/images/dev/my-post/photo.png");
 
         // With WebP
         let url = processor.build_cdn_url(

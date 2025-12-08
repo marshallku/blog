@@ -1,53 +1,39 @@
-[package]
-name = "blog"
+[workspace]
+resolver = "2"
+members = ["crates/ssg", "crates/backend"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
-description = "A blazing-fast static site generator for marshallku blog"
+authors = ["Marshall Ku"]
 
-[[bin]]
-name = "blog"
-path = "src/main.rs"
-
-[dependencies]
-# CLI
-clap = { version = "4.5", features = ["derive"] }
-
-# Markdown parsing
-pulldown-cmark = "0.9"
-
-# Frontmatter parsing
+[workspace.dependencies]
+# Shared across multiple crates
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.9"
-
-# Templating
-tera = "1.20"
-
-# Syntax highlighting
-autumnus = { version = "0.7", default-features = false, features = [
-  "lang-rust", "lang-javascript", "lang-typescript", "lang-tsx", "lang-python",
-  "lang-go", "lang-c", "lang-cpp", "lang-java", "lang-json", "lang-bash",
-  "lang-html", "lang-css", "lang-yaml", "lang-dockerfile", "lang-toml",
-  "lang-sql", "lang-markdown", "lang-diff", "lang-elixir", "lang-ruby",
-  "lang-php", "lang-swift", "lang-kotlin", "lang-scala", "lang-lua",
-  "lang-vim", "lang-make", "lang-cmake", "lang-graphql", "lang-scss"
-] }
-
-# Utilities
-anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
-walkdir = "2.5"
-percent-encoding = "2.3"
-regex = "1.11"
+anyhow = "1.0"
 
-# Hashing (for cache)
-blake3 = "1.8"
-
-# File watching (for watch mode)
-notify = "6.1"
-
-# Image processing (for dimensions)
-image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
-
-[dev-dependencies]
-tempfile = "3.23"
+# Backend-specific
+axum = "0.7.9"
+axum-extra = { version = "0.10.1", features = ["cookie"] }
+mongodb = "3.2.3"
+bson = { version = "2.15.0", features = ["chrono-0_4"] }
+tokio = { version = "1.45", features = ["rt-multi-thread", "macros", "signal"] }
+tower = { version = "0.4.13", features = ["util"] }
+tower-http = { version = "0.5.2", features = ["cors", "trace"] }
+bcrypt = "0.17.0"
+hmac = "0.12.1"
+jwt = "0.16.0"
+sha2 = "0.10.9"
+validator = { version = "0.20.0", features = ["derive"] }
+reqwest = { version = "0.12.19", features = ["json"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+dotenv = "0.15.0"
+futures = "0.3.31"
+cookie = "0.18.1"
+time = "0.3.41"
+log = "0.4.27"
+env_logger = "0.11.8"
+http-body-util = "0.1.3"

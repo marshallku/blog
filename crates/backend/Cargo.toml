@@ -1,0 +1,49 @@
+[package]
+name = "blog-backend"
+version.workspace = true
+edition.workspace = true
+description = "REST API backend for marshallku blog"
+
+[[bin]]
+name = "blog-api"
+path = "src/main.rs"
+
+[dependencies]
+# Web framework
+axum = { workspace = true }
+axum-extra = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+# Database
+mongodb = { workspace = true }
+bson = { workspace = true }
+
+# Auth
+bcrypt = { workspace = true }
+hmac = { workspace = true }
+jwt = { workspace = true }
+sha2 = { workspace = true }
+
+# Serialization & validation
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+validator = { workspace = true }
+
+# HTTP client (for webhooks)
+reqwest = { workspace = true }
+
+# Utilities
+dotenv = { workspace = true }
+futures = { workspace = true }
+cookie = { workspace = true }
+time = { workspace = true }
+http-body-util = { workspace = true }
+
+# Logging
+log = { workspace = true }
+env_logger = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

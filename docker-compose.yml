@@ -1,7 +1,55 @@
 services:
-  web:
-    build: .
-    ports:
-      - "8088:80"
-    restart: unless-stopped
-    container_name: blog
+    web:
+        build: .
+        ports:
+            - "8088:80"
+        restart: unless-stopped
+        container_name: blog
+
+    database:
+        image: mongo:${MONGO_TAG:-4.4.28-focal}
+        restart: always
+        container_name: blog-database
+        ports:
+            - ${MONGO_PORT:-27017}:27017
+        networks:
+            - internal_network
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+            - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+        volumes:
+            - ./db:/data/db
+            - ./config:/data/configdb
+
+    redis:
+        image: redis:${REDIS_TAG:-8.2.1-alpine}
+        restart: always
+        container_name: blog-redis
+        ports:
+            - ${REDIS_PORT:-6379}:6379
+        networks:
+            - internal_network
+
+    api:
+        restart: unless-stopped
+        container_name: blog-api
+        build:
+            context: .
+            dockerfile: docker/backend/Dockerfile
+        depends_on:
+            - database
+        ports:
+            - 48312:${PORT:-8080}
+        env_file:
+            - .env
+        environment:
+            - HOST=0.0.0.0
+            - MONGO_HOST=database
+        networks:
+            - internal_network
+            - app_network
+
+networks:
+    app_network:
+        external: true
+    internal_network:

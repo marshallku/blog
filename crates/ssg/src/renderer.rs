@@ -507,9 +507,11 @@ impl Renderer {
                             let post_content_dir =
                                 content_path.join(ctx.category.trim_matches('/'));
 
-                            if let Ok(Some(metadata)) =
-                                processor.process_image(&original_src, &post_content_dir, ctx.base_path)
-                            {
+                            if let Ok(Some(metadata)) = processor.process_image(
+                                &original_src,
+                                &post_content_dir,
+                                ctx.base_path,
+                            ) {
                                 context.insert("cdn_src", &metadata.src);
                                 context.insert("lqip", &metadata.lqip);
                                 context.insert("sources", &metadata.sources);

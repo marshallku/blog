@@ -1,0 +1,53 @@
+[package]
+name = "blog-ssg"
+version.workspace = true
+edition.workspace = true
+description = "A blazing-fast static site generator for marshallku blog"
+
+[[bin]]
+name = "blog"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+
+# Markdown parsing
+pulldown-cmark = "0.9"
+
+# Frontmatter parsing
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+
+# Templating
+tera = "1.20"
+
+# Syntax highlighting
+autumnus = { version = "0.7", default-features = false, features = [
+  "lang-rust", "lang-javascript", "lang-typescript", "lang-tsx", "lang-python",
+  "lang-go", "lang-c", "lang-cpp", "lang-java", "lang-json", "lang-bash",
+  "lang-html", "lang-css", "lang-yaml", "lang-dockerfile", "lang-toml",
+  "lang-sql", "lang-markdown", "lang-diff", "lang-elixir", "lang-ruby",
+  "lang-php", "lang-swift", "lang-kotlin", "lang-scala", "lang-lua",
+  "lang-vim", "lang-make", "lang-cmake", "lang-graphql", "lang-scss"
+] }
+
+# Utilities
+anyhow = { workspace = true }
+chrono = { workspace = true }
+walkdir = "2.5"
+percent-encoding = "2.3"
+regex = "1.11"
+
+# Hashing (for cache)
+blake3 = "1.8"
+
+# File watching (for watch mode)
+notify = "6.1"
+
+# Image processing (for dimensions)
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
+
+[dev-dependencies]
+tempfile = "3.23"
