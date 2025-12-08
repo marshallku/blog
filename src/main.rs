@@ -10,6 +10,7 @@ mod navigation;
 mod parallel;
 mod parser;
 mod renderer;
+mod recent;
 mod search;
 mod shortcodes;
 mod slug;
@@ -38,6 +39,7 @@ use crate::parallel::{
 };
 use crate::parser::Parser;
 use crate::renderer::Renderer;
+use crate::recent::RecentGenerator;
 use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
 use crate::types::Post;
@@ -347,6 +349,9 @@ fn build_all(use_cache: bool) -> Result<()> {
         search_generator.generate(&metadata)?;
     }
 
+    let recent_generator = RecentGenerator::new(config.clone());
+    recent_generator.generate(&metadata)?;
+
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 
@@ -547,6 +552,9 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         let search_generator = SearchIndexGenerator::new((*config).clone());
         search_generator.generate(&metadata)?;
     }
+
+    let recent_generator = RecentGenerator::new((*config).clone());
+    recent_generator.generate(&metadata)?;
 
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
