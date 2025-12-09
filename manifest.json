@@ -11,7 +11,7 @@
     "index": "/scripts/0.1.0/index.js"
   },
   "styles": {
-    "version": "0.1.0",
-    "theme": "/styles/0.1.0/theme.css"
+    "version": "0.1.1",
+    "theme": "/styles/0.1.1/theme.css"
   }
 }
