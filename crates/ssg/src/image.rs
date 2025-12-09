@@ -78,22 +78,30 @@ impl ImageProcessor {
             }
         };
 
-        // Filter sizes to only include those <= original width
-        let sizes: Vec<u32> = IMAGE_SIZES
-            .iter()
-            .copied()
-            .filter(|&s| s <= width)
-            .collect();
-
         let (filename, ext) = self.parse_image_path(src);
+        let is_svg = ext.eq_ignore_ascii_case("svg");
 
-        // Generate individual sources for each size
-        let sources = self.generate_sources(cdn_url, base_path, &filename, &ext, &sizes, false);
-        let webp_sources = self.generate_sources(cdn_url, base_path, &filename, &ext, &sizes, true);
+        let (sources, webp_sources, lqip) = if is_svg {
+            let src_url = self.build_cdn_url(cdn_url, base_path, &filename, None, &ext, false);
+            (vec![], vec![], src_url)
+        } else {
+            let sizes: Vec<u32> = IMAGE_SIZES
+                .iter()
+                .copied()
+                .filter(|&s| s <= width)
+                .collect();
+
+            let sources = self.generate_sources(cdn_url, base_path, &filename, &ext, &sizes, false);
+            let webp_sources =
+                self.generate_sources(cdn_url, base_path, &filename, &ext, &sizes, true);
+            let lqip =
+                self.build_cdn_url(cdn_url, base_path, &filename, Some(LQIP_SIZE), &ext, false);
+
+            (sources, webp_sources, lqip)
+        };
 
         // Full-size fallback (original)
         let src_url = self.build_cdn_url(cdn_url, base_path, &filename, None, &ext, false);
-        let lqip = self.build_cdn_url(cdn_url, base_path, &filename, Some(LQIP_SIZE), &ext, false);
 
         Ok(Some(ImageMetadata {
             width,
@@ -129,23 +137,31 @@ impl ImageProcessor {
         }
 
         let (filename, ext) = self.parse_image_path(src);
+        let is_svg = ext.eq_ignore_ascii_case("svg");
 
-        let src_url = self.build_cdn_url(
-            cdn_url,
-            base_path,
-            &filename,
-            Some(THUMBNAIL_SIZE),
-            &ext,
-            false,
-        );
-        let webp_src = self.build_cdn_url(
-            cdn_url,
-            base_path,
-            &filename,
-            Some(THUMBNAIL_SIZE),
-            &ext,
-            true,
-        );
+        // SVG files don't need resizing or WebP conversion - use original URL
+        let (src_url, webp_src) = if is_svg {
+            let url = self.build_cdn_url(cdn_url, base_path, &filename, None, &ext, false);
+            (url.clone(), url)
+        } else {
+            let src_url = self.build_cdn_url(
+                cdn_url,
+                base_path,
+                &filename,
+                Some(THUMBNAIL_SIZE),
+                &ext,
+                false,
+            );
+            let webp_src = self.build_cdn_url(
+                cdn_url,
+                base_path,
+                &filename,
+                Some(THUMBNAIL_SIZE),
+                &ext,
+                true,
+            );
+            (src_url, webp_src)
+        };
 
         Ok(Some(ThumbnailMetadata {
             src: src_url,
@@ -320,5 +336,23 @@ mod tests {
 
         let result = processor.process_image("./test/image.jpg", content_dir, "dev");
         assert!(result.unwrap().is_none());
+    }
+
+    #[test]
+    fn test_svg_no_resize_or_webp() {
+        let processor = ImageProcessor::new(Some("https://cdn.example.com".to_string()));
+
+        // SVG should not generate resized sources or webp
+        let url = processor.build_cdn_url(
+            "https://cdn.example.com",
+            "dev",
+            "my-post/icon",
+            None,
+            "svg",
+            false,
+        );
+        assert_eq!(url, "https://cdn.example.com/images/dev/my-post/icon.svg");
+        assert!(!url.contains(".webp"));
+        assert!(!url.contains(".w"));
     }
 }
