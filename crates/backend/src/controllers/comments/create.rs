@@ -108,6 +108,7 @@ pub async fn post(
 
     let mut context = Context::new();
     context.insert("comment", &created_comment.to_response());
+    context.insert("border", &true);
 
     match TEMPLATES.render("comments/comment.html", &context) {
         Ok(html) => (

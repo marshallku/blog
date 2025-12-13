@@ -269,7 +269,7 @@
                         if (ul) {
                             const empty = ul.querySelector(".comment-list__empty");
                             if (empty) empty.remove();
-                            ul.insertAdjacentHTML("beforeend", html);
+                            ul.insertAdjacentHTML("afterbegin", html);
                         } else {
                             list.innerHTML = '<ul class="comment-list">' + html + '</ul>';
                         }
