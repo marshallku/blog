@@ -19,7 +19,8 @@
     "blog": {
         "assets": {
             "bundle": "bundle.js",
-            "index": "index.js"
+            "index": "index.js",
+            "comment": "comment.global.js"
         }
     },
     "scripts": {

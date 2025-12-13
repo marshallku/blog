@@ -8,7 +8,8 @@
   "scripts": {
     "version": "0.1.0",
     "bundle": "/scripts/0.1.0/bundle.js",
-    "index": "/scripts/0.1.0/index.js"
+    "index": "/scripts/0.1.0/index.js",
+    "comment": "/scripts/0.1.0/comment.global.js"
   },
   "styles": {
     "version": "0.1.1",
