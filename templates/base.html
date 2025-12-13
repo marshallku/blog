@@ -189,6 +189,104 @@
     {% if config.assets.scripts.bundle %}
     <script src="{{ config.assets.scripts.bundle }}" type="module"></script>
     {% endif %}
+    {% if config.api_url %}
+    <script>
+    function commentForm(postSlug, apiUrl) {
+        return {
+            postSlug,
+            apiUrl,
+            name: localStorage.getItem("comment-name") || "",
+            url: localStorage.getItem("comment-url") || "",
+            body: "",
+            parentId: "",
+            replyingTo: "",
+            loading: false,
+
+            async init() {
+                await this.loadComments();
+                document.getElementById("comment-list").addEventListener("click", (e) => {
+                    if (e.target.matches(".comment-bubble__reply-btn")) {
+                        this.setReply(e.target.dataset.id, e.target.dataset.name);
+                    }
+                });
+            },
+
+            async loadComments() {
+                const list = document.getElementById("comment-list");
+                try {
+                    const res = await fetch(`${this.apiUrl}/api/v2/comment/list?postSlug=${encodeURIComponent(this.postSlug)}`);
+                    if (!res.ok) throw new Error();
+                    list.innerHTML = await res.text();
+                } catch {
+                    list.innerHTML = '<p class="comment-list__error">댓글을 불러오지 못했습니다.</p>';
+                }
+            },
+
+            setReply(id, name) {
+                this.parentId = id;
+                this.replyingTo = name;
+                document.getElementById("comment-body").focus();
+            },
+
+            cancelReply() {
+                this.parentId = "";
+                this.replyingTo = "";
+            },
+
+            async submit() {
+                this.loading = true;
+                localStorage.setItem("comment-name", this.name);
+                if (this.url) localStorage.setItem("comment-url", this.url);
+
+                try {
+                    const res = await fetch(`${this.apiUrl}/api/v2/comment/create`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            postSlug: this.postSlug,
+                            name: this.name || "익명",
+                            url: this.url || undefined,
+                            body: this.body,
+                            parentCommentId: this.parentId || undefined
+                        })
+                    });
+
+                    if (!res.ok) throw new Error();
+
+                    const html = await res.text();
+
+                    if (this.parentId) {
+                        const parent = document.getElementById("comment-" + this.parentId);
+                        let replies = parent.nextElementSibling;
+                        if (!replies || replies.tagName !== "UL") {
+                            replies = document.createElement("ul");
+                            parent.after(replies);
+                        }
+                        replies.insertAdjacentHTML("beforeend", html);
+                    } else {
+                        const list = document.getElementById("comment-list");
+                        const ul = list.querySelector("ul.comment-list");
+                        if (ul) {
+                            const empty = ul.querySelector(".comment-list__empty");
+                            if (empty) empty.remove();
+                            ul.insertAdjacentHTML("beforeend", html);
+                        } else {
+                            list.innerHTML = '<ul class="comment-list">' + html + '</ul>';
+                        }
+                    }
+
+                    this.body = "";
+                    this.cancelReply();
+                } catch {
+                    alert("댓글 등록에 실패했습니다.");
+                } finally {
+                    this.loading = false;
+                }
+            }
+        };
+    }
+    </script>
+    {% endif %}
     {% block extra_js %}
     {# Override this block in child templates to add page-specific JavaScript #}
     {% endblock %}

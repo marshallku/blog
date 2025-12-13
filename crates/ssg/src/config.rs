@@ -18,6 +18,9 @@ pub struct SiteConfig {
     /// CDN URL for image optimization (optional)
     #[serde(default)]
     pub cdn_url: Option<String>,
+    /// API URL for backend services (optional)
+    #[serde(default)]
+    pub api_url: Option<String>,
 }
 
 /// Search configuration
@@ -95,6 +98,7 @@ pub struct TemplateConfig<'a> {
     pub author: &'a str,
     pub description: &'a str,
     pub assets: &'a AssetsConfig,
+    pub api_url: Option<&'a str>,
 }
 
 impl SsgConfig {
@@ -105,6 +109,7 @@ impl SsgConfig {
             author: &self.site.author,
             description: &self.site.description,
             assets: &self.assets,
+            api_url: self.site.api_url.as_deref(),
         }
     }
 }
@@ -117,6 +122,7 @@ impl Default for SiteConfig {
             author: default_author(),
             description: default_description(),
             cdn_url: None,
+            api_url: None,
         }
     }
 }
