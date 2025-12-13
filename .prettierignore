@@ -1,1 +1,2 @@
 templates/**/*.html
+crates/backend/templates/**/*.html

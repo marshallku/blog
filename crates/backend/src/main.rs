@@ -23,6 +23,7 @@ mod controllers;
 mod database;
 mod env;
 mod models;
+mod templates;
 mod utils;
 
 fn setup_tracing() {

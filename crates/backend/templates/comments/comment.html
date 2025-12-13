@@ -1,0 +1,30 @@
+<li class="comment-bubble{% if comment.byPostAuthor %} comment-bubble--author{% endif %}{% if border %} comment-bubble--border{% endif %}" id="comment-{{ comment._id }}">
+    <figure class="comment-bubble__avatar">
+        <img
+            src="https://api.dicebear.com/9.x/bottts/svg?seed={{ comment.name | urlencode }}"
+            alt="{{ comment.name }} 님의 아바타"
+            width="40"
+            height="40"
+            loading="lazy"
+        />
+    </figure>
+    <div class="comment-bubble__content">
+        <div class="comment-bubble__name">
+            {% if comment.url %}
+            <a href="{{ comment.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ comment.name }}</a>
+            {% else %}
+            <span>{{ comment.name }}</span>
+            {% endif %}
+        </div>
+        <div class="comment-bubble__text">{{ comment.body }}</div>
+        <span class="comment-bubble__date">{{ comment.createdAt }}</span>
+        <button
+            type="button"
+            class="comment-bubble__reply-btn"
+            data-id="{{ comment._id }}"
+            data-name="{{ comment.name }}"
+        >
+            답글
+        </button>
+    </div>
+</li>

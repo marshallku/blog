@@ -397,6 +397,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "tera",
  "time",
  "tokio",
  "tower 0.4.13",

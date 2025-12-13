@@ -1,0 +1,19 @@
+<ul class="comment-list">
+    {% if comments | length == 0 %}
+    <li class="comment-list__empty">아직 댓글이 없습니다.</li>
+    {% else %}
+    {% for comment in comments %}
+    {% set border = true %}
+    {% include "comments/comment.html" %}
+    {% if comment.replies and comment.replies | length > 0 %}
+    <ul>
+        {% for reply in comment.replies %}
+        {% set comment = reply %}
+        {% set border = false %}
+        {% include "comments/comment.html" %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+</ul>

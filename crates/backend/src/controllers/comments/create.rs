@@ -1,14 +1,19 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    extract::State,
+    http::{header, StatusCode},
+    response::IntoResponse,
+};
 use bson::oid::ObjectId;
 use chrono::Utc;
 use serde::Deserialize;
-use serde_json::json;
+use tera::Context;
 use validator::Validate;
 
 use crate::{
     auth::guard::AuthUserOrPublic,
     env::state::AppState,
     models::{comment::Comment, user::UserRole},
+    templates::TEMPLATES,
     utils::{
         validator::ValidatedJson,
         webhook::{send_message, DiscordEmbed, DiscordField},
@@ -59,7 +64,7 @@ pub async fn post(
         replies: None,
     };
 
-    let comment_create_result = match Comment::create(&state.db, comment.clone()).await {
+    let created_comment = match Comment::create(&state.db, comment.clone()).await {
         Ok(comment) => {
             let comment_to_send = comment.clone();
 
@@ -69,8 +74,7 @@ pub async fn post(
                 description: format!(
                     "New comment added by {} on {}",
                     comment_to_send.name, comment_to_send.post_slug
-                )
-                .to_string(),
+                ),
                 color: None,
                 fields: vec![
                     DiscordField {
@@ -95,11 +99,31 @@ pub async fn post(
             log::error!("Failed to create comment: {}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "message": "Failed to create comment" })),
+                [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
+                "<p class=\"comment-form__error\">댓글 등록에 실패했습니다.</p>".to_string(),
             )
                 .into_response();
         }
     };
 
-    (StatusCode::CREATED, Json(json!(comment_create_result))).into_response()
+    let mut context = Context::new();
+    context.insert("comment", &created_comment.to_response());
+
+    match TEMPLATES.render("comments/comment.html", &context) {
+        Ok(html) => (
+            StatusCode::CREATED,
+            [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
+            html,
+        )
+            .into_response(),
+        Err(e) => {
+            log::error!("Template render error: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
+                "<p class=\"comment-form__error\">댓글 등록에 실패했습니다.</p>".to_string(),
+            )
+                .into_response()
+        }
+    }
 }

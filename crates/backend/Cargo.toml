@@ -47,3 +47,6 @@ log = { workspace = true }
 env_logger = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+# Templating
+tera = { workspace = true }
