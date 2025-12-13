@@ -2,8 +2,7 @@
 target/
 .build-cache/
 
-# Source code (not needed for serving static files)
-src/
+# Content (not needed for backend build)
 content/
 themes/
 static/
@@ -12,8 +11,6 @@ static/
 .git/
 .gitignore
 *.md
-Cargo.toml
-Cargo.lock
 
 # IDE
 .vscode/
