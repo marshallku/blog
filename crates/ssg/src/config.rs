@@ -21,6 +21,9 @@ pub struct SiteConfig {
     /// API URL for backend services (optional)
     #[serde(default)]
     pub api_url: Option<String>,
+    /// Google Analytics ID (optional)
+    #[serde(default)]
+    pub google_analytics_id: Option<String>,
 }
 
 /// Search configuration
@@ -99,6 +102,7 @@ pub struct TemplateConfig<'a> {
     pub description: &'a str,
     pub assets: &'a AssetsConfig,
     pub api_url: Option<&'a str>,
+    pub google_analytics_id: Option<&'a str>,
 }
 
 impl SsgConfig {
@@ -110,6 +114,7 @@ impl SsgConfig {
             description: &self.site.description,
             assets: &self.assets,
             api_url: self.site.api_url.as_deref(),
+            google_analytics_id: self.site.google_analytics_id.as_deref(),
         }
     }
 }
@@ -123,6 +128,7 @@ impl Default for SiteConfig {
             description: default_description(),
             cdn_url: None,
             api_url: None,
+            google_analytics_id: None,
         }
     }
 }
