@@ -142,6 +142,11 @@ table {
     border-spacing: 0;
 }
 
+pre,
+code {
+    font-family: "Fira Code", "JetBrains Mono", Consolas, Monaco, monospace;
+}
+
 *,
 *::before,
 *::after {

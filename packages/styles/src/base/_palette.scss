@@ -114,6 +114,53 @@ $container-width: (
     small: 880px,
 );
 
+$spacing-size: (
+    xs: 4px,
+    sm: 8px,
+    md: 16px,
+    lg: 24px,
+    xl: 32px,
+    xxl: 40px,
+);
+
+@function spacing($key) {
+    @if map.has-key($spacing-size, $key) {
+        @return map.get($spacing-size, $key);
+    }
+
+    @warn "`#{$key}` doesn't exist in spacing-size";
+    @return null;
+}
+
+$radius-size: (
+    sm: 4px,
+    md: 8px,
+    lg: 12px,
+);
+
+@function radius($key) {
+    @if map.has-key($radius-size, $key) {
+        @return map.get($radius-size, $key);
+    }
+
+    @warn "`#{$key}` doesn't exist in radius-size";
+    @return null;
+}
+
+$transition-speed: (
+    fast: 150ms,
+    normal: 300ms,
+);
+
+@function transition($key) {
+    @if map.has-key($transition-speed, $key) {
+        @return map.get($transition-speed, $key);
+    }
+
+    @warn "`#{$key}` doesn't exist in transition-speed";
+    @return null;
+}
+
 @function get-color($palette, $key, $sub-key: null) {
     @if map.has-key($palette, $key) {
         $color: map.get($palette, $key);

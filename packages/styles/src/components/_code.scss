@@ -1,11 +1,13 @@
+@use "../base/palette" as *;
+
 /* Code block styles */
 pre {
     position: relative;
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-lg);
+    background-color: color(background-dimmed);
+    border-radius: radius(md);
+    padding: spacing(lg);
     overflow-x: auto;
-    margin: var(--spacing-lg) 0;
+    margin: spacing(lg) 0;
     font-size: 0.875rem;
     line-height: 1.6;
 }
@@ -19,33 +21,32 @@ pre code {
 /* Copy button */
 .copy-code {
     position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    background-color: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
+    top: spacing(sm);
+    right: spacing(sm);
+    padding: spacing(xs) spacing(sm);
+    background-color: color(background);
+    border: 1px solid color(grayscale, 300);
+    border-radius: radius(sm);
     font-size: 0.75rem;
     cursor: pointer;
     opacity: 0;
-    transition: opacity var(--transition-fast);
+    transition: opacity transition(fast);
 
     pre:hover & {
         opacity: 1;
     }
 
     &:hover {
-        background-color: var(--color-primary);
-        color: white;
-        border-color: var(--color-primary);
+        background-color: color(background-transparent);
+        color: color(text);
+        border-color: color(grayscale, 300);
     }
 }
 
 /* Inline code */
 :not(pre) > code {
-    font-family: var(--font-mono);
     font-size: 0.875em;
     padding: 0.15em 0.4em;
-    background-color: var(--color-bg-secondary);
-    border-radius: var(--radius-sm);
+    background-color: color(background-dimmed);
+    border-radius: radius(sm);
 }
