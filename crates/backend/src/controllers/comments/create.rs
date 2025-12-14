@@ -15,6 +15,7 @@ use crate::{
     models::{comment::Comment, user::UserRole},
     templates::TEMPLATES,
     utils::{
+        slug::normalize_slug,
         validator::ValidatedJson,
         webhook::{send_message, DiscordEmbed, DiscordField},
     },
@@ -48,9 +49,10 @@ pub async fn post(
     ValidatedJson(payload): ValidatedJson<AddCommentPayload>,
 ) -> impl IntoResponse {
     let is_root = user.is_some() && user.unwrap().role == UserRole::Root;
+    let post_slug = normalize_slug(&payload.post_slug).to_string();
     let comment = Comment {
         id: None,
-        post_slug: payload.post_slug,
+        post_slug,
         name: payload.name,
         email: payload.email.unwrap_or_default(),
         url: payload.url.unwrap_or_default(),

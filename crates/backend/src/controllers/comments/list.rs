@@ -6,7 +6,10 @@ use axum::{
 use serde::Deserialize;
 use tera::Context;
 
-use crate::{env::state::AppState, models::comment::Comment, templates::TEMPLATES};
+use crate::{
+    env::state::AppState, models::comment::Comment, templates::TEMPLATES,
+    utils::slug::normalize_slug,
+};
 
 #[derive(Deserialize)]
 pub struct ListCommentsQuery {
@@ -18,7 +21,8 @@ pub async fn get(
     State(state): State<AppState>,
     Query(query): Query<ListCommentsQuery>,
 ) -> impl IntoResponse {
-    let comments = match Comment::get_by_slug(&state.db, &query.slug).await {
+    let slug = normalize_slug(&query.slug);
+    let comments = match Comment::get_by_slug(&state.db, slug).await {
         Ok(comments) => comments,
         Err(e) => {
             log::error!("Failed to get comments: {:?}", e);
