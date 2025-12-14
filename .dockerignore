@@ -1,5 +1,4 @@
 # Build artifacts
-target/
 .build-cache/
 
 # Content (not needed for backend build)
