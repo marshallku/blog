@@ -34,6 +34,7 @@ FROM alpine:3.20.2
 WORKDIR /usr/local/bin
 
 COPY --from=builder /usr/src/app/target/release/blog-api .
+COPY crates/backend/templates templates
 
 EXPOSE ${PORT}
 

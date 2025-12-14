@@ -38,6 +38,7 @@ services:
         environment:
             - HOST=0.0.0.0
             - MONGO_HOST=database
+            - TEMPLATE_PATH=templates/**/*.html
         networks:
             - internal_network
             - app_network
