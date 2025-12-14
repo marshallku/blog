@@ -80,10 +80,10 @@
 
     &__content {
         display: flex;
-        max-width: 100%;
         min-width: 0;
-        flex-wrap: wrap;
+        max-width: 100%;
         padding: 12px 0;
+        flex-wrap: wrap;
 
         @at-root #{$self}--author & {
             flex-direction: row-reverse;
@@ -91,7 +91,7 @@
     }
 
     &__name,
-    &__date {
+    &__footer {
         width: 100%;
 
         @at-root #{$self}--author & {
@@ -153,20 +153,24 @@
         }
     }
 
-    &__date {
+    &__footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         margin-top: 4px;
-        font-size: 0.75rem;
+    }
+
+    &__date {
         color: palette.color(comment-text);
     }
 
     &__reply-btn {
+        padding: 0;
         background: none;
         border: none;
         color: palette.color(comment-text);
-        font-size: 0.75rem;
         cursor: pointer;
-        padding: 0;
-        margin-top: 4px;
+        flex-shrink: 0;
 
         &:hover {
             color: palette.color(theme);
@@ -259,7 +263,6 @@
         padding: 8px 12px;
         background: rgba(241, 113, 140, 0.15);
         border-radius: 4px;
-        font-size: 0.875rem;
     }
 
     &__cancel {
@@ -268,7 +271,6 @@
         color: #dc3545;
         cursor: pointer;
         margin-left: auto;
-        font-size: 0.875rem;
 
         &:hover {
             text-decoration: underline;
@@ -277,15 +279,12 @@
 
     &__input {
         width: 100%;
-        margin-bottom: 0.75em;
-        padding: 8px 12px;
+        margin-bottom: palette.spacing(sm);
+        padding: palette.spacing(sm) palette.spacing(md);
         border: 1px solid palette.color(main);
-        border-radius: 4px;
-        font-family: inherit;
-        font-size: 1rem;
+        border-radius: palette.radius(md);
         background: palette.color(background);
         color: palette.color(text);
-        transition: border-color 0.2s, box-shadow 0.2s;
 
         &:focus {
             outline: none;
@@ -301,12 +300,9 @@
     &__textarea {
         width: 100%;
         height: 7em;
-        margin-top: 0.75em;
-        padding: 8px 12px;
+        padding: palette.spacing(sm) palette.spacing(md);
         border: 1px solid palette.color(main);
-        border-radius: 4px;
-        font-family: inherit;
-        font-size: 1rem;
+        border-radius: palette.radius(md);
         background: palette.color(background);
         color: palette.color(text);
         resize: vertical;

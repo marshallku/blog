@@ -8,7 +8,7 @@
             loading="lazy"
         />
     </figure>
-    <div class="comment-bubble__content">
+    <div class="comment-bubble__content typography-c1">
         <div class="comment-bubble__name">
             {% if comment.url %}
             <a href="{{ comment.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ comment.name }}</a>
@@ -16,15 +16,17 @@
             <span>{{ comment.name }}</span>
             {% endif %}
         </div>
-        <div class="comment-bubble__text">{{ comment.body }}</div>
-        <span class="comment-bubble__date">{{ comment.createdAt }}</span>
-        <button
-            type="button"
-            class="comment-bubble__reply-btn"
-            data-id="{{ comment._id }}"
-            data-name="{{ comment.name }}"
-        >
-            답글
-        </button>
+        <div class="comment-bubble__text typography-b1">{{ comment.body }}</div>
+        <div class="comment-bubble__footer">
+            <time class="comment-bubble__date typography-c1" datetime="{{ comment.createdAt }}">{{ comment.createdAt | date(format="%Y년 %m월 %d일") }}</time>
+            <button
+                type="button"
+                class="comment-bubble__reply-btn typography-c1"
+                data-id="{{ comment._id }}"
+                data-name="{{ comment.name }}"
+            >
+                답글
+            </button>    
+        </div>
     </div>
 </li>
