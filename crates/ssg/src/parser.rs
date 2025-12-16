@@ -88,6 +88,7 @@ impl Parser {
                     title: slug.replace('-', " "),
                     description: None,
                     hidden: false,
+                    comments: true,
                 },
                 content: content.to_string(),
                 rendered_html: None,

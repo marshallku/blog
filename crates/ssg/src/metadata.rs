@@ -145,6 +145,7 @@ mod tests {
             description: None,
             display_ad: false,
             hidden: false,
+            comments: true,
         };
         (category.to_string(), frontmatter)
     }

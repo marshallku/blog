@@ -46,7 +46,7 @@
     </div>
 </article>
 
-{% if config.api_url %}
+{% if post.frontmatter.comments and config.api_url %}
 <section class="post-comment" id="comments" x-data="commentForm('/{{ post.category }}/{{ post.slug }}', '{{ config.api_url }}')">
     <div class="comment-form">
         <figure class="comment-form__avatar">

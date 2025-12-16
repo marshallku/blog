@@ -102,6 +102,7 @@ mod tests {
             description: Some("A test post".to_string()),
             display_ad: false,
             hidden: false,
+            comments: true,
         };
 
         metadata.upsert_post("test-post".to_string(), "dev".to_string(), frontmatter);

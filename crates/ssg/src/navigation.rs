@@ -181,6 +181,7 @@ mod tests {
                     og_image: None,
                     display_ad: false,
                     hidden: false,
+                    comments: true,
                 },
             },
             PostMetadata {
@@ -198,6 +199,7 @@ mod tests {
                     og_image: None,
                     display_ad: false,
                     hidden: false,
+                    comments: true,
                 },
             },
             PostMetadata {
@@ -215,6 +217,7 @@ mod tests {
                     og_image: None,
                     display_ad: false,
                     hidden: false,
+                    comments: true,
                 },
             },
         ];

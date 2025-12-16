@@ -59,6 +59,8 @@ pub struct Frontmatter {
     pub display_ad: bool,
     #[serde(default)]
     pub hidden: bool,
+    #[serde(default = "default_true")]
+    pub comments: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -110,6 +112,10 @@ fn default_category_index() -> i32 {
     999
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PageFrontmatter {
     pub title: String,
@@ -117,6 +123,8 @@ pub struct PageFrontmatter {
     pub description: Option<String>,
     #[serde(default)]
     pub hidden: bool,
+    #[serde(default = "default_true")]
+    pub comments: bool,
 }
 
 #[derive(Debug, Clone)]
