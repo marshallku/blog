@@ -1,0 +1,13 @@
+// Post page styles
+// Used on: individual post pages
+
+@use "./base/palette";
+@use "./base/mixins";
+@use "./base/fonts";
+
+@use "./components/post";
+@use "./components/code";
+@use "./components/syntax";
+@use "./components/prev-next-post";
+@use "./components/comments";
+@use "./components/post-card"; // for related posts

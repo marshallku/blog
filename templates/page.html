@@ -2,6 +2,12 @@
 
 {% block title %}{{ page.title }} - {{ config.site_title }}{% endblock %}
 
+{% block extra_css %}
+{% if config.assets.styles.post %}
+<link id="spa-page-styles" rel="stylesheet" href="{{ config.assets.styles.post | safe }}">
+{% endif %}
+{% endblock %}
+
 {% block description %}{{ page.description | default(value="") }}{% endblock %}
 
 {% block meta %}

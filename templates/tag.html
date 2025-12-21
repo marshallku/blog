@@ -3,6 +3,12 @@
 
 {% block title %}Tag: {{ tag | urldecode }} - {{ config.site_title }}{% endblock %}
 
+{% block extra_css %}
+{% if config.assets.styles.list %}
+<link id="spa-page-styles" rel="stylesheet" href="{{ config.assets.styles.list | safe }}">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 {% include "includes/tag-content.html" %}
 {% endblock %}

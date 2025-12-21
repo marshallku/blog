@@ -2,6 +2,12 @@
 
 {% block title %}All Tags - {{ config.site_title }}{% endblock %}
 
+{% block extra_css %}
+{% if config.assets.styles.tags %}
+<link id="spa-page-styles" rel="stylesheet" href="{{ config.assets.styles.tags | safe }}">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="page page--top-padding">
     <header class="page-header">

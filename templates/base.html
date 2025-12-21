@@ -16,8 +16,8 @@
     <meta property="og:site_name" content="{{ config.site_title }}">
     {% endblock %}
 
-    {% if config.assets.styles.theme %}
-    <link rel="stylesheet" href="{{ config.assets.styles.theme | safe }}">
+    {% if config.assets.styles.critical %}
+    <link rel="stylesheet" href="{{ config.assets.styles.critical | safe }}">
     {% endif %}
     {% if config.assets.icon.css %}
     <link rel="stylesheet" href="{{ config.assets.icon.css | safe }}">

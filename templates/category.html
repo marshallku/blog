@@ -3,6 +3,12 @@
 
 {% block title %}{{ category.name }} - {{ config.site_title }}{% endblock %}
 
+{% block extra_css %}
+{% if config.assets.styles.list %}
+<link id="spa-page-styles" rel="stylesheet" href="{{ config.assets.styles.list | safe }}">
+{% endif %}
+{% endblock %}
+
 {% block content %}
 {% include "includes/category-content.html" %}
 {% endblock %}

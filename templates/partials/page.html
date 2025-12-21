@@ -1,7 +1,8 @@
 <div class="partial-content"
      data-page-title="{{ page.title }} - {{ config.site_title }}"
      data-page-url="{{ config.site_url }}/{{ slug }}/"
-     data-page-description="{{ page.description | default(value='') }}">
+     data-page-description="{{ page.description | default(value='') }}"
+     data-page-styles="{{ config.assets.styles.post | default(value='') }}">
 
 {% include "includes/page-content.html" %}
 

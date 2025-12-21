@@ -1,0 +1,11 @@
+// List page styles
+// Used on: index, category, tag pages
+
+@use "./base/palette";
+@use "./base/mixins";
+@use "./base/fonts";
+
+@use "./components/post-card";
+@use "./components/pagination";
+@use "./components/home";
+@use "./components/profile";

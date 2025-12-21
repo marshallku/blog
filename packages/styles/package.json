@@ -1,23 +1,29 @@
 {
     "name": "@blog/styles",
-    "version": "0.1.5",
+    "version": "0.2.0",
     "private": true,
     "description": "SCSS processing and optimization for the blog",
     "type": "module",
     "exports": {
-        "./theme.css": "./dist/theme.css"
+        "./critical.css": "./dist/critical.css",
+        "./post.css": "./dist/post.css",
+        "./list.css": "./dist/list.css",
+        "./tags.css": "./dist/tags.css"
     },
     "files": [
         "dist"
     ],
     "blog": {
         "assets": {
-            "theme": "theme.css"
+            "critical": "critical.css",
+            "post": "post.css",
+            "list": "list.css",
+            "tags": "tags.css"
         }
     },
     "scripts": {
-        "build": "sass src/theme.scss dist/theme.css --style=compressed --no-source-map && postcss dist/theme.css -o dist/theme.css --env production",
-        "dev": "sass src/theme.scss dist/theme.css --watch",
+        "build": "sass src/critical.scss:dist/critical.css src/post.scss:dist/post.css src/list.scss:dist/list.css src/tags.scss:dist/tags.css --style=compressed --no-source-map && postcss dist/*.css --dir dist --env production",
+        "dev": "sass src/critical.scss:dist/critical.css src/post.scss:dist/post.css src/list.scss:dist/list.css src/tags.scss:dist/tags.css --watch",
         "clean": "rm -rf dist",
         "lint": "stylelint 'src/**/*.scss'"
     },

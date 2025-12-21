@@ -6,13 +6,16 @@
     "woff2": "/icon/0.1.0/icons.woff2"
   },
   "scripts": {
-    "version": "0.1.1",
-    "bundle": "/scripts/0.1.1/bundle.js",
-    "index": "/scripts/0.1.1/index.js",
-    "comment": "/scripts/0.1.1/comment.global.js"
+    "version": "0.1.2",
+    "bundle": "/scripts/0.1.2/bundle.js",
+    "index": "/scripts/0.1.2/index.js",
+    "comment": "/scripts/0.1.2/comment.global.js"
   },
   "styles": {
-    "version": "0.1.5",
-    "theme": "/styles/0.1.5/theme.css"
+    "version": "0.2.0",
+    "critical": "/styles/0.2.0/critical.css",
+    "post": "/styles/0.2.0/post.css",
+    "list": "/styles/0.2.0/list.css",
+    "tags": "/styles/0.2.0/tags.css"
   }
 }

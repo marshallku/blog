@@ -1,6 +1,7 @@
 const PARTIAL_DIR = "/html";
 const MAIN_SELECTOR = "#main";
 const PARTIAL_CONTENT_SELECTOR = ".partial-content";
+const SPA_STYLE_ID = "spa-page-styles";
 
 declare global {
     interface Window {
@@ -100,6 +101,40 @@ function updatePageMeta(container: Element): void {
     if (title) {
         document.title = title;
     }
+
+    const styles = partialContent.getAttribute("data-page-styles");
+    updatePageStyles(styles);
+}
+
+function updatePageStyles(newStylesUrl: string | null): void {
+    const existingLink = document.getElementById(
+        SPA_STYLE_ID
+    ) as HTMLLinkElement | null;
+    const currentHref = existingLink?.href ?? "";
+
+    if (!newStylesUrl) {
+        existingLink?.remove();
+        return;
+    }
+
+    const absoluteNewUrl = new URL(newStylesUrl, window.location.origin).href;
+
+    if (currentHref === absoluteNewUrl) {
+        return;
+    }
+
+    if (existingLink) {
+        existingLink.href = newStylesUrl;
+        return;
+    }
+
+    const link = document.createElement("link");
+
+    link.id = SPA_STYLE_ID;
+    link.rel = "stylesheet";
+    link.href = newStylesUrl;
+
+    document.head.appendChild(link);
 }
 
 function reInitAlpine(container: Element): void {
