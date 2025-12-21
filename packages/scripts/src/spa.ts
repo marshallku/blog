@@ -1,6 +1,6 @@
 const PARTIAL_DIR = "/html";
 const MAIN_SELECTOR = "#main";
-const PARTIAL_CONTENT_SELECTOR = ".partial-content";
+const PARTIAL_CONTENT_ID = "partial-content";
 const SPA_STYLE_ID = "spa-page-styles";
 
 declare global {
@@ -90,20 +90,21 @@ async function fetchPartial(url: string): Promise<string> {
     return html;
 }
 
-function updatePageMeta(container: Element): void {
-    const partialContent = container.querySelector(PARTIAL_CONTENT_SELECTOR);
-
+function updatePageMeta(): void {
+    const partialContent = document.getElementById(PARTIAL_CONTENT_ID);
     if (!partialContent) {
         return;
     }
 
-    const title = partialContent.getAttribute("data-page-title");
+    const title = partialContent.dataset.pageTitle;
     if (title) {
         document.title = title;
     }
 
-    const styles = partialContent.getAttribute("data-page-styles");
-    updatePageStyles(styles);
+    const styles = partialContent.dataset.pageStyles;
+    if (styles) {
+        updatePageStyles(styles);
+    }
 }
 
 function updatePageStyles(newStylesUrl: string | null): void {
@@ -200,11 +201,11 @@ async function navigateTo(url: string, pushState = true): Promise<void> {
     try {
         const html = await fetchPartial(url);
 
-        const container = main.querySelector(".container");
+        const container = main.querySelector<HTMLElement>(".container");
         if (container) {
             container.innerHTML = html;
 
-            updatePageMeta(container);
+            updatePageMeta();
             reInitAlpine(container);
             reInitCodeCopy(container);
         }
