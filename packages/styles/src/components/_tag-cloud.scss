@@ -1,0 +1,47 @@
+@use "../base/palette";
+@use "../base/mixins";
+
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+
+    &__item {
+        display: inline-flex;
+        padding: 4px 12px;
+        gap: 6px;
+        border: 1px solid palette.color(grayscale, 200);
+        border-radius: 20px;
+        background-color: palette.color(background);
+        text-decoration: none;
+        transition: border-color palette.transition(fast) ease,
+            background-color palette.transition(fast) ease;
+
+        @include mixins.supports-hover {
+            &:hover {
+                border-color: palette.color(theme);
+                background-color: palette.color(theme);
+
+                .tag-name {
+                    color: palette.color(comment-2);
+                }
+
+                .tag-count {
+                    color: palette.color(comment-2);
+                    opacity: 0.8;
+                }
+            }
+        }
+    }
+
+    &__name {
+        color: palette.color(text);
+    }
+
+    &__count {
+        color: palette.color(grayscale, 500);
+        align-self: center;
+    }
+}
