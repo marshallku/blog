@@ -1,0 +1,72 @@
+<article class="post">
+    <header class="post-header">
+        <h1 class="post-header__title typography-h1">{{ page.title }}</h1>
+    </header>
+
+    <div class="post__body typography-b1">
+        {{ content | safe }}
+    </div>
+</article>
+
+{% if page.comments and config.api_url %}
+<section class="post-comment" id="comments" x-data="commentForm('/{{ slug }}', '{{ config.api_url }}')">
+    <div class="comment-form">
+        <figure class="comment-form__avatar">
+            <img
+                :src="'https://api.dicebear.com/9.x/bottts/svg?seed=' + encodeURIComponent(name || 'anonymous')"
+                alt="내 아바타"
+                width="40"
+                height="40"
+            />
+        </figure>
+        <form class="comment-form__form" @submit.prevent="submit">
+            <input type="hidden" name="postSlug" :value="postSlug">
+            <input type="hidden" name="parentCommentId" x-model="parentId">
+
+            <div x-show="parentId" x-cloak class="comment-form__replying typography-c1">
+                <span x-text="replyingTo"></span>님에게 답글
+                <button type="button" @click="cancelReply" class="comment-form__cancel typography-c1">취소</button>
+            </div>
+
+            <input
+                type="text"
+                id="comment-name"
+                name="name"
+                placeholder="이름"
+                x-model="name"
+                class="comment-form__input typography-b2"
+            >
+            <input
+                type="url"
+                id="comment-url"
+                name="url"
+                x-model="url"
+                placeholder="웹사이트"
+                class="comment-form__input typography-b2"
+            >
+            <textarea
+                id="comment-body"
+                name="body"
+                required
+                x-model="body"
+                placeholder="댓글을 입력해 주세요. 작성한 댓글은 수정하거나 삭제할 수 없습니다."
+                class="comment-form__textarea typography-b1"
+            ></textarea>
+
+            <div class="comment-form__buttons">
+                <button type="submit" class="comment-form__submit typography-c1" :disabled="loading || !body">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/>
+                    </svg>
+                    <span class="sr-only">댓글 남기기</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="comments">
+        <div id="comment-list">
+            <p class="comment-list__empty typography-c1">댓글을 불러오는 중...</p>
+        </div>
+    </div>
+</section>
+{% endif %}
