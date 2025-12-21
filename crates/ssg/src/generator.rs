@@ -100,7 +100,13 @@ impl Generator {
             context.insert(key, value);
         }
 
-        let output = self.tera.render("page.html", &context)?;
+        let template_name = page
+            .frontmatter
+            .template
+            .as_ref()
+            .map(|t| format!("page-{}.html", t))
+            .unwrap_or_else(|| "page.html".to_string());
+        let output = self.tera.render(&template_name, &context)?;
 
         let output_path = self.get_page_path(page);
         fs::create_dir_all(output_path.parent().unwrap())?;
@@ -129,7 +135,13 @@ impl Generator {
             context.insert(key, value);
         }
 
-        let output = self.tera.render("partials/page.html", &context)?;
+        let template_name = page
+            .frontmatter
+            .template
+            .as_ref()
+            .map(|t| format!("partials/page-{}.html", t))
+            .unwrap_or_else(|| "partials/page.html".to_string());
+        let output = self.tera.render(&template_name, &context)?;
 
         let output_path = self.get_page_partial_path(page);
         fs::create_dir_all(output_path.parent().unwrap())?;

@@ -89,6 +89,7 @@ impl Parser {
                     description: None,
                     hidden: false,
                     comments: true,
+                    template: None,
                 },
                 content: content.to_string(),
                 rendered_html: None,

@@ -125,6 +125,8 @@ pub struct PageFrontmatter {
     pub hidden: bool,
     #[serde(default = "default_true")]
     pub comments: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub template: Option<String>,
 }
 
 #[derive(Debug, Clone)]
