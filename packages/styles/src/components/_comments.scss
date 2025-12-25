@@ -96,6 +96,7 @@
 
         @at-root #{$self}--author & {
             text-align: right;
+            justify-content: flex-end;
         }
     }
 

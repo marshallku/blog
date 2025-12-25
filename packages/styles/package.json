@@ -1,6 +1,6 @@
 {
     "name": "@blog/styles",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "private": true,
     "description": "SCSS processing and optimization for the blog",
     "type": "module",

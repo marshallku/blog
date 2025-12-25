@@ -12,10 +12,10 @@
     "comment": "/scripts/0.1.3/comment.global.js"
   },
   "styles": {
-    "version": "0.2.0",
-    "critical": "/styles/0.2.0/critical.css",
-    "post": "/styles/0.2.0/post.css",
-    "list": "/styles/0.2.0/list.css",
-    "tags": "/styles/0.2.0/tags.css"
+    "version": "0.2.1",
+    "critical": "/styles/0.2.1/critical.css",
+    "post": "/styles/0.2.1/post.css",
+    "list": "/styles/0.2.1/list.css",
+    "tags": "/styles/0.2.1/tags.css"
   }
 }
