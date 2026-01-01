@@ -42,12 +42,13 @@ impl RecentGenerator {
             .map(|post| {
                 let uri = if self.config.build.encode_filenames {
                     format!(
-                        "/{}/{}/",
+                        "{}/{}/{}/",
+                        self.config.site.url,
                         slug::encode_for_url(&post.category),
                         slug::encode_for_url(&post.slug)
                     )
                 } else {
-                    format!("/{}/{}/", post.category, post.slug)
+                    format!("{}/{}/{}/", self.config.site.url, post.category, post.slug)
                 };
 
                 RecentPost {
