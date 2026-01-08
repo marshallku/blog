@@ -3,7 +3,21 @@
 
 {% macro post_card(post, show_category=false) %}
 <article class="post-card">
-    {% if post.frontmatter.og_image %}
+    {% if post.thumbnail_metadata %}
+    <a href="/{{ post.category }}/{{ post.slug }}/">
+        <figure class="post-card__image">
+            <picture>
+                <source type="image/webp" srcset="{{ post.thumbnail_metadata.webp_src }}">
+                <source srcset="{{ post.thumbnail_metadata.src }}">
+                <img
+                    src="{{ post.thumbnail_metadata.src }}"
+                    alt="{{ post.frontmatter.title }}"
+                    loading="lazy"
+                />
+            </picture>
+        </figure>
+    </a>
+    {% elif post.frontmatter.og_image %}
     <a href="/{{ post.category }}/{{ post.slug }}/">
         <figure class="post-card__image">
             <img

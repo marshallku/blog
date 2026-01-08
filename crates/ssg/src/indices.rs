@@ -1,4 +1,5 @@
 use crate::config::SsgConfig;
+use crate::image::{ImageProcessor, ThumbnailMetadata};
 use crate::metadata::{MetadataCache, PostMetadata};
 use crate::slug;
 use crate::types::Category;
@@ -37,19 +38,64 @@ struct PageLink {
 #[derive(Debug, Clone, Serialize)]
 struct CategoryPosts<'a> {
     category: &'a Category,
-    posts: Vec<&'a PostMetadata>,
+    posts: Vec<PostCardData<'a>>,
+}
+
+/// Post data with CDN thumbnail metadata for post cards
+#[derive(Debug, Clone, Serialize)]
+struct PostCardData<'a> {
+    #[serde(flatten)]
+    post: &'a PostMetadata,
+    thumbnail_metadata: Option<ThumbnailMetadata>,
 }
 
 pub struct IndexGenerator {
     tera: Tera,
     config: SsgConfig,
+    image_processor: Option<ImageProcessor>,
+    content_dir: PathBuf,
 }
 
 impl IndexGenerator {
     pub fn new(config: SsgConfig) -> Result<Self> {
         let tera = create_tera_engine()?;
 
-        Ok(Self { tera, config })
+        let image_processor = config.site.cdn_url.as_ref().map(|url| {
+            ImageProcessor::new(Some(url.clone()))
+        });
+        let content_dir = PathBuf::from(&config.build.content_dir);
+
+        Ok(Self { tera, config, image_processor, content_dir })
+    }
+
+    fn create_post_card_data<'a>(&self, post: &'a PostMetadata) -> PostCardData<'a> {
+        let thumbnail_metadata = self.image_processor.as_ref().and_then(|processor| {
+            let cover_src = post.frontmatter.cover_image.as_ref()
+                .or(post.frontmatter.og_image.as_ref())?;
+
+            let relative_src = if cover_src.starts_with('/') {
+                let without_leading_slash = cover_src.trim_start_matches('/');
+                if let Some(rest) = without_leading_slash.strip_prefix(&post.category) {
+                    format!(".{}", rest)
+                } else {
+                    format!("./{}", without_leading_slash)
+                }
+            } else {
+                cover_src.clone()
+            };
+
+            let post_content_dir = self.content_dir.join(&post.category);
+            let base_path = post.category.clone();
+
+            processor.process_thumbnail(&relative_src, &post_content_dir, &base_path)
+                .ok()
+                .flatten()
+        });
+
+        PostCardData {
+            post,
+            thumbnail_metadata,
+        }
     }
 
     pub fn generate_all(&self, metadata: &MetadataCache) -> Result<()> {
@@ -123,6 +169,7 @@ impl IndexGenerator {
             .get_recent_posts(posts_limit)
             .into_iter()
             .filter(|p| visible_category_slugs.contains(p.category.as_str()))
+            .map(|p| self.create_post_card_data(p))
             .collect();
 
         let category_posts: Vec<CategoryPosts> = visible_categories
@@ -132,7 +179,7 @@ impl IndexGenerator {
                 posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
                 CategoryPosts {
                     category: cat,
-                    posts: posts.into_iter().take(posts_limit).collect(),
+                    posts: posts.into_iter().take(posts_limit).map(|p| self.create_post_card_data(p)).collect(),
                 }
             })
             .collect();
@@ -160,7 +207,11 @@ impl IndexGenerator {
 
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let total_posts = posts.len();
+        let posts_with_thumbnails: Vec<_> = posts.iter()
+            .map(|p| self.create_post_card_data(p))
+            .collect();
+
+        let total_posts = posts_with_thumbnails.len();
         let posts_per_page = self.config.build.posts_per_page;
         let total_pages = if total_posts == 0 {
             1
@@ -181,7 +232,7 @@ impl IndexGenerator {
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
             let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
-            let page_posts = &posts[start_idx..end_idx];
+            let page_posts = &posts_with_thumbnails[start_idx..end_idx];
 
             let mut context = TeraContext::new();
             context.insert("category", category_info);
@@ -223,7 +274,11 @@ impl IndexGenerator {
 
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let total_posts = posts.len();
+        let posts_with_thumbnails: Vec<_> = posts.iter()
+            .map(|p| self.create_post_card_data(p))
+            .collect();
+
+        let total_posts = posts_with_thumbnails.len();
         let posts_per_page = self.config.build.posts_per_page;
         let total_pages = if total_posts == 0 {
             1
@@ -244,7 +299,7 @@ impl IndexGenerator {
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
             let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
-            let page_posts = &posts[start_idx..end_idx];
+            let page_posts = &posts_with_thumbnails[start_idx..end_idx];
 
             let mut context = TeraContext::new();
             context.insert("tag", tag);
@@ -330,6 +385,7 @@ impl IndexGenerator {
             .get_recent_posts(posts_limit)
             .into_iter()
             .filter(|p| visible_category_slugs.contains(p.category.as_str()))
+            .map(|p| self.create_post_card_data(p))
             .collect();
 
         let category_posts: Vec<CategoryPosts> = visible_categories
@@ -339,7 +395,7 @@ impl IndexGenerator {
                 posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
                 CategoryPosts {
                     category: cat,
-                    posts: posts.into_iter().take(posts_limit).collect(),
+                    posts: posts.into_iter().take(posts_limit).map(|p| self.create_post_card_data(p)).collect(),
                 }
             })
             .collect();
@@ -367,7 +423,11 @@ impl IndexGenerator {
         let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let total_posts = posts.len();
+        let posts_with_thumbnails: Vec<_> = posts.iter()
+            .map(|p| self.create_post_card_data(p))
+            .collect();
+
+        let total_posts = posts_with_thumbnails.len();
         let posts_per_page = self.config.build.posts_per_page;
         let total_pages = if total_posts == 0 {
             1
@@ -388,7 +448,7 @@ impl IndexGenerator {
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
             let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
-            let page_posts = &posts[start_idx..end_idx];
+            let page_posts = &posts_with_thumbnails[start_idx..end_idx];
 
             let mut context = TeraContext::new();
             context.insert("category", category_info);
@@ -423,7 +483,11 @@ impl IndexGenerator {
         let mut posts = metadata.get_posts_by_tag(tag);
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let total_posts = posts.len();
+        let posts_with_thumbnails: Vec<_> = posts.iter()
+            .map(|p| self.create_post_card_data(p))
+            .collect();
+
+        let total_posts = posts_with_thumbnails.len();
         let posts_per_page = self.config.build.posts_per_page;
         let total_pages = if total_posts == 0 {
             1
@@ -444,7 +508,7 @@ impl IndexGenerator {
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
             let end_idx = std::cmp::min(start_idx + posts_per_page, total_posts);
-            let page_posts = &posts[start_idx..end_idx];
+            let page_posts = &posts_with_thumbnails[start_idx..end_idx];
 
             let mut context = TeraContext::new();
             context.insert("tag", tag);
