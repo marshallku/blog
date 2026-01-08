@@ -19,6 +19,7 @@ mod types;
 
 use anyhow::Result;
 use clap::{Parser as ClapParser, Subcommand};
+use serde::Serialize;
 use serde_json::json;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -30,7 +31,7 @@ use crate::category::{discover_categories, validate_category};
 use crate::config::{load_config, SsgConfig};
 use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
-use crate::image::ImageProcessor;
+use crate::image::{ImageProcessor, ThumbnailMetadata};
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
 use crate::navigation::{build_post_navigation, build_post_navigation_with_cdn};
@@ -721,6 +722,13 @@ struct OriginalImagePaths {
     og_image: Option<String>,
 }
 
+#[derive(Serialize)]
+struct RelatedPostData {
+    #[serde(flatten)]
+    post: crate::metadata::PostMetadata,
+    thumbnail_metadata: Option<ThumbnailMetadata>,
+}
+
 fn build_post_extra_data(
     post: &crate::types::Post,
     metadata: &MetadataCache,
@@ -787,10 +795,39 @@ fn build_post_extra_data(
         .collect();
     related.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-    let related_posts: Vec<_> = related
+    let related_posts: Vec<RelatedPostData> = related
         .into_iter()
         .take(RELATED_POSTS_COUNT)
-        .cloned()
+        .map(|p| {
+            let thumbnail_metadata = cdn_url.and_then(|url| {
+                let image_processor = ImageProcessor::new(Some(url.to_string()));
+                let cover_src = p.frontmatter.cover_image.as_ref()
+                    .or(p.frontmatter.og_image.as_ref())?;
+
+                let relative_src = if cover_src.starts_with('/') {
+                    let without_leading_slash = cover_src.trim_start_matches('/');
+                    if let Some(rest) = without_leading_slash.strip_prefix(&p.category) {
+                        format!(".{}", rest)
+                    } else {
+                        format!("./{}", without_leading_slash)
+                    }
+                } else {
+                    cover_src.clone()
+                };
+
+                let post_content_dir = content_dir.join(&p.category);
+                let base_path = p.category.clone();
+
+                image_processor.process_thumbnail(&relative_src, &post_content_dir, &base_path)
+                    .ok()
+                    .flatten()
+            });
+
+            RelatedPostData {
+                post: p.clone(),
+                thumbnail_metadata,
+            }
+        })
         .collect();
     data.insert("related_posts".to_string(), json!(related_posts));
 
