@@ -24,4 +24,23 @@ export default defineConfig([
         outDir: "dist",
         target: "es2022",
     },
+    {
+        entry: {
+            islands: "src/islands/index.ts",
+        },
+        format: ["esm"],
+        dts: false,
+        minify: true,
+        outDir: "dist",
+        target: "es2022",
+        splitting: true,
+        noExternal: ["react", "react-dom"],
+        define: {
+            "process.env.NODE_ENV": '"production"',
+        },
+        esbuildOptions(options) {
+            options.jsx = "automatic";
+            options.jsxImportSource = "react";
+        },
+    },
 ]);

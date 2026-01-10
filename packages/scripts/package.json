@@ -20,7 +20,8 @@
         "assets": {
             "bundle": "bundle.js",
             "index": "index.js",
-            "comment": "comment.global.js"
+            "comment": "comment.global.js",
+            "islands": "islands.js"
         }
     },
     "scripts": {
@@ -29,7 +30,13 @@
         "clean": "rm -rf dist",
         "typecheck": "tsc --noEmit"
     },
+    "dependencies": {
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
+    },
     "devDependencies": {
+        "@types/react": "^18.3.18",
+        "@types/react-dom": "^18.3.5",
         "tsup": "^8.5.0",
         "typescript": "^5.9.3"
     }

@@ -9,7 +9,8 @@
     "version": "0.1.3",
     "bundle": "/scripts/0.1.3/bundle.js",
     "index": "/scripts/0.1.3/index.js",
-    "comment": "/scripts/0.1.3/comment.global.js"
+    "comment": "/scripts/0.1.3/comment.global.js",
+    "islands": "/scripts/0.1.3/islands.js"
   },
   "styles": {
     "version": "0.2.1",

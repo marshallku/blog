@@ -136,6 +136,52 @@ impl ShortcodeRegistry {
                 Ok(html)
             }),
         );
+
+        // React island shortcode: [react component="..." data="..." title="..."]
+        // Generates a placeholder div that will be hydrated by React on the client
+        // All attributes except 'component' and 'loading' are passed as props
+        self.register(
+            "react",
+            Box::new(|attrs, content| {
+                let component = attrs
+                    .get("component")
+                    .ok_or_else(|| anyhow!("React shortcode requires 'component' attribute"))?;
+                let loading = attrs.get("loading").map(|s| s.as_str()).unwrap_or("lazy");
+
+                // Build props JSON from all other attributes
+                let mut props_parts: Vec<String> = Vec::new();
+                for (key, value) in attrs.iter() {
+                    if key != "component" && key != "loading" {
+                        // Escape the value for JSON string
+                        let escaped_value = value
+                            .replace('\\', "\\\\")
+                            .replace('"', "\\\"");
+                        props_parts.push(format!(r#""{}":"{}""#, key, escaped_value));
+                    }
+                }
+                let props_json = format!("{{{}}}", props_parts.join(","));
+
+                let mut html = format!(
+                    r#"<div class="react-island" data-component="{}" data-props='{}' data-loading="{}">"#,
+                    escape_html(component),
+                    escape_html(&props_json),
+                    escape_html(loading)
+                );
+
+                if let Some(fallback) = content {
+                    html.push_str(&format!(
+                        r#"<div class="react-island__fallback">{}</div>"#,
+                        fallback
+                    ));
+                }
+
+                html.push_str(
+                    r#"<noscript>Interactive component requires JavaScript</noscript></div>"#,
+                );
+
+                Ok(html)
+            }),
+        );
     }
 
     /// Register a custom shortcode handler
@@ -328,5 +374,46 @@ mod tests {
             escape_html("<script>alert('xss')</script>"),
             "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;"
         );
+    }
+
+    #[test]
+    fn test_react_shortcode() {
+        let registry = ShortcodeRegistry::new();
+        let result = registry
+            .process(r#"[react component="Chart" data="1,2,3" title="Test"]"#)
+            .unwrap();
+        assert!(result.contains("react-island"));
+        assert!(result.contains(r#"data-component="Chart""#));
+        assert!(result.contains(r#"data-props='"#));
+        assert!(result.contains(r#""data":"1,2,3""#));
+        assert!(result.contains(r#""title":"Test""#));
+        assert!(result.contains(r#"data-loading="lazy""#));
+    }
+
+    #[test]
+    fn test_react_shortcode_with_fallback() {
+        let registry = ShortcodeRegistry::new();
+        let result = registry
+            .process(r#"[react component="CodeEditor" lang="ts"]const x = 1;[/react]"#)
+            .unwrap();
+        assert!(result.contains("react-island__fallback"));
+        assert!(result.contains("const x = 1;"));
+        assert!(result.contains(r#""lang":"ts""#));
+    }
+
+    #[test]
+    fn test_react_shortcode_eager_loading() {
+        let registry = ShortcodeRegistry::new();
+        let result = registry
+            .process(r#"[react component="Chart" loading="eager"]"#)
+            .unwrap();
+        assert!(result.contains(r#"data-loading="eager""#));
+    }
+
+    #[test]
+    fn test_react_shortcode_missing_component() {
+        let registry = ShortcodeRegistry::new();
+        let result = registry.process(r#"[react data="1,2,3"]"#);
+        assert!(result.is_err());
     }
 }

@@ -74,6 +74,17 @@ function copyPackageAssets(pkg) {
         }
     }
 
+    // Copy code-split chunks (files matching chunk-*.js or component chunks like Chart-*.js)
+    const distFiles = readdirSync(srcDir);
+    for (const file of distFiles) {
+        if ((file.startsWith("chunk-") || /^[A-Z][a-zA-Z]+-[A-Z0-9]+\.js$/.test(file)) && file.endsWith(".js")) {
+            const srcFile = join(srcDir, file);
+            const destFile = join(destDir, file);
+            cpSync(srcFile, destFile);
+            copied++;
+        }
+    }
+
     console.log(
         `✅ ${pkg.name}@${pkg.version}: copied ${copied} files to static/${pkg.name}/${pkg.version}/`
     );

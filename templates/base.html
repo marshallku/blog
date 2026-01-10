@@ -205,6 +205,9 @@
     {% if config.assets.scripts.bundle %}
     <script src="{{ config.assets.scripts.bundle }}" type="module"></script>
     {% endif %}
+    {% if config.assets.scripts.islands %}
+    <script src="{{ config.assets.scripts.islands }}" type="module"></script>
+    {% endif %}
     {% block extra_js %}
     {# Override this block in child templates to add page-specific JavaScript #}
     {% endblock %}

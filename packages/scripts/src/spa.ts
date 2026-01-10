@@ -208,6 +208,10 @@ async function navigateTo(url: string, pushState = true): Promise<void> {
             updatePageMeta();
             reInitAlpine(container);
             reInitCodeCopy(container);
+
+            document.dispatchEvent(
+                new CustomEvent("spa:navigate", { detail: { container } })
+            );
         }
 
         if (pushState) {
