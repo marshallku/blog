@@ -1,6 +1,7 @@
 use anyhow::Result;
 use serde::Serialize;
 use std::path::Path;
+use unicode_normalization::UnicodeNormalization;
 
 /// Standard image sizes for responsive images
 pub const IMAGE_SIZES: [u32; 4] = [480, 600, 860, 1180];
@@ -204,9 +205,12 @@ impl ImageProcessor {
     ) -> String {
         let size_suffix = size.map(|s| format!(".w{}", s)).unwrap_or_default();
         let webp_suffix = if is_webp { ".webp" } else { "" };
+        // Normalize to NFC for consistent Unicode representation
+        let base_path_nfc: String = base_path.nfc().collect();
+        let filename_nfc: String = filename.nfc().collect();
         format!(
             "{}/images/{}/{}{}.{}{}",
-            cdn_url, base_path, filename, size_suffix, ext, webp_suffix
+            cdn_url, base_path_nfc, filename_nfc, size_suffix, ext, webp_suffix
         )
     }
 

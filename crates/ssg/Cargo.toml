@@ -39,6 +39,7 @@ chrono = { workspace = true }
 walkdir = "2.5"
 percent-encoding = "2.3"
 regex = "1.11"
+unicode-normalization = "0.1"
 
 # Hashing (for cache)
 blake3 = "1.8"

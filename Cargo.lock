@@ -426,6 +426,7 @@ dependencies = [
  "serde_yaml",
  "tempfile",
  "tera",
+ "unicode-normalization",
  "walkdir",
 ]
 
