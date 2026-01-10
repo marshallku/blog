@@ -4,6 +4,17 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+/// Contact information for the site
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Contacts {
+    #[serde(default)]
+    pub linkedin: Option<String>,
+    #[serde(default)]
+    pub github: Option<String>,
+    #[serde(default)]
+    pub email: Option<String>,
+}
+
 /// Site configuration from config.yaml
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SiteConfig {
@@ -24,6 +35,9 @@ pub struct SiteConfig {
     /// Google Analytics ID (optional)
     #[serde(default)]
     pub google_analytics_id: Option<String>,
+    /// Contact information (optional)
+    #[serde(default)]
+    pub contacts: Contacts,
 }
 
 /// Search configuration
@@ -103,6 +117,7 @@ pub struct TemplateConfig<'a> {
     pub assets: &'a AssetsConfig,
     pub api_url: Option<&'a str>,
     pub google_analytics_id: Option<&'a str>,
+    pub contacts: &'a Contacts,
 }
 
 impl SsgConfig {
@@ -115,6 +130,7 @@ impl SsgConfig {
             assets: &self.assets,
             api_url: self.site.api_url.as_deref(),
             google_analytics_id: self.site.google_analytics_id.as_deref(),
+            contacts: &self.site.contacts,
         }
     }
 }
@@ -129,6 +145,7 @@ impl Default for SiteConfig {
             cdn_url: None,
             api_url: None,
             google_analytics_id: None,
+            contacts: Contacts::default(),
         }
     }
 }
