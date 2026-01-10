@@ -385,8 +385,9 @@ mod tests {
         assert!(result.contains("react-island"));
         assert!(result.contains(r#"data-component="Chart""#));
         assert!(result.contains(r#"data-props='"#));
-        assert!(result.contains(r#""data":"1,2,3""#));
-        assert!(result.contains(r#""title":"Test""#));
+        // Props are HTML-escaped in the output
+        assert!(result.contains(r#"&quot;data&quot;:&quot;1,2,3&quot;"#));
+        assert!(result.contains(r#"&quot;title&quot;:&quot;Test&quot;"#));
         assert!(result.contains(r#"data-loading="lazy""#));
     }
 
@@ -398,7 +399,8 @@ mod tests {
             .unwrap();
         assert!(result.contains("react-island__fallback"));
         assert!(result.contains("const x = 1;"));
-        assert!(result.contains(r#""lang":"ts""#));
+        // Props are HTML-escaped in the output
+        assert!(result.contains(r#"&quot;lang&quot;:&quot;ts&quot;"#));
     }
 
     #[test]
