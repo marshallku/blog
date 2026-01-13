@@ -13,6 +13,7 @@ mod recent;
 mod renderer;
 mod search;
 mod shortcodes;
+mod sitemap;
 mod slug;
 mod syntax_highlighter;
 mod types;
@@ -43,6 +44,7 @@ use crate::recent::RecentGenerator;
 use crate::renderer::Renderer;
 use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
+use crate::sitemap::SitemapGenerator;
 use crate::types::Post;
 
 const RELATED_POSTS_COUNT: usize = 4;
@@ -345,6 +347,9 @@ fn build_all(use_cache: bool) -> Result<()> {
         Path::new(&config.build.output_dir),
     )?;
 
+    println!("🗺  Generating sitemap...");
+    SitemapGenerator::generate(&config, &metadata, Path::new(&config.build.output_dir))?;
+
     if config.build.search.enabled {
         let search_generator = SearchIndexGenerator::new(config.clone());
         search_generator.generate(&metadata)?;
@@ -548,6 +553,9 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         posts_dir,
         Path::new(&config.build.output_dir),
     )?;
+
+    println!("🗺  Generating sitemap...");
+    SitemapGenerator::generate(&config, &metadata, Path::new(&config.build.output_dir))?;
 
     if config.build.search.enabled {
         let search_generator = SearchIndexGenerator::new((*config).clone());
