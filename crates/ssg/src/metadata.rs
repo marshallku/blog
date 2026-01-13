@@ -63,7 +63,7 @@ impl MetadataCache {
         self.recalculate_stats();
     }
 
-    fn recalculate_stats(&mut self) {
+    pub(crate) fn recalculate_stats(&mut self) {
         self.categories.clear();
         self.tags.clear();
 
