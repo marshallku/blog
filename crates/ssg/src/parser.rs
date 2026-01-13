@@ -126,6 +126,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Datelike;
 
     #[test]
     fn test_split_frontmatter() {
@@ -159,5 +160,89 @@ Content with multiple lines"#;
         let path = Path::new("content/posts/dev/hello-world.md");
         let slug = Parser::path_to_slug(path).unwrap();
         assert_eq!(slug, "hello-world");
+    }
+
+    #[test]
+    fn test_parse_frontmatter_simple_date() {
+        let yaml = r#"
+title: Test Post
+date: 2025-01-01T12:00:00Z
+tags: []
+"#;
+        let fm = Parser::parse_frontmatter(yaml).unwrap();
+        assert_eq!(fm.title, "Test Post");
+        assert_eq!(fm.date.posted.year(), 2025);
+        assert!(fm.date.modified.is_none());
+    }
+
+    #[test]
+    fn test_parse_frontmatter_nested_date() {
+        let yaml = r#"
+title: Test Post
+date:
+  posted: 2025-01-01T12:00:00Z
+  modified: 2025-01-15T14:30:00Z
+tags: []
+"#;
+        let fm = Parser::parse_frontmatter(yaml).unwrap();
+        assert_eq!(fm.title, "Test Post");
+        assert_eq!(fm.date.posted.year(), 2025);
+        assert!(fm.date.modified.is_some());
+        assert_eq!(fm.date.modified.unwrap().day(), 15);
+    }
+
+    #[test]
+    fn test_parse_frontmatter_missing_title_fails() {
+        let yaml = r#"
+date: 2025-01-01T12:00:00Z
+tags: []
+"#;
+        let result = Parser::parse_frontmatter(yaml);
+        assert!(result.is_err(), "Should fail when title is missing");
+    }
+
+    #[test]
+    fn test_parse_frontmatter_missing_date_fails() {
+        let yaml = r#"
+title: Test Post
+tags: []
+"#;
+        let result = Parser::parse_frontmatter(yaml);
+        assert!(result.is_err(), "Should fail when date is missing");
+    }
+
+    #[test]
+    fn test_parse_frontmatter_invalid_date_fails() {
+        let yaml = r#"
+title: Test Post
+date: not-a-date
+tags: []
+"#;
+        let result = Parser::parse_frontmatter(yaml);
+        assert!(result.is_err(), "Should fail with invalid date format");
+    }
+
+    #[test]
+    fn test_split_frontmatter_missing_closing_delimiter_fails() {
+        let content = r#"---
+title: Test Post
+Content without closing delimiter"#;
+
+        let result = Parser::split_frontmatter(content);
+        assert!(result.is_err(), "Should fail without closing ---");
+    }
+
+    #[test]
+    fn test_extract_category_nested() {
+        let path = Path::new("content/posts/dev/rust/hello-world.md");
+        let category = Parser::extract_category(path).unwrap();
+        assert_eq!(category, "dev/rust");
+    }
+
+    #[test]
+    fn test_extract_category_missing_posts_fails() {
+        let path = Path::new("content/articles/dev/hello-world.md");
+        let result = Parser::extract_category(path);
+        assert!(result.is_err(), "Should fail when 'posts' not in path");
     }
 }
