@@ -19,8 +19,13 @@ impl FeedGenerator {
         // Build slug -> path lookup map once (O(N) instead of O(N*M))
         let post_paths = Self::build_post_path_map(content_dir);
 
+        // RSS feeds
         Self::generate_global_feed(config, metadata, &post_paths, output_dir)?;
         Self::generate_category_feeds(config, metadata, &post_paths, output_dir)?;
+
+        // Atom feeds
+        Self::generate_global_atom_feed(config, metadata, &post_paths, output_dir)?;
+
         Ok(())
     }
 
@@ -294,6 +299,121 @@ impl FeedGenerator {
             let output_path = category_dir.join("feed.xml");
             fs::write(&output_path, rss_xml)?;
         }
+
+        Ok(())
+    }
+
+    fn generate_global_atom_feed(
+        config: &SsgConfig,
+        metadata: &MetadataCache,
+        post_paths: &HashMap<String, PathBuf>,
+        output_dir: &Path,
+    ) -> Result<()> {
+        let recent_posts = metadata.get_recent_posts(10);
+
+        if recent_posts.is_empty() {
+            return Ok(());
+        }
+
+        let updated = chrono::Utc::now().to_rfc3339();
+
+        let mut entries = Vec::new();
+
+        for post_meta in recent_posts {
+            if post_meta.frontmatter.hidden {
+                continue;
+            }
+
+            let post_path = post_paths
+                .get(&post_meta.slug)
+                .ok_or_else(|| anyhow::anyhow!("Post file not found: {}", post_meta.slug))?;
+            let post = Parser::parse_file(post_path)
+                .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
+
+            let rendered_content = Self::render_markdown_simple(&post.content);
+            let url = format!("{}/{}/{}/", config.site.url, post.category, post.slug);
+
+            let summary = post
+                .frontmatter
+                .description
+                .as_deref()
+                .unwrap_or(&post.frontmatter.title);
+
+            let published = post.frontmatter.date.posted.to_rfc3339();
+            let entry_updated = post
+                .frontmatter
+                .date
+                .modified
+                .as_ref()
+                .map(|d| d.to_rfc3339())
+                .unwrap_or_else(|| published.clone());
+
+            let categories_xml: String = post
+                .frontmatter
+                .tags
+                .iter()
+                .map(|tag| format!(r#"    <category term="{}" />"#, Self::escape_xml(tag)))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            let entry = format!(
+                r#"  <entry>
+    <title>{}</title>
+    <link href="{}" rel="alternate" type="text/html" />
+    <id>{}</id>
+    <published>{}</published>
+    <updated>{}</updated>
+    <author>
+      <name>{}</name>
+    </author>
+    <summary type="text">{}</summary>
+    <content type="html"><![CDATA[{}]]></content>
+{}
+  </entry>"#,
+                Self::escape_xml(&post.frontmatter.title),
+                url,
+                url,
+                published,
+                entry_updated,
+                Self::escape_xml(&config.site.author),
+                Self::escape_xml(summary),
+                rendered_content,
+                categories_xml
+            );
+
+            entries.push(entry);
+        }
+
+        let feed_url = format!("{}/atom.xml", config.site.url);
+
+        let atom_xml = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="ko">
+  <title>{}</title>
+  <subtitle>{}</subtitle>
+  <link href="{}" rel="self" type="application/atom+xml" />
+  <link href="{}" rel="alternate" type="text/html" />
+  <id>{}</id>
+  <updated>{}</updated>
+  <author>
+    <name>{}</name>
+  </author>
+{}
+</feed>
+"#,
+            Self::escape_xml(&config.site.title),
+            Self::escape_xml(&config.site.description),
+            feed_url,
+            config.site.url,
+            config.site.url,
+            updated,
+            Self::escape_xml(&config.site.author),
+            entries.join("\n")
+        );
+
+        fs::create_dir_all(output_dir)?;
+        let output_path = output_dir.join("atom.xml");
+        fs::write(&output_path, atom_xml)?;
 
         Ok(())
     }
