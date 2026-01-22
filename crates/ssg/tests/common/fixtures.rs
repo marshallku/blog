@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub const MINIMAL_CONFIG: &str = r#"site:
   title: "Test Blog"
   url: "https://test.example.com"
