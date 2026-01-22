@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 mod common;
 
 use common::fixtures::{POST_INVALID_DATE, POST_MALFORMED_YAML, POST_MISSING_TITLE};
