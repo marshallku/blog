@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub mod fixtures;
 
 use assert_cmd::Command;
@@ -8,6 +10,7 @@ use tempfile::TempDir;
 use fixtures::{MINIMAL_CONFIG, MINIMAL_POST, MINIMAL_TEMPLATES};
 
 pub struct TestEnvironment {
+    #[allow(dead_code)]
     pub temp_dir: TempDir,
     pub root: PathBuf,
 }
