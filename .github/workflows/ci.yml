@@ -34,8 +34,10 @@ jobs:
       - name: Set environment
         run: |
           cp .env.example .env
-      - name: Run test
-        run: cargo test
+      - name: Run unit tests
+        run: cargo test --lib
+      - name: Run integration tests
+        run: cargo test --test '*'
   send-notification:
     needs: [check-spelling, build, test]
     if: ${{ failure() }}
