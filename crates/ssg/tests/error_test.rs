@@ -54,7 +54,7 @@ fn should_error_on_empty_content_directory() {
     std::fs::create_dir_all(env.root.join("content/posts")).unwrap();
 
     // Act
-    let result = env.run_build();
+    let _result = env.run_build();
 
     // Assert - Should warn about no categories but not crash
     // The current implementation shows a warning but completes
