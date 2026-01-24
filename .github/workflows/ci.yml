@@ -34,10 +34,8 @@ jobs:
       - name: Set environment
         run: |
           cp .env.example .env
-      - name: Run unit tests (SSG only)
-        run: cargo test -p blog-ssg --lib
-      - name: Run integration tests (SSG only)
-        run: cargo test -p blog-ssg --test '*'
+      - name: Run unit tests
+        run: cargo test
   send-notification:
     needs: [check-spelling, build, test]
     if: ${{ failure() }}
