@@ -50,3 +50,6 @@ tracing-subscriber = { workspace = true }
 
 # Templating
 tera = { workspace = true }
+
+# UUID generation
+uuid = { workspace = true }

@@ -42,4 +42,12 @@ pub fn app() -> Router<AppState> {
             &format!("{}/thumbnail/*path", API_VERSION_PREFIX),
             get(super::thumbnail::get::get),
         )
+        .route(
+            &format!("{}/like/toggle", API_VERSION_PREFIX),
+            post(super::likes::toggle::post),
+        )
+        .route(
+            &format!("{}/like/status", API_VERSION_PREFIX),
+            get(super::likes::status::get),
+        )
 }
