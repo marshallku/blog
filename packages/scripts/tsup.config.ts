@@ -17,6 +17,7 @@ export default defineConfig([
     {
         entry: {
             comment: "src/comment.ts",
+            like: "src/like.ts",
         },
         format: ["iife"],
         dts: false,

@@ -1,0 +1,61 @@
+@use "../base/palette";
+
+.post-like {
+    display: flex;
+    justify-content: center;
+    margin: palette.spacing(lg) 0;
+
+    &__button {
+        display: flex;
+        align-items: center;
+        gap: palette.spacing(xs);
+        padding: palette.spacing(sm) palette.spacing(md);
+        border: 1px solid palette.color(grayscale, 300);
+        border-radius: 9999px;
+        background: transparent;
+        color: palette.color(text);
+        cursor: pointer;
+        transition: all palette.transition(fast) ease;
+
+        &:hover:not(:disabled) {
+            border-color: palette.color(theme);
+            color: palette.color(theme);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        &--liked {
+            color: palette.color(theme);
+            border-color: palette.color(theme);
+
+            .post-like__icon {
+                animation: like-pop 0.3s ease;
+            }
+        }
+    }
+
+    &__icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    &__count {
+        min-width: 1.5em;
+        text-align: center;
+    }
+}
+
+@keyframes like-pop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

@@ -46,6 +46,15 @@
     </div>
 </article>
 
+{% if config.api_url %}
+<div class="post-like" x-data="likeButton('/{{ post.category }}/{{ post.slug }}', '{{ config.api_url }}')">
+    <div id="like-button" @click="toggle">
+        <button type="button" class="post-like__button" disabled>
+            <span class="post-like__count typography-c1">...</span>
+        </button>
+    </div>
+</div>
+{% endif %}
 {% if post.frontmatter.comments and config.api_url %}
 <section class="post-comment" id="comments" x-data="commentForm('/{{ post.category }}/{{ post.slug }}', '{{ config.api_url }}')">
     <div class="comment-form">

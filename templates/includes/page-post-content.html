@@ -8,7 +8,14 @@
     </div>
 </article>
 
-{% if page.comments and config.api_url %}
+{% if config.api_url %}
+<div class="post-like" x-data="likeButton('/{{ slug }}', '{{ config.api_url }}')">
+    <div id="like-button" @click="toggle">
+        <button type="button" class="post-like__button" disabled>
+            <span class="post-like__count typography-c1">...</span>
+        </button>
+    </div>
+</div>
 <section class="post-comment" id="comments" x-data="commentForm('/{{ slug }}', '{{ config.api_url }}')">
     <div class="comment-form">
         <figure class="comment-form__avatar">

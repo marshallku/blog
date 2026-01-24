@@ -29,6 +29,9 @@
     {% if config.api_url and config.assets.scripts.comment %}
     <script src="{{ config.assets.scripts.comment }}"></script>
     {% endif %}
+    {% if config.api_url and config.assets.scripts.like %}
+    <script src="{{ config.assets.scripts.like }}"></script>
+    {% endif %}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     {% if config.assets.scripts.index %}
     <script type="module" src="{{ config.assets.scripts.index | safe }}"></script>

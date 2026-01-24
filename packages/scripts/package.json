@@ -21,6 +21,7 @@
             "bundle": "bundle.js",
             "index": "index.js",
             "comment": "comment.global.js",
+            "like": "like.global.js",
             "islands": "islands.js"
         }
     },
