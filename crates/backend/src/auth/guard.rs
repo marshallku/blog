@@ -32,7 +32,7 @@ where
         }
 
         let token = token.unwrap().value();
-        let user = get_user_from_token(&token, &state).await;
+        let user = get_user_from_token(token, &state).await;
 
         if user.is_err() {
             return Err((StatusCode::UNAUTHORIZED, "Invalid auth-token cookie"));
@@ -68,7 +68,7 @@ where
         }
 
         let token = token.unwrap().value();
-        let user = get_user_from_token(&token, &state).await;
+        let user = get_user_from_token(token, &state).await;
 
         if user.is_err() {
             return Ok(AuthUserOrPublic { user: None });
@@ -84,7 +84,7 @@ async fn get_user_from_token(
     token: &str,
     state: &AppState,
 ) -> Result<User, (StatusCode, &'static str)> {
-    let token_claims = Token::parse(&token, &state.jwt_secret)
+    let token_claims = Token::parse(token, &state.jwt_secret)
         .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid auth-token cookie"))?;
 
     let user = User::find_by_id(&state.db, &token_claims.sub).await;

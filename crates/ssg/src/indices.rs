@@ -60,17 +60,27 @@ impl IndexGenerator {
     pub fn new(config: SsgConfig) -> Result<Self> {
         let tera = create_tera_engine()?;
 
-        let image_processor = config.site.cdn_url.as_ref().map(|url| {
-            ImageProcessor::new(Some(url.clone()))
-        });
+        let image_processor = config
+            .site
+            .cdn_url
+            .as_ref()
+            .map(|url| ImageProcessor::new(Some(url.clone())));
         let content_dir = PathBuf::from(&config.build.content_dir);
 
-        Ok(Self { tera, config, image_processor, content_dir })
+        Ok(Self {
+            tera,
+            config,
+            image_processor,
+            content_dir,
+        })
     }
 
     fn create_post_card_data<'a>(&self, post: &'a PostMetadata) -> PostCardData<'a> {
         let thumbnail_metadata = self.image_processor.as_ref().and_then(|processor| {
-            let cover_src = post.frontmatter.cover_image.as_ref()
+            let cover_src = post
+                .frontmatter
+                .cover_image
+                .as_ref()
                 .or(post.frontmatter.og_image.as_ref())?;
 
             let relative_src = if cover_src.starts_with('/') {
@@ -87,7 +97,8 @@ impl IndexGenerator {
             let post_content_dir = self.content_dir.join(&post.category);
             let base_path = post.category.clone();
 
-            processor.process_thumbnail(&relative_src, &post_content_dir, &base_path)
+            processor
+                .process_thumbnail(&relative_src, &post_content_dir, &base_path)
                 .ok()
                 .flatten()
         });
@@ -179,7 +190,11 @@ impl IndexGenerator {
                 posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
                 CategoryPosts {
                     category: cat,
-                    posts: posts.into_iter().take(posts_limit).map(|p| self.create_post_card_data(p)).collect(),
+                    posts: posts
+                        .into_iter()
+                        .take(posts_limit)
+                        .map(|p| self.create_post_card_data(p))
+                        .collect(),
                 }
             })
             .collect();
@@ -207,7 +222,8 @@ impl IndexGenerator {
 
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let posts_with_thumbnails: Vec<_> = posts.iter()
+        let posts_with_thumbnails: Vec<_> = posts
+            .iter()
             .map(|p| self.create_post_card_data(p))
             .collect();
 
@@ -274,7 +290,8 @@ impl IndexGenerator {
 
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let posts_with_thumbnails: Vec<_> = posts.iter()
+        let posts_with_thumbnails: Vec<_> = posts
+            .iter()
             .map(|p| self.create_post_card_data(p))
             .collect();
 
@@ -395,7 +412,11 @@ impl IndexGenerator {
                 posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
                 CategoryPosts {
                     category: cat,
-                    posts: posts.into_iter().take(posts_limit).map(|p| self.create_post_card_data(p)).collect(),
+                    posts: posts
+                        .into_iter()
+                        .take(posts_limit)
+                        .map(|p| self.create_post_card_data(p))
+                        .collect(),
                 }
             })
             .collect();
@@ -423,7 +444,8 @@ impl IndexGenerator {
         let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let posts_with_thumbnails: Vec<_> = posts.iter()
+        let posts_with_thumbnails: Vec<_> = posts
+            .iter()
             .map(|p| self.create_post_card_data(p))
             .collect();
 
@@ -483,7 +505,8 @@ impl IndexGenerator {
         let mut posts = metadata.get_posts_by_tag(tag);
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let posts_with_thumbnails: Vec<_> = posts.iter()
+        let posts_with_thumbnails: Vec<_> = posts
+            .iter()
             .map(|p| self.create_post_card_data(p))
             .collect();
 

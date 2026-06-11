@@ -7,6 +7,10 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Marshall Ku"]
 
+[profile.release]
+lto = "thin"
+strip = "debuginfo"
+
 [workspace.dependencies]
 # Shared across multiple crates
 serde = { version = "1.0", features = ["derive"] }

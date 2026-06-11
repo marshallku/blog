@@ -102,8 +102,7 @@ fn should_error_on_missing_content_directory() {
     // Assert
     assert_failure(&result);
     assert!(
-        stderr_contains(&result, "does not exist")
-            || stderr_contains(&result, "Content directory")
+        stderr_contains(&result, "does not exist") || stderr_contains(&result, "Content directory")
     );
 }
 

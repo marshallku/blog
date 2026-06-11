@@ -33,7 +33,7 @@ const COMPONENT_TAGS: &[&str] = &[
     "iframe",
 ];
 
-const RAW_HTML_TAGS: &'static [&'static str] = &[
+const RAW_HTML_TAGS: &[&str] = &[
     "video", "audio", "source", "iframe", "embed", "object", "track",
 ];
 

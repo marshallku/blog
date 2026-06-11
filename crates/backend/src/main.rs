@@ -55,10 +55,7 @@ async fn main() {
         .split(',')
         .map(|domain| domain.trim())
         .filter(|domain| !domain.is_empty())
-        .filter_map(|domain| match HeaderValue::from_str(&domain.to_string()) {
-            Ok(value) => Some(value),
-            Err(_) => None,
-        })
+        .filter_map(|domain| HeaderValue::from_str(domain).ok())
         .collect::<Vec<_>>();
     let cors_layer = CorsLayer::new()
         .allow_credentials(true)

@@ -43,8 +43,8 @@ use crate::parallel::{
 use crate::parser::Parser;
 use crate::recent::RecentGenerator;
 use crate::renderer::Renderer;
-use crate::search::SearchIndexGenerator;
 use crate::robots::RobotsGenerator;
+use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
 use crate::sitemap::SitemapGenerator;
 use crate::types::Post;
@@ -850,7 +850,10 @@ fn build_post_extra_data(
         .map(|p| {
             let thumbnail_metadata = cdn_url.and_then(|url| {
                 let image_processor = ImageProcessor::new(Some(url.to_string()));
-                let cover_src = p.frontmatter.cover_image.as_ref()
+                let cover_src = p
+                    .frontmatter
+                    .cover_image
+                    .as_ref()
                     .or(p.frontmatter.og_image.as_ref())?;
 
                 let relative_src = if cover_src.starts_with('/') {
@@ -867,7 +870,8 @@ fn build_post_extra_data(
                 let post_content_dir = content_dir.join(&p.category);
                 let base_path = p.category.clone();
 
-                image_processor.process_thumbnail(&relative_src, &post_content_dir, &base_path)
+                image_processor
+                    .process_thumbnail(&relative_src, &post_content_dir, &base_path)
                     .ok()
                     .flatten()
             });

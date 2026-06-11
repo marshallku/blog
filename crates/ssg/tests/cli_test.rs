@@ -124,7 +124,5 @@ fn should_show_watch_subcommand_help() {
     let assert = cmd.args(["watch", "--help"]).assert();
 
     // Assert
-    assert
-        .success()
-        .stdout(predicate::str::contains("port"));
+    assert.success().stdout(predicate::str::contains("port"));
 }

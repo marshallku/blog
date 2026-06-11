@@ -9,11 +9,7 @@ use walkdir::WalkDir;
 pub struct SitemapGenerator;
 
 impl SitemapGenerator {
-    pub fn generate(
-        config: &SsgConfig,
-        metadata: &MetadataCache,
-        output_dir: &Path,
-    ) -> Result<()> {
+    pub fn generate(config: &SsgConfig, metadata: &MetadataCache, output_dir: &Path) -> Result<()> {
         let mut urls = Vec::new();
 
         Self::add_homepage(&mut urls, config);
@@ -89,7 +85,7 @@ impl SitemapGenerator {
                 .into_iter()
                 .filter(|p| !p.frontmatter.hidden)
                 .count();
-            let total_pages = (post_count + posts_per_page - 1) / posts_per_page;
+            let total_pages = post_count.div_ceil(posts_per_page);
 
             for page in 2..=total_pages {
                 let page_url = format!("{}/{}/page/{}/", config.site.url, encoded_slug, page);
@@ -128,7 +124,7 @@ impl SitemapGenerator {
                 .into_iter()
                 .filter(|p| !p.frontmatter.hidden)
                 .count();
-            let total_pages = (post_count + posts_per_page - 1) / posts_per_page;
+            let total_pages = post_count.div_ceil(posts_per_page);
 
             for page in 2..=total_pages {
                 let page_url = format!("{}/tags/{}/page/{}/", config.site.url, encoded_tag, page);
@@ -220,8 +216,8 @@ struct SitemapUrl {
 mod tests {
     use super::*;
     use crate::config::{BuildConfig, SiteConfig};
-    use crate::types::{Category, Frontmatter, PostDate};
     use crate::metadata::PostMetadata;
+    use crate::types::{Category, Frontmatter, PostDate};
     use chrono::Utc;
 
     fn create_test_config() -> SsgConfig {
@@ -284,9 +280,15 @@ mod tests {
         let config = create_test_config();
         let mut metadata = MetadataCache::new();
 
-        metadata.posts.push(create_test_post("visible-post", "dev", false));
-        metadata.posts.push(create_test_post("hidden-post", "dev", true));
-        metadata.posts.push(create_test_post("another-visible", "dev", false));
+        metadata
+            .posts
+            .push(create_test_post("visible-post", "dev", false));
+        metadata
+            .posts
+            .push(create_test_post("hidden-post", "dev", true));
+        metadata
+            .posts
+            .push(create_test_post("another-visible", "dev", false));
 
         let mut urls = Vec::new();
         SitemapGenerator::add_posts(&mut urls, &config, &metadata);
@@ -294,7 +296,10 @@ mod tests {
         assert_eq!(urls.len(), 2, "Should only include 2 visible posts");
         assert!(urls.iter().any(|u| u.loc.contains("visible-post")));
         assert!(urls.iter().any(|u| u.loc.contains("another-visible")));
-        assert!(!urls.iter().any(|u| u.loc.contains("hidden-post")), "Hidden post should not be in sitemap");
+        assert!(
+            !urls.iter().any(|u| u.loc.contains("hidden-post")),
+            "Hidden post should not be in sitemap"
+        );
     }
 
     #[test]
@@ -302,15 +307,22 @@ mod tests {
         let config = create_test_config();
         let mut metadata = MetadataCache::new();
 
-        metadata.category_info.push(create_test_category("visible-cat", false));
-        metadata.category_info.push(create_test_category("hidden-cat", true));
+        metadata
+            .category_info
+            .push(create_test_category("visible-cat", false));
+        metadata
+            .category_info
+            .push(create_test_category("hidden-cat", true));
 
         let mut urls = Vec::new();
         SitemapGenerator::add_categories(&mut urls, &config, &metadata);
 
         assert_eq!(urls.len(), 1, "Should only include 1 visible category");
         assert!(urls.iter().any(|u| u.loc.contains("visible-cat")));
-        assert!(!urls.iter().any(|u| u.loc.contains("hidden-cat")), "Hidden category should not be in sitemap");
+        assert!(
+            !urls.iter().any(|u| u.loc.contains("hidden-cat")),
+            "Hidden category should not be in sitemap"
+        );
     }
 
     #[test]
@@ -319,7 +331,9 @@ mod tests {
         config.build.posts_per_page = 5;
 
         let mut metadata = MetadataCache::new();
-        metadata.category_info.push(create_test_category("dev", false));
+        metadata
+            .category_info
+            .push(create_test_category("dev", false));
 
         // Add 12 posts - should result in 3 pages (5 + 5 + 2)
         for i in 0..12 {
@@ -335,9 +349,16 @@ mod tests {
         // Should have: 1 category index + 2 pagination pages (page/2, page/3)
         assert_eq!(urls.len(), 3, "Should have category + 2 pagination pages");
         assert!(urls.iter().any(|u| u.loc == "https://example.com/dev/"));
-        assert!(urls.iter().any(|u| u.loc == "https://example.com/dev/page/2/"));
-        assert!(urls.iter().any(|u| u.loc == "https://example.com/dev/page/3/"));
-        assert!(!urls.iter().any(|u| u.loc.contains("page/1")), "Page 1 should not exist (it's the index)");
+        assert!(urls
+            .iter()
+            .any(|u| u.loc == "https://example.com/dev/page/2/"));
+        assert!(urls
+            .iter()
+            .any(|u| u.loc == "https://example.com/dev/page/3/"));
+        assert!(
+            !urls.iter().any(|u| u.loc.contains("page/1")),
+            "Page 1 should not exist (it's the index)"
+        );
     }
 
     #[test]
@@ -345,15 +366,23 @@ mod tests {
         let config = create_test_config();
         let mut metadata = MetadataCache::new();
 
-        metadata.posts.push(create_test_post("한글-포스트", "개발", false));
+        metadata
+            .posts
+            .push(create_test_post("한글-포스트", "개발", false));
 
         let mut urls = Vec::new();
         SitemapGenerator::add_posts(&mut urls, &config, &metadata);
 
         assert_eq!(urls.len(), 1);
         let url = &urls[0].loc;
-        assert!(url.contains("%"), "Korean characters should be percent-encoded");
-        assert!(!url.contains("한"), "Korean characters should not appear literally");
+        assert!(
+            url.contains("%"),
+            "Korean characters should be percent-encoded"
+        );
+        assert!(
+            !url.contains("한"),
+            "Korean characters should not appear literally"
+        );
     }
 
     #[test]
@@ -368,7 +397,7 @@ mod tests {
         SitemapGenerator::add_tags(&mut urls, &config, &metadata);
 
         // Should still have homepage + tags overview
-        assert!(urls.len() >= 1, "Should at least have homepage");
+        assert!(!urls.is_empty(), "Should at least have homepage");
         assert!(urls.iter().any(|u| u.loc == "https://example.com"));
 
         let xml = SitemapGenerator::build_sitemap_xml(&urls);
@@ -379,14 +408,12 @@ mod tests {
 
     #[test]
     fn test_sitemap_xml_structure_valid() {
-        let urls = vec![
-            SitemapUrl {
-                loc: "https://example.com/test/".to_string(),
-                lastmod: Some("2025-01-01T00:00:00+00:00".to_string()),
-                changefreq: Some("weekly".to_string()),
-                priority: Some(0.8),
-            },
-        ];
+        let urls = vec![SitemapUrl {
+            loc: "https://example.com/test/".to_string(),
+            lastmod: Some("2025-01-01T00:00:00+00:00".to_string()),
+            changefreq: Some("weekly".to_string()),
+            priority: Some(0.8),
+        }];
 
         let xml = SitemapGenerator::build_sitemap_xml(&urls);
 

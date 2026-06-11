@@ -26,7 +26,7 @@
         }
     },
     "scripts": {
-        "build": "pnpm build:icons && pnpm build:minify",
+        "build": "mkdir -p dist && pnpm build:icons && pnpm build:minify",
         "build:icons": "fantasticon",
         "build:ts": "tsup",
         "build:minify": "cleancss -o dist/icons.css dist/icons.css",

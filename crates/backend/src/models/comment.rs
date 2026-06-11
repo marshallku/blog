@@ -124,7 +124,7 @@ impl Comment {
             email: self.email.clone(),
             url: self.url.clone(),
             body: self.body.clone(),
-            parent_comment_id: self.parent_comment_id.clone().map(|id| id.to_string()),
+            parent_comment_id: self.parent_comment_id.map(|id| id.to_string()),
             created_at: self.created_at.to_rfc3339(),
             updated_at: Some(self.updated_at.to_rfc3339()),
             replies: None,

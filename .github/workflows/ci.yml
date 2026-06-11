@@ -8,8 +8,6 @@ on:
 
 env:
   CI: true
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   check-spelling:
@@ -18,26 +16,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: marshallku/actions/analyze/spell@master
-  build:
-    name: Build project
+  rust:
+    name: Lint, build and test (Rust)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: cargo build
-  test:
-    name: Test project
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
       - name: Set environment
         run: |
           cp .env.example .env
-      - name: Run unit tests
-        run: cargo test
+      - name: Check formatting
+        run: cargo fmt --all --check
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Run tests
+        run: cargo test --workspace
+  frontend:
+    name: Build frontend packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: marshallku/actions/setup/pnpm@master
+      - name: Build packages and manifest
+        run: pnpm build && pnpm manifest
   send-notification:
-    needs: [check-spelling, build, test]
+    needs: [check-spelling, rust, frontend]
     if: ${{ failure() }}
     uses: marshallku/actions/.github/workflows/send-notification.yml@master
     with:
