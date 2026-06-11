@@ -74,7 +74,7 @@ pub async fn post(
     let mut response_headers = HeaderMap::new();
     response_headers.insert(
         header::CONTENT_TYPE,
-        "text/html; charset=utf-8".parse().unwrap(),
+        HeaderValue::from_static("text/html; charset=utf-8"),
     );
 
     if is_new_visitor {

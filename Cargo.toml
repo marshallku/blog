@@ -19,7 +19,7 @@ axum = "0.7.9"
 axum-extra = { version = "0.10.1", features = ["cookie"] }
 mongodb = "3.2.3"
 bson = { version = "2.15.0", features = ["chrono-0_4"] }
-tokio = { version = "1.45", features = ["rt-multi-thread", "macros", "signal"] }
+tokio = { version = "1.45", features = ["rt-multi-thread", "macros", "signal", "time"] }
 tower = { version = "0.4.13", features = ["util"] }
 tower-http = { version = "0.5.2", features = ["cors", "trace"] }
 bcrypt = "0.17.0"

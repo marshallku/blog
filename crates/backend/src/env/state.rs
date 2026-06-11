@@ -1,6 +1,7 @@
 use crate::database::init_db;
 
 use super::app::Env;
+use anyhow::Result;
 use dotenv::dotenv;
 use mongodb::Database;
 
@@ -14,10 +15,10 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self, mongodb::error::Error> {
+    pub async fn new() -> Result<Self> {
         dotenv().ok();
 
-        let env = Env::new();
+        let env = Env::new()?;
         let db = init_db().await?;
 
         Ok(Self {

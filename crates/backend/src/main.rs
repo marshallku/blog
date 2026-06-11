@@ -42,7 +42,13 @@ fn setup_tracing() {
 async fn main() {
     setup_tracing();
 
-    let state = AppState::new().await.unwrap();
+    let state = match AppState::new().await {
+        Ok(state) => state,
+        Err(e) => {
+            tracing::error!("Failed to initialize app state: {e:#}");
+            std::process::exit(1);
+        }
+    };
     let address = format!("{}:{}", state.host, state.port);
     let trusted_domains = var("TRUSTED_DOMAINS").unwrap_or_default();
     let origins = trusted_domains
@@ -79,14 +85,23 @@ async fn main() {
         )
         .layer(cors_layer)
         .with_state(state);
-    let listener = TcpListener::bind(address.as_str()).await.unwrap();
+    let listener = match TcpListener::bind(address.as_str()).await {
+        Ok(listener) => listener,
+        Err(e) => {
+            tracing::error!("Failed to bind {address}: {e}");
+            std::process::exit(1);
+        }
+    };
 
     info!("Listening on http://{}", address);
 
-    serve(listener, app.into_make_service())
+    if let Err(e) = serve(listener, app.into_make_service())
         .with_graceful_shutdown(handle_shutdown())
         .await
-        .unwrap();
+    {
+        tracing::error!("Server error: {e}");
+        std::process::exit(1);
+    }
 }
 
 async fn handle_shutdown() {

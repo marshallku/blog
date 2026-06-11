@@ -41,10 +41,11 @@ impl Like {
             "visitorId": visitor_id
         };
 
-        let existing = collection.find_one(filter.clone()).await?;
-
-        let liked = if existing.is_some() {
-            collection.delete_one(filter).await?;
+        // Atomic toggle: delete first, insert only when nothing was deleted.
+        // The unique index on (postSlug, ipHash, visitorId) backstops the
+        // delete→insert race; a duplicate-key error means a concurrent
+        // request already inserted the like, so the end state is "liked".
+        let liked = if collection.delete_one(filter).await?.deleted_count > 0 {
             false
         } else {
             let like = Like {
@@ -54,8 +55,12 @@ impl Like {
                 visitor_id: visitor_id.to_string(),
                 created_at: Utc::now(),
             };
-            collection.insert_one(like).await?;
-            true
+
+            match collection.insert_one(like).await {
+                Ok(_) => true,
+                Err(e) if is_duplicate_key_error(&e) => true,
+                Err(e) => return Err(e),
+            }
         };
 
         let count = collection
@@ -92,5 +97,21 @@ impl Like {
         let liked = collection.find_one(filter).await?.is_some();
 
         Ok((liked, count))
+    }
+}
+
+pub fn is_duplicate_key_error(error: &Error) -> bool {
+    use mongodb::error::{ErrorKind, WriteFailure};
+
+    const DUPLICATE_KEY_CODE: i32 = 11000;
+
+    // Duplicate inserts surface as write errors; index creation over
+    // duplicate documents surfaces as a command error with the same code.
+    match &*error.kind {
+        ErrorKind::Write(WriteFailure::WriteError(write_error)) => {
+            write_error.code == DUPLICATE_KEY_CODE
+        }
+        ErrorKind::Command(command_error) => command_error.code == DUPLICATE_KEY_CODE,
+        _ => false,
     }
 }
