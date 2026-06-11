@@ -33,15 +33,18 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GH_PACKAGE_TOKEN }}
 
+            # :latest only moves on the default branch so a branch push can
+            # never poison what the server's compose pulls
             - name: Docker meta
               id: meta
               uses: docker/metadata-action@v5
               with:
                   images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
                   tags: |
+                      type=raw,value=latest,enable={{is_default_branch}}
+                      type=sha,prefix=,format=long
                       type=ref,event=branch
                       type=ref,event=pr
-                      type=semver,pattern={{version}}
 
             - name: Build and push Docker image
               uses: docker/build-push-action@v6
@@ -49,27 +52,30 @@ jobs:
                   context: .
                   file: docker/backend/Dockerfile
                   push: true
-                  tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+                  tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
-    # deploy:
-    #     needs: [push-image]
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #         - name: Run remote script
-    #           uses: appleboy/ssh-action@master
-    #           env:
-    #               GH_PACKAGE_TOKEN: ${{ secrets.GH_PACKAGE_TOKEN }}
-    #           with:
-    #               host: ${{ secrets.SERVER_IP }}
-    #               port: ${{ secrets.SERVER_PORT }}
-    #               username: ${{ secrets.SERVER_USER }}
-    #               key: ${{ secrets.SSH_KEY }}
-    #               script: /home/${{ secrets.SERVER_USER }}/dev/containers/blog-frontend/deploy.sh
-    #               envs: GH_PACKAGE_TOKEN
-    send-notification:
+    # Manual-trigger only until the server-side compose setup is confirmed
+    # (run once via workflow_dispatch, then drop the `if` to deploy on every push)
+    deploy:
         needs: [push-image]
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Run remote deploy script
+              uses: appleboy/ssh-action@v1
+              env:
+                  GH_PACKAGE_TOKEN: ${{ secrets.GH_PACKAGE_TOKEN }}
+              with:
+                  host: ${{ secrets.SERVER_IP }}
+                  port: ${{ secrets.SERVER_PORT }}
+                  username: ${{ secrets.SERVER_USER }}
+                  key: ${{ secrets.SSH_KEY }}
+                  script: cd ~/dev/blog && git pull --ff-only && ./scripts/deploy-backend.sh
+                  envs: GH_PACKAGE_TOKEN
+    send-notification:
+        needs: [push-image, deploy]
         if: ${{ failure() }}
         uses: marshallku/actions/.github/workflows/send-notification.yml@master
         with:

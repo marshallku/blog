@@ -26,11 +26,17 @@ services:
     api:
         restart: unless-stopped
         container_name: blog-api
+        image: ghcr.io/marshallku/blog-backend:${BACKEND_TAG:-latest}
         build:
             context: .
             dockerfile: docker/backend/Dockerfile
         depends_on:
             - database
+        healthcheck:
+            test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:${PORT:-8080}/health"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
         ports:
             - 48312:${PORT:-8080}
         env_file:

@@ -15,8 +15,9 @@ if [ ! -x "$BLOG_BIN" ]; then
     exit 1
 fi
 
-# Build site to dist/
-"$BLOG_BIN" build
+# Build site to dist/ (incremental: the cache invalidates itself when the
+# binary, templates, config.yaml, or manifest.json change)
+"$BLOG_BIN" build --incremental
 
 echo "🚀 Deploying to $WWW_PATH..."
 

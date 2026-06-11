@@ -4,12 +4,13 @@ on:
     push:
         branches:
             - master
-            - chore/deploy
         paths:
             - "crates/ssg/**"
             - "static/**"
+            - "templates/**"
             - "manifest.json"
             - "packages/**"
+            - "scripts/**"
     workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
@@ -34,12 +35,36 @@ jobs:
                   chmod 600 ~/.ssh/deploy_key
                   ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-            - name: Deploy binary with scp
+            - name: Upload binary to staging path
               run: |
                   scp -P ${{ secrets.SERVER_PORT }} -i ~/.ssh/deploy_key \
                     target/release/blog \
-                    ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SERVER_USER }}/dev/blog
+                    ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/tmp/blog-binary
+
+            # The server checkout is a deploy target: tracked files are reset to
+            # origin/master (content/, config.yaml, .build-cache are gitignored
+            # and untouched). Assets are committed to the repo, so no server-side
+            # pnpm build is needed — update-assets.sh regenerating tracked files
+            # is what used to leave the tree dirty and break pulls.
+            - name: Build and deploy site on server
+              run: |
+                  ssh -p ${{ secrets.SERVER_PORT }} -i ~/.ssh/deploy_key \
+                    ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+                    "cd ~/dev/blog \
+                      && git fetch origin master \
+                      && git reset --hard origin/master \
+                      && ./scripts/update-binary.sh \
+                      && ./scripts/deploy.sh"
 
             - name: Cleanup SSH key
               if: always()
               run: rm -f ~/.ssh/deploy_key
+    send-notification:
+        needs: [deploy]
+        if: ${{ failure() }}
+        uses: marshallku/actions/.github/workflows/send-notification.yml@master
+        with:
+            failed: ${{ contains(join(needs.*.result, ','), 'failure') }}
+            message: "Binary deploy failed"
+        secrets:
+            url: ${{ secrets.DISCORD_WEBHOOK_URI }}
