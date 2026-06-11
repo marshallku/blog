@@ -188,6 +188,17 @@ Hidden content for {}.
         self.write_file("config.yaml", &content);
     }
 
+    pub fn delete_post(&self, category: &str, slug: &str) {
+        let path = self
+            .root
+            .join(format!("content/posts/{}/{}.md", category, slug));
+        fs::remove_file(path).expect("Failed to delete post");
+    }
+
+    pub fn corrupt_cache(&self) {
+        self.write_file(".build-cache/cache.json", "{ not valid json");
+    }
+
     pub fn delete_cache(&self) {
         let cache_path = self.root.join(".build-cache");
         if cache_path.exists() {

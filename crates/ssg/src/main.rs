@@ -28,7 +28,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{mpsc, Arc, Mutex};
 use walkdir::WalkDir;
 
-use crate::cache::{hash_directory, hash_file, BuildCache};
+use crate::cache::{compute_environment_hash, hash_file, normalize_path, BuildCache};
 use crate::category::{discover_categories, validate_category};
 use crate::config::{load_config, SsgConfig};
 use crate::feeds::FeedGenerator;
@@ -124,7 +124,6 @@ struct PostProcessingContext<'a> {
     shortcode_registry: &'a ShortcodeRegistry,
     config: &'a SsgConfig,
     cache: &'a Arc<Mutex<BuildCache>>,
-    template_hash: &'a str,
     metadata: &'a MetadataCache,
     use_cache: bool,
 }
@@ -209,16 +208,6 @@ fn build_all(use_cache: bool) -> Result<()> {
     let renderer = Renderer::new();
     let shortcode_registry = ShortcodeRegistry::new();
     let generator = Generator::new(config.clone())?;
-    let mut cache = if use_cache {
-        BuildCache::load()?
-    } else {
-        BuildCache::new()
-    };
-    let mut metadata = if use_cache {
-        MetadataCache::load().unwrap_or_else(|_| MetadataCache::new())
-    } else {
-        MetadataCache::new()
-    };
 
     let posts_dir = Path::new(&config.build.content_dir);
 
@@ -230,7 +219,13 @@ fn build_all(use_cache: bool) -> Result<()> {
         );
     }
 
-    let template_hash = hash_directory(Path::new("templates"))?;
+    let environment_hash = compute_environment_hash(posts_dir)?;
+    let mut cache = if use_cache {
+        BuildCache::load(&environment_hash)
+    } else {
+        BuildCache::new(&environment_hash)
+    };
+    let mut metadata = MetadataCache::new();
 
     let categories = discover_categories(posts_dir)?;
     if categories.is_empty() {
@@ -240,6 +235,8 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
     metadata.set_category_info(categories);
 
+    let mut existing_sources = std::collections::HashSet::new();
+
     for entry in WalkDir::new(posts_dir)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -247,6 +244,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     {
         if let Ok(mut post) = Parser::parse_file(entry.path()) {
             if !post.frontmatter.hidden {
+                existing_sources.insert(normalize_path(entry.path()));
                 resolve_post_images(&mut post);
                 metadata.upsert_post(post.slug, post.category, post.frontmatter);
             }
@@ -264,7 +262,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         let path = entry.path();
         let file_hash = hash_file(path)?;
 
-        if use_cache && !cache.needs_rebuild(path, &file_hash, &template_hash) {
+        if use_cache && !cache.needs_rebuild(path, &file_hash) {
             println!("⏭  Skipping (unchanged): {}", path.display());
             skipped_count += 1;
             continue;
@@ -314,12 +312,7 @@ fn build_all(use_cache: bool) -> Result<()> {
             generator.generate_post_partial(&post, &extra_data)?;
         }
 
-        cache.update_entry(
-            path,
-            file_hash,
-            template_hash.clone(),
-            output_path.to_string_lossy().to_string(),
-        );
+        cache.update_entry(path, file_hash, output_path.to_string_lossy().to_string());
 
         metadata.upsert_post(
             post.slug.clone(),
@@ -329,6 +322,8 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         built_count += 1;
     }
+
+    remove_stale_outputs(&mut cache, &existing_sources, &config);
 
     if use_cache {
         cache.save()?;
@@ -392,20 +387,16 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         );
     }
 
-    let template_hash = Arc::new(hash_directory(Path::new("templates"))?);
+    let environment_hash = compute_environment_hash(posts_dir)?;
 
     let categories = discover_categories(posts_dir)?;
-    let mut metadata = if use_cache {
-        MetadataCache::load().unwrap_or_else(|_| MetadataCache::new())
-    } else {
-        MetadataCache::new()
-    };
+    let mut metadata = MetadataCache::new();
     metadata.set_category_info(categories);
 
     let cache = Arc::new(Mutex::new(if use_cache {
-        BuildCache::load()?
+        BuildCache::load(&environment_hash)
     } else {
-        BuildCache::new()
+        BuildCache::new(&environment_hash)
     }));
 
     let shortcode_registry = Arc::new(ShortcodeRegistry::new());
@@ -417,9 +408,12 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         .map(|e| e.path().to_path_buf())
         .collect();
 
+    let mut existing_sources = std::collections::HashSet::new();
+
     for path in &file_paths {
         if let Ok(mut post) = Parser::parse_file(path) {
             if !post.frontmatter.hidden {
+                existing_sources.insert(normalize_path(path));
                 resolve_post_images(&mut post);
                 metadata.upsert_post(post.slug, post.category, post.frontmatter);
             }
@@ -446,7 +440,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         let result_tx = result_tx.clone();
         let config = Arc::clone(&config);
         let cache = Arc::clone(&cache);
-        let template_hash = Arc::clone(&template_hash);
         let shortcode_registry = Arc::clone(&shortcode_registry);
         let progress = Arc::clone(&progress);
         let metadata_for_nav = Arc::clone(&metadata_for_nav);
@@ -478,7 +471,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                     shortcode_registry: &shortcode_registry,
                     config: &config,
                     cache: &cache,
-                    template_hash: &template_hash,
                     metadata: &metadata_for_nav,
                     use_cache,
                 };
@@ -513,7 +505,6 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                 category,
                 frontmatter,
                 file_hash,
-                template_hash,
                 output_path,
             } => {
                 println!("🔨 Built: {}", path.display());
@@ -521,7 +512,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                 cache
                     .lock()
                     .unwrap()
-                    .update_entry(&path, file_hash, template_hash, output_path);
+                    .update_entry(&path, file_hash, output_path);
             }
             BuildResult::Skipped { path, reason } => match reason {
                 SkipReason::Cached => println!("⏭  Skipped (unchanged): {}", path.display()),
@@ -537,6 +528,8 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     if !errors.is_empty() {
         anyhow::bail!("{} posts failed to build", errors.len());
     }
+
+    remove_stale_outputs(&mut cache.lock().unwrap(), &existing_sources, &config);
 
     if use_cache {
         cache.lock().unwrap().save()?;
@@ -607,7 +600,7 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
 
     if ctx.use_cache {
         let cache = ctx.cache.lock().unwrap();
-        if !cache.needs_rebuild(path, &file_hash, ctx.template_hash) {
+        if !cache.needs_rebuild(path, &file_hash) {
             return BuildResult::Skipped {
                 path: path.to_path_buf(),
                 reason: SkipReason::Cached,
@@ -672,8 +665,48 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
         category: post.category,
         frontmatter: Box::new(post.frontmatter),
         file_hash,
-        template_hash: ctx.template_hash.to_string(),
         output_path: output_path.to_string_lossy().to_string(),
+    }
+}
+
+/// Deletes generated HTML (and its SPA partial) for posts whose source file
+/// was removed or became hidden since the last cached build.
+fn remove_stale_outputs(
+    cache: &mut BuildCache,
+    existing_sources: &std::collections::HashSet<String>,
+    config: &SsgConfig,
+) {
+    let output_dir = Path::new(&config.build.output_dir);
+
+    for output_path in cache.prune_deleted(existing_sources) {
+        let output_path = Path::new(&output_path);
+        remove_output_file(output_path, output_dir);
+
+        if let Ok(relative) = output_path.strip_prefix(output_dir) {
+            let partial_path = output_dir.join(&config.build.partial_dir).join(relative);
+            remove_output_file(&partial_path, output_dir);
+        }
+    }
+}
+
+fn remove_output_file(path: &Path, output_dir: &Path) {
+    if !path.exists() || !path.starts_with(output_dir) {
+        return;
+    }
+
+    if std::fs::remove_file(path).is_err() {
+        eprintln!("⚠️  Failed to remove stale output: {}", path.display());
+        return;
+    }
+    println!("🧹 Removed stale output: {}", path.display());
+
+    // Drop now-empty directories (e.g. dist/dev/deleted-post/)
+    let mut dir = path.parent();
+    while let Some(d) = dir {
+        if d == output_dir || std::fs::remove_dir(d).is_err() {
+            break;
+        }
+        dir = d.parent();
     }
 }
 

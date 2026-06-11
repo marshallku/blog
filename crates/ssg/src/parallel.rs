@@ -12,7 +12,6 @@ pub enum BuildResult {
         category: String,
         frontmatter: Box<Frontmatter>,
         file_hash: String,
-        template_hash: String,
         output_path: String,
     },
     Skipped {

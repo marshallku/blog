@@ -119,7 +119,7 @@ impl MetadataCache {
     pub fn save(&self) -> Result<()> {
         fs::create_dir_all(".build-cache")?;
         let json = serde_json::to_string_pretty(self)?;
-        fs::write(".build-cache/metadata.json", json)?;
+        crate::cache::write_atomic(std::path::Path::new(".build-cache/metadata.json"), &json)?;
         Ok(())
     }
 }
