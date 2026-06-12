@@ -88,7 +88,7 @@ impl FeedGenerator {
                 post.frontmatter
                     .tags
                     .iter()
-                    .map(|tag| format!("        <category><![CDATA[{}]]></category>", tag))
+                    .map(|tag| format!("        <category>{}</category>", Self::cdata(tag)))
                     .collect::<Vec<_>>()
                     .join("\n")
             } else {
@@ -107,23 +107,23 @@ impl FeedGenerator {
                 r#"    <item>
         <title>{}</title>
         <link>{}</link>
-        <dc:creator><![CDATA[{}]]></dc:creator>
+        <dc:creator>{}</dc:creator>
         <pubDate>{}</pubDate>
-        <category><![CDATA[{}]]></category>{}{}
+        <category>{}</category>{}{}
         <guid isPermaLink="false">{}</guid>
-        <description><![CDATA[{}]]></description>
-        <content:encoded><![CDATA[{}]]></content:encoded>
+        <description>{}</description>
+        <content:encoded>{}</content:encoded>
     </item>"#,
                 Self::escape_xml(&post.frontmatter.title),
                 url,
-                config.site.author,
+                Self::cdata(&config.site.author),
                 pub_date,
-                category_name,
+                Self::cdata(&category_name),
                 if tags_xml.is_empty() { "" } else { "\n" },
                 tags_xml,
                 url,
-                Self::escape_xml(description),
-                rendered_content
+                Self::cdata(description),
+                Self::cdata(&rendered_content)
             );
 
             items.push(item);
@@ -214,7 +214,7 @@ impl FeedGenerator {
                     post.frontmatter
                         .tags
                         .iter()
-                        .map(|tag| format!("        <category><![CDATA[{}]]></category>", tag))
+                        .map(|tag| format!("        <category>{}</category>", Self::cdata(tag)))
                         .collect::<Vec<_>>()
                         .join("\n")
                 } else {
@@ -233,23 +233,23 @@ impl FeedGenerator {
                     r#"    <item>
         <title>{}</title>
         <link>{}</link>
-        <dc:creator><![CDATA[{}]]></dc:creator>
+        <dc:creator>{}</dc:creator>
         <pubDate>{}</pubDate>
-        <category><![CDATA[{}]]></category>{}{}
+        <category>{}</category>{}{}
         <guid isPermaLink="false">{}</guid>
-        <description><![CDATA[{}]]></description>
-        <content:encoded><![CDATA[{}]]></content:encoded>
+        <description>{}</description>
+        <content:encoded>{}</content:encoded>
     </item>"#,
                     Self::escape_xml(&post.frontmatter.title),
                     url,
-                    config.site.author,
+                    Self::cdata(&config.site.author),
                     pub_date,
-                    category_name,
+                    Self::cdata(&category_name),
                     if tags_xml.is_empty() { "" } else { "\n" },
                     tags_xml,
                     url,
-                    Self::escape_xml(description),
-                    rendered_content
+                    Self::cdata(description),
+                    Self::cdata(&rendered_content)
                 );
 
                 items.push(item);
@@ -367,7 +367,7 @@ impl FeedGenerator {
       <name>{}</name>
     </author>
     <summary type="text">{}</summary>
-    <content type="html"><![CDATA[{}]]></content>
+    <content type="html">{}</content>
 {}
   </entry>"#,
                 Self::escape_xml(&post.frontmatter.title),
@@ -377,7 +377,7 @@ impl FeedGenerator {
                 entry_updated,
                 Self::escape_xml(&config.site.author),
                 Self::escape_xml(summary),
-                rendered_content,
+                Self::cdata(&rendered_content),
                 categories_xml
             );
 
@@ -434,6 +434,14 @@ impl FeedGenerator {
             .replace('"', "&quot;")
             .replace('\'', "&apos;")
     }
+
+    /// Wraps text in a CDATA section. Content goes in verbatim (readers see it
+    /// as-is — entity-escaping here would show literal `&amp;` to users); a
+    /// `]]>` in the content is split across two CDATA sections so it cannot
+    /// terminate the section early.
+    fn cdata(s: &str) -> String {
+        format!("<![CDATA[{}]]>", s.replace("]]>", "]]]]><![CDATA[>"))
+    }
 }
 
 #[cfg(test)]
@@ -445,5 +453,21 @@ mod tests {
         let input = r#"Hello & <world> "test""#;
         let expected = r#"Hello &amp; &lt;world&gt; &quot;test&quot;"#;
         assert_eq!(FeedGenerator::escape_xml(input), expected);
+    }
+
+    #[test]
+    fn test_cdata_keeps_content_verbatim() {
+        assert_eq!(
+            FeedGenerator::cdata("만월 & 장만월 <b>"),
+            "<![CDATA[만월 & 장만월 <b>]]>"
+        );
+    }
+
+    #[test]
+    fn test_cdata_splits_terminator() {
+        assert_eq!(
+            FeedGenerator::cdata("a]]>b"),
+            "<![CDATA[a]]]]><![CDATA[>b]]>"
+        );
     }
 }

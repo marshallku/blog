@@ -222,3 +222,36 @@ fn should_build_with_parallel_flag() {
     assert!(env.output_exists("dev/test-post/index.html"));
     assert!(stdout_contains(&result, "threads"));
 }
+
+#[test]
+fn should_emit_feed_description_unescaped_inside_cdata() {
+    // Arrange
+    let env = TestEnvironment::minimal();
+    env.write_file(
+        "content/posts/dev/ampersand-post.md",
+        r#"---
+title: "Moon & Sun"
+date: 2024-02-01T10:00:00Z
+tags: [test]
+hidden: false
+description: "moon & sun <pair>"
+---
+
+Body with `]]>` inside code.
+"#,
+    );
+
+    // Act
+    let result = env.run_build();
+
+    // Assert
+    assert_success(&result);
+    let feed = env.read_output("feed.xml");
+    assert!(
+        feed.contains("<description><![CDATA[moon & sun <pair>]]></description>"),
+        "description must be verbatim inside CDATA, got: {}",
+        &feed[feed.find("<description>").unwrap_or(0)..feed.len().min(feed.find("<description>").unwrap_or(0) + 120)]
+    );
+    assert!(!feed.contains("&amp;amp;"), "no double escaping");
+    assert!(feed.contains("<title>Moon &amp; Sun</title>"), "title stays entity-escaped");
+}
