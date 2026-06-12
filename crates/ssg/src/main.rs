@@ -35,7 +35,7 @@ use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
 use crate::image::{ImageProcessor, ThumbnailMetadata};
 use crate::indices::IndexGenerator;
-use crate::metadata::MetadataCache;
+use crate::metadata::{compare_posts_desc, MetadataCache};
 use crate::navigation::{build_post_navigation, build_post_navigation_with_cdn};
 use crate::parallel::{
     get_thread_count, BuildProgress, BuildResult, SkipReason, WorkQueue, WorkerPool,
@@ -880,7 +880,7 @@ fn build_post_extra_data(
         .iter()
         .filter(|p| p.category == post.category && p.slug != post.slug)
         .collect();
-    related.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+    related.sort_by(|a, b| compare_posts_desc(a, b));
 
     let related_posts: Vec<RelatedPostData> = related
         .into_iter()

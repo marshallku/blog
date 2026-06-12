@@ -1,5 +1,5 @@
 use crate::image::{ImageProcessor, ThumbnailMetadata};
-use crate::metadata::{MetadataCache, PostMetadata};
+use crate::metadata::{compare_posts_desc, MetadataCache, PostMetadata};
 use crate::slug;
 use serde::Serialize;
 use std::path::Path;
@@ -99,7 +99,7 @@ pub fn build_post_navigation(
         .filter(|p| !same_category || p.category == current_category)
         .collect();
 
-    posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+    posts.sort_by(|a, b| compare_posts_desc(a, b));
 
     let Some(index) = posts.iter().position(|p| p.slug == current_slug) else {
         return PostNavigation {
@@ -132,7 +132,7 @@ pub fn build_post_navigation_with_cdn(
         .filter(|p| !same_category || p.category == current_category)
         .collect();
 
-    posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+    posts.sort_by(|a, b| compare_posts_desc(a, b));
 
     let Some(index) = posts.iter().position(|p| p.slug == current_slug) else {
         return PostNavigation {

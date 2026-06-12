@@ -1,6 +1,7 @@
 use crate::config::SsgConfig;
-use crate::metadata::MetadataCache;
+use crate::metadata::{compare_posts_desc, MetadataCache};
 use crate::parser::Parser;
+use crate::slug::encode_for_url;
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::fs;
@@ -75,7 +76,12 @@ impl FeedGenerator {
                 .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
             let rendered_content = Self::render_markdown_simple(&post.content);
-            let url = format!("{}/{}/{}", config.site.url, post.category, post.slug);
+            let url = format!(
+                "{}/{}/{}",
+                config.site.url,
+                encode_for_url(&post.category),
+                encode_for_url(&post.slug)
+            );
 
             let category_name = metadata
                 .get_category_info()
@@ -178,7 +184,7 @@ impl FeedGenerator {
                 .filter(|p| !p.frontmatter.hidden)
                 .collect();
 
-            category_posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+            category_posts.sort_by(|a, b| compare_posts_desc(a, b));
             let category_posts: Vec<_> = category_posts.into_iter().take(10).collect();
 
             if category_posts.is_empty() {
@@ -208,7 +214,12 @@ impl FeedGenerator {
                     .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
                 let rendered_content = Self::render_markdown_simple(&post.content);
-                let url = format!("{}/{}/{}", config.site.url, post.category, post.slug);
+                let url = format!(
+                    "{}/{}/{}",
+                    config.site.url,
+                    encode_for_url(&post.category),
+                    encode_for_url(&post.slug)
+                );
 
                 let tags_xml = if !post.frontmatter.tags.is_empty() {
                     post.frontmatter
@@ -255,8 +266,12 @@ impl FeedGenerator {
                 items.push(item);
             }
 
-            let feed_url = format!("{}/{}/feed.xml", config.site.url, category_slug);
-            let category_url = format!("{}/{}/", config.site.url, category_slug);
+            let feed_url = format!(
+                "{}/{}/feed.xml",
+                config.site.url,
+                encode_for_url(&category_slug)
+            );
+            let category_url = format!("{}/{}/", config.site.url, encode_for_url(&category_slug));
             let feed_title = format!("{} - {}", config.site.title, category_name);
             let feed_description = category_info
                 .as_ref()
@@ -331,7 +346,12 @@ impl FeedGenerator {
                 .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
             let rendered_content = Self::render_markdown_simple(&post.content);
-            let url = format!("{}/{}/{}/", config.site.url, post.category, post.slug);
+            let url = format!(
+                "{}/{}/{}/",
+                config.site.url,
+                encode_for_url(&post.category),
+                encode_for_url(&post.slug)
+            );
 
             let summary = post
                 .frontmatter

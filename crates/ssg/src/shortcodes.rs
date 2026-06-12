@@ -149,8 +149,11 @@ impl ShortcodeRegistry {
                 let loading = attrs.get("loading").map(|s| s.as_str()).unwrap_or("lazy");
 
                 // Build props JSON from all other attributes
+                let mut entries: Vec<_> = attrs.iter().collect();
+                entries.sort_by_key(|(key, _)| key.as_str());
+
                 let mut props_parts: Vec<String> = Vec::new();
-                for (key, value) in attrs.iter() {
+                for (key, value) in entries {
                     if key != "component" && key != "loading" {
                         // Escape the value for JSON string
                         let escaped_value = value
@@ -203,7 +206,8 @@ impl ShortcodeRegistry {
 
     fn process_block_shortcodes(&self, content: &str) -> Result<String> {
         static OPEN_RE: OnceLock<Regex> = OnceLock::new();
-        let open_re = OPEN_RE.get_or_init(|| Regex::new(r"\[(\w+)([^\]]*)\]").unwrap());
+        let open_re = OPEN_RE
+            .get_or_init(|| Regex::new(r#"\[(\w+)((?:[^\]"']|"[^"]*"|'[^']*')*)\]"#).unwrap());
 
         let mut result = content.to_string();
         let mut processed = true;
@@ -251,7 +255,8 @@ impl ShortcodeRegistry {
 
     fn process_inline_shortcodes(&self, content: &str) -> Result<String> {
         static INLINE_RE: OnceLock<Regex> = OnceLock::new();
-        let re = INLINE_RE.get_or_init(|| Regex::new(r"\[(\w+)([^\]]*)\]").unwrap());
+        let re = INLINE_RE
+            .get_or_init(|| Regex::new(r#"\[(\w+)((?:[^\]"']|"[^"]*"|'[^']*')*)\]"#).unwrap());
 
         let mut result = content.to_string();
         let mut offset = 0i64;
@@ -647,5 +652,23 @@ mod tests {
             result.contains("youtube.com/embed/abc"),
             "paragraph boundary must stop span search"
         );
+    }
+
+    #[test]
+    fn test_bracket_inside_quoted_attribute() {
+        let registry = ShortcodeRegistry::new();
+        let result = registry
+            .process(r#"[figure src="image[1].jpg" alt="x"]"#)
+            .unwrap();
+        assert!(result.contains(r#"src="image[1].jpg""#), "got: {}", result);
+    }
+
+    #[test]
+    fn test_bracket_inside_single_quoted_attribute() {
+        let registry = ShortcodeRegistry::new();
+        let result = registry
+            .process(r#"[figure src='image[1].jpg' alt='x']"#)
+            .unwrap();
+        assert!(result.contains(r#"src="image[1].jpg""#), "got: {}", result);
     }
 }

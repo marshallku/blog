@@ -100,7 +100,7 @@ impl MetadataCache {
 
     pub fn get_recent_posts(&self, limit: usize) -> Vec<&PostMetadata> {
         let mut posts: Vec<_> = self.posts.iter().collect();
-        posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+        posts.sort_by(|a, b| compare_posts_desc(a, b));
         posts.into_iter().take(limit).collect()
     }
 
@@ -122,6 +122,15 @@ impl MetadataCache {
         crate::cache::write_atomic(std::path::Path::new(".build-cache/metadata.json"), &json)?;
         Ok(())
     }
+}
+
+/// Newest-first ordering with slug tiebreak so listings, navigation, and
+/// feeds stay deterministic when posts share a timestamp.
+pub fn compare_posts_desc(a: &PostMetadata, b: &PostMetadata) -> std::cmp::Ordering {
+    b.frontmatter
+        .date
+        .cmp(&a.frontmatter.date)
+        .then_with(|| a.slug.cmp(&b.slug))
 }
 
 impl Default for MetadataCache {
@@ -192,5 +201,33 @@ mod tests {
 
         let rust_posts = cache.get_posts_by_tag("rust");
         assert_eq!(rust_posts.len(), 2);
+    }
+
+    #[test]
+    fn test_recent_posts_tie_broken_by_slug() {
+        let mut cache = MetadataCache::new();
+        let now = Utc::now();
+
+        for slug in ["b-post", "a-post", "c-post"] {
+            let frontmatter = Frontmatter {
+                title: slug.to_string(),
+                date: crate::types::PostDate::new(now),
+                tags: vec![],
+                cover_image: None,
+                og_image: None,
+                description: None,
+                display_ad: false,
+                hidden: false,
+                comments: true,
+            };
+            cache.upsert_post(slug.to_string(), "dev".to_string(), frontmatter);
+        }
+
+        let recent: Vec<_> = cache
+            .get_recent_posts(3)
+            .iter()
+            .map(|p| p.slug.clone())
+            .collect();
+        assert_eq!(recent, vec!["a-post", "b-post", "c-post"]);
     }
 }

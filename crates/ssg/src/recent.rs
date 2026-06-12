@@ -1,5 +1,5 @@
 use crate::config::SsgConfig;
-use crate::metadata::MetadataCache;
+use crate::metadata::{compare_posts_desc, MetadataCache};
 use crate::slug;
 use anyhow::Result;
 use serde::Serialize;
@@ -34,7 +34,7 @@ impl RecentGenerator {
             .filter(|p| !p.frontmatter.hidden)
             .collect();
 
-        filtered.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+        filtered.sort_by(|a, b| compare_posts_desc(a, b));
 
         let posts: Vec<RecentPost> = filtered
             .into_iter()

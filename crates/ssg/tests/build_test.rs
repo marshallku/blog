@@ -293,3 +293,35 @@ This page cannot render.
     );
     assert!(stderr_contains(&result, "broken.md"));
 }
+
+#[test]
+fn should_percent_encode_feed_urls() {
+    // Arrange
+    let env = TestEnvironment::minimal();
+    env.write_file(
+        "content/posts/dev/한글-포스트.md",
+        r#"---
+title: "Korean Post"
+date: 2030-01-01T10:00:00Z
+tags: [test]
+hidden: false
+---
+
+Korean slug content.
+"#,
+    );
+
+    // Act
+    let result = env.run_build();
+
+    // Assert
+    assert_success(&result);
+    let feed = env.read_output("feed.xml");
+    assert!(
+        feed.contains("/dev/%ED%95%9C%EA%B8%80-%ED%8F%AC%EC%8A%A4%ED%8A%B8"),
+        "feed link must be percent-encoded"
+    );
+    assert!(!feed.contains("<link>https://example.com/dev/한글-포스트</link>"));
+    let atom = env.read_output("atom.xml");
+    assert!(atom.contains("/dev/%ED%95%9C%EA%B8%80-%ED%8F%AC%EC%8A%A4%ED%8A%B8/"));
+}

@@ -1,6 +1,6 @@
 use crate::config::SsgConfig;
 use crate::image::{ImageProcessor, ThumbnailMetadata};
-use crate::metadata::{MetadataCache, PostMetadata};
+use crate::metadata::{compare_posts_desc, MetadataCache, PostMetadata};
 use crate::slug;
 use crate::types::Category;
 use anyhow::{Context, Result};
@@ -194,7 +194,7 @@ impl IndexGenerator {
             .iter()
             .map(|cat| {
                 let mut posts = metadata.get_posts_by_category(&cat.slug);
-                posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+                posts.sort_by(|a, b| compare_posts_desc(a, b));
                 CategoryPosts {
                     category: cat,
                     posts: posts
@@ -227,7 +227,7 @@ impl IndexGenerator {
     ) -> Result<()> {
         let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
 
-        posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+        posts.sort_by(|a, b| compare_posts_desc(a, b));
 
         let posts_with_thumbnails: Vec<_> = posts
             .iter()
@@ -299,7 +299,7 @@ impl IndexGenerator {
     fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
 
-        posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+        posts.sort_by(|a, b| compare_posts_desc(a, b));
 
         let posts_with_thumbnails: Vec<_> = posts
             .iter()
@@ -373,7 +373,7 @@ impl IndexGenerator {
 
     fn generate_tags_overview(&self, metadata: &MetadataCache) -> Result<()> {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
-        tags_with_counts.sort_by(|a, b| b.1.cmp(a.1));
+        tags_with_counts.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
 
         let visible_categories: Vec<_> = metadata
             .get_category_info()
@@ -425,7 +425,7 @@ impl IndexGenerator {
             .iter()
             .map(|cat| {
                 let mut posts = metadata.get_posts_by_category(&cat.slug);
-                posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+                posts.sort_by(|a, b| compare_posts_desc(a, b));
                 CategoryPosts {
                     category: cat,
                     posts: posts
@@ -458,7 +458,7 @@ impl IndexGenerator {
         metadata: &MetadataCache,
     ) -> Result<()> {
         let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
-        posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+        posts.sort_by(|a, b| compare_posts_desc(a, b));
 
         let posts_with_thumbnails: Vec<_> = posts
             .iter()
@@ -522,7 +522,7 @@ impl IndexGenerator {
 
     fn generate_tag_partial(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
-        posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
+        posts.sort_by(|a, b| compare_posts_desc(a, b));
 
         let posts_with_thumbnails: Vec<_> = posts
             .iter()
@@ -586,7 +586,7 @@ impl IndexGenerator {
 
     fn generate_tags_overview_partial(&self, metadata: &MetadataCache) -> Result<()> {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
-        tags_with_counts.sort_by(|a, b| b.1.cmp(a.1));
+        tags_with_counts.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
 
         let visible_categories: Vec<_> = metadata
             .get_category_info()

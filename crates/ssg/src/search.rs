@@ -1,5 +1,5 @@
 use crate::config::SsgConfig;
-use crate::metadata::MetadataCache;
+use crate::metadata::{compare_posts_desc, MetadataCache};
 use crate::slug;
 use anyhow::Result;
 use serde::Serialize;
@@ -35,10 +35,15 @@ impl SearchIndexGenerator {
     pub fn generate(&self, metadata: &MetadataCache) -> Result<()> {
         println!("\n🔍 Generating search index...");
 
-        let mut posts: Vec<SearchEntry> = metadata
+        let mut source_posts: Vec<_> = metadata
             .posts
             .iter()
             .filter(|p| !p.frontmatter.hidden)
+            .collect();
+        source_posts.sort_by(|a, b| compare_posts_desc(a, b));
+
+        let posts: Vec<SearchEntry> = source_posts
+            .into_iter()
             .map(|post| {
                 let url = if self.config.build.encode_filenames {
                     format!(
@@ -60,8 +65,6 @@ impl SearchIndexGenerator {
                 }
             })
             .collect();
-
-        posts.sort_by(|a, b| b.date.cmp(&a.date));
 
         let index = SearchIndex {
             version: "1.0".to_string(),
