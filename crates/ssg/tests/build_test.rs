@@ -1,6 +1,6 @@
 mod common;
 
-use common::{assert_success, stdout_contains, TestEnvironment};
+use common::{assert_failure, assert_success, stderr_contains, stdout_contains, TestEnvironment};
 
 #[test]
 fn should_build_minimal_site_with_single_post() {
@@ -254,4 +254,30 @@ Body with `]]>` inside code.
     );
     assert!(!feed.contains("&amp;amp;"), "no double escaping");
     assert!(feed.contains("<title>Moon &amp; Sun</title>"), "title stays entity-escaped");
+}
+
+#[test]
+fn should_generate_feeds_and_indices_even_when_a_page_fails() {
+    // Arrange - page requests a template that doesn't exist
+    let env = TestEnvironment::minimal();
+    env.write_file(
+        "content/pages/broken.md",
+        r#"---
+title: "Broken Page"
+template: nonexistent
+---
+
+This page cannot render.
+"#,
+    );
+
+    // Act
+    let result = env.run_build();
+
+    // Assert - build fails (deploy gate) but derived outputs exist
+    assert_failure(&result);
+    assert!(env.output_exists("feed.xml"), "feed must be generated");
+    assert!(env.output_exists("sitemap.xml"), "sitemap must be generated");
+    assert!(env.output_exists("index.html"), "homepage must be generated");
+    assert!(stderr_contains(&result, "broken.md"));
 }

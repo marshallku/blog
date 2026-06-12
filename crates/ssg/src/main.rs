@@ -52,18 +52,22 @@ use crate::types::Post;
 const RELATED_POSTS_COUNT: usize = 4;
 const DEV_SERVER_BUFFER_SIZE: usize = 1024;
 
+/// Builds custom pages, collecting per-page failures instead of aborting:
+/// one broken page must not prevent indices, feeds, and sitemap generation.
+/// The caller reports the returned errors after all other outputs are done.
 fn build_pages(
     shortcode_registry: &ShortcodeRegistry,
     renderer: &Renderer,
     generator: &Generator,
-) -> Result<usize> {
+) -> Vec<(std::path::PathBuf, String)> {
     let pages_dir = Path::new("content/pages");
     if !pages_dir.exists() {
-        return Ok(0);
+        return Vec::new();
     }
 
     println!("\n📄 Building pages...");
     let mut pages_built = 0;
+    let mut errors = Vec::new();
 
     for entry in WalkDir::new(pages_dir)
         .into_iter()
@@ -73,36 +77,52 @@ fn build_pages(
         let path = entry.path();
         println!("🔨 Building page: {}", path.display());
 
-        let mut page = Parser::parse_page_file(path)?;
-
-        if page.frontmatter.hidden {
-            println!("   ⚠  Hidden - skipping output");
-            continue;
+        match build_single_page(path, shortcode_registry, renderer, generator) {
+            Ok(true) => pages_built += 1,
+            Ok(false) => {}
+            Err(e) => {
+                eprintln!("   ❌ {}", e);
+                errors.push((path.to_path_buf(), e.to_string()));
+            }
         }
-
-        let processed_content = shortcode_registry.process(&page.content)?;
-        let html = renderer.render_markdown_with_components(
-            &processed_content,
-            generator.get_tera(),
-            &page.slug,
-        )?;
-        page.rendered_html = Some(html);
-
-        let output_path = generator.generate_page(&page, &HashMap::new())?;
-        println!("   ✓ {}", output_path.display());
-
-        if generator.should_generate_partials() {
-            generator.generate_page_partial(&page, &HashMap::new())?;
-        }
-
-        pages_built += 1;
     }
 
     if pages_built > 0 {
         println!("✅ Built {} page(s)", pages_built);
     }
 
-    Ok(pages_built)
+    errors
+}
+
+fn build_single_page(
+    path: &Path,
+    shortcode_registry: &ShortcodeRegistry,
+    renderer: &Renderer,
+    generator: &Generator,
+) -> Result<bool> {
+    let mut page = Parser::parse_page_file(path)?;
+
+    if page.frontmatter.hidden {
+        println!("   ⚠  Hidden - skipping output");
+        return Ok(false);
+    }
+
+    let processed_content = shortcode_registry.process(&page.content)?;
+    let html = renderer.render_markdown_with_components(
+        &processed_content,
+        generator.get_tera(),
+        &page.slug,
+    )?;
+    page.rendered_html = Some(html);
+
+    let output_path = generator.generate_page(&page, &HashMap::new())?;
+    println!("   ✓ {}", output_path.display());
+
+    if generator.should_generate_partials() {
+        generator.generate_page_partial(&page, &HashMap::new())?;
+    }
+
+    Ok(true)
 }
 
 fn resolve_post_images(post: &mut Post) {
@@ -330,7 +350,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
     metadata.save()?;
 
-    build_pages(&shortcode_registry, &renderer, &generator)?;
+    let page_errors = build_pages(&shortcode_registry, &renderer, &generator);
 
     let index_generator = IndexGenerator::new(config.clone())?;
     index_generator.generate_all(&metadata)?;
@@ -361,6 +381,8 @@ fn build_all(use_cache: bool) -> Result<()> {
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 
+    report_page_errors(&page_errors)?;
+
     println!("\n✅ Build complete!");
     println!("   Built: {}", built_count);
     if use_cache {
@@ -370,6 +392,20 @@ fn build_all(use_cache: bool) -> Result<()> {
     println!("   Tags: {}", metadata.get_tags().len());
 
     Ok(())
+}
+
+/// Fails the build after every other output has been generated, so a broken
+/// page still exits nonzero (deploy gates) without leaving feeds/indices stale.
+fn report_page_errors(errors: &[(PathBuf, String)]) -> Result<()> {
+    if errors.is_empty() {
+        return Ok(());
+    }
+
+    eprintln!("\n❌ {} page(s) failed to build:", errors.len());
+    for (path, error) in errors {
+        eprintln!("   {}: {}", path.display(), error);
+    }
+    anyhow::bail!("{} pages failed to build", errors.len());
 }
 
 fn build_all_parallel(use_cache: bool) -> Result<()> {
@@ -538,7 +574,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     let renderer = Renderer::new();
     let generator = Generator::new((*config).clone())?;
-    build_pages(&shortcode_registry, &renderer, &generator)?;
+    let page_errors = build_pages(&shortcode_registry, &renderer, &generator);
 
     let index_generator = IndexGenerator::new((*config).clone())?;
     index_generator.generate_all(&metadata)?;
@@ -568,6 +604,8 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
+
+    report_page_errors(&page_errors)?;
 
     let elapsed = start_time.elapsed();
     println!("\n✅ Build complete in {:.2}s!", elapsed.as_secs_f64());
