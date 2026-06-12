@@ -189,14 +189,16 @@ impl ShortcodeRegistry {
         self.handlers.insert(name.to_string(), handler);
     }
 
-    /// Process all shortcodes in content
+    /// Process all shortcodes in content. Fenced code blocks and inline code
+    /// spans are masked first so shortcode syntax can be shown as code
+    /// without being executed.
     pub fn process(&self, content: &str) -> Result<String> {
-        let mut result = content.to_string();
+        let (masked, code_regions) = mask_code_regions(content);
 
-        result = self.process_block_shortcodes(&result)?;
+        let mut result = self.process_block_shortcodes(&masked)?;
         result = self.process_inline_shortcodes(&result)?;
 
-        Ok(result)
+        Ok(restore_code_regions(result, &code_regions))
     }
 
     fn process_block_shortcodes(&self, content: &str) -> Result<String> {
@@ -310,6 +312,150 @@ fn parse_attributes(s: &str) -> HashMap<String, String> {
 }
 
 /// Escape HTML special characters
+// Private-use-area sentinel; effectively impossible in real markdown content
+const CODE_PLACEHOLDER_MARK: char = '\u{E000}';
+
+fn code_placeholder(index: usize) -> String {
+    format!(
+        "{}{}{}",
+        CODE_PLACEHOLDER_MARK, index, CODE_PLACEHOLDER_MARK
+    )
+}
+
+/// Replaces fenced code blocks (``` / ~~~) and inline code spans with
+/// placeholders so shortcode processing never touches code content.
+/// Indented (4-space) code blocks are not masked — this blog uses fences.
+fn mask_code_regions(content: &str) -> (String, Vec<String>) {
+    let mut regions: Vec<String> = Vec::new();
+    let mut out = String::with_capacity(content.len());
+    let mut open_fence: Option<(char, usize)> = None;
+    let mut fence_buf = String::new();
+    // Inline spans may cross single newlines, so they are masked per
+    // paragraph (blank-line boundaries), not per physical line
+    let mut paragraph_buf = String::new();
+
+    for line in content.split_inclusive('\n') {
+        if let Some((marker, open_len)) = open_fence {
+            fence_buf.push_str(line);
+            if closes_fence(line, marker, open_len) {
+                out.push_str(&code_placeholder(regions.len()));
+                regions.push(std::mem::take(&mut fence_buf));
+                open_fence = None;
+            }
+            continue;
+        }
+
+        if let Some(fence) = parse_fence_open(line) {
+            out.push_str(&mask_inline_code(
+                &std::mem::take(&mut paragraph_buf),
+                &mut regions,
+            ));
+            open_fence = Some(fence);
+            fence_buf.push_str(line);
+            continue;
+        }
+
+        if line.trim().is_empty() {
+            out.push_str(&mask_inline_code(
+                &std::mem::take(&mut paragraph_buf),
+                &mut regions,
+            ));
+            out.push_str(line);
+        } else {
+            paragraph_buf.push_str(line);
+        }
+    }
+
+    out.push_str(&mask_inline_code(&paragraph_buf, &mut regions));
+
+    // Unclosed fence: markdown treats the rest of the document as code
+    if !fence_buf.is_empty() {
+        out.push_str(&code_placeholder(regions.len()));
+        regions.push(fence_buf);
+    }
+
+    (out, regions)
+}
+
+/// CommonMark fence opening: up to 3 spaces of indentation, then a run of
+/// at least 3 backticks or tildes. Returns the marker char and run length.
+fn parse_fence_open(line: &str) -> Option<(char, usize)> {
+    let indent = line.len() - line.trim_start_matches(' ').len();
+    if indent > 3 {
+        return None;
+    }
+
+    let rest = &line[indent..];
+    let marker = rest.chars().next().filter(|c| *c == '`' || *c == '~')?;
+    let run_len = rest.chars().take_while(|c| *c == marker).count();
+
+    (run_len >= 3).then_some((marker, run_len))
+}
+
+/// CommonMark fence closing: same marker char, run at least as long as the
+/// opening run, nothing but whitespace afterwards.
+fn closes_fence(line: &str, marker: char, open_len: usize) -> bool {
+    let indent = line.len() - line.trim_start_matches(' ').len();
+    if indent > 3 {
+        return false;
+    }
+
+    let rest = &line[indent..];
+    let run_len = rest.chars().take_while(|c| *c == marker).count();
+
+    run_len >= open_len && rest[run_len..].trim().is_empty()
+}
+
+/// Masks inline code spans per CommonMark: an opening run of N backticks is
+/// closed by the next run of exactly N backticks.
+fn mask_inline_code(line: &str, regions: &mut Vec<String>) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut rest = line;
+
+    while let Some(start) = rest.find('`') {
+        let run_len = rest[start..].chars().take_while(|c| *c == '`').count();
+        let after_open = start + run_len;
+
+        let mut close_end = None;
+        let mut search = after_open;
+        while let Some(offset) = rest[search..].find('`') {
+            let close_start = search + offset;
+            let close_len = rest[close_start..]
+                .chars()
+                .take_while(|c| *c == '`')
+                .count();
+            if close_len == run_len {
+                close_end = Some(close_start + close_len);
+                break;
+            }
+            search = close_start + close_len;
+        }
+
+        match close_end {
+            Some(end) => {
+                out.push_str(&rest[..start]);
+                out.push_str(&code_placeholder(regions.len()));
+                regions.push(rest[start..end].to_string());
+                rest = &rest[end..];
+            }
+            None => {
+                out.push_str(&rest[..after_open]);
+                rest = &rest[after_open..];
+            }
+        }
+    }
+
+    out.push_str(rest);
+    out
+}
+
+fn restore_code_regions(mut content: String, regions: &[String]) -> String {
+    for (index, region) in regions.iter().enumerate() {
+        content = content.replace(&code_placeholder(index), region);
+    }
+    content
+}
+
 fn escape_html(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -417,5 +563,89 @@ mod tests {
         let registry = ShortcodeRegistry::new();
         let result = registry.process(r#"[react data="1,2,3"]"#);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_shortcode_inside_fenced_block_untouched() {
+        let registry = ShortcodeRegistry::new();
+        let input = "Before\n\n```\n[figure src=\"a.jpg\" alt=\"x\"]\n```\n\nAfter";
+        let result = registry.process(input).unwrap();
+        assert_eq!(result, input);
+    }
+
+    #[test]
+    fn test_shortcode_inside_inline_code_untouched() {
+        let registry = ShortcodeRegistry::new();
+        let input = "Use `[youtube id=\"abc\"]` to embed.";
+        let result = registry.process(input).unwrap();
+        assert_eq!(result, input);
+    }
+
+    #[test]
+    fn test_shortcode_outside_code_still_processed() {
+        let registry = ShortcodeRegistry::new();
+        let input = "```\n[figure src=\"doc.jpg\" alt=\"doc\"]\n```\n\n[youtube id=\"abc\"]";
+        let result = registry.process(input).unwrap();
+        assert!(
+            result.contains("[figure src=\"doc.jpg\" alt=\"doc\"]"),
+            "code block stays raw"
+        );
+        assert!(
+            result.contains("youtube.com/embed/abc"),
+            "real shortcode executes"
+        );
+    }
+
+    #[test]
+    fn test_tilde_fence_and_unclosed_fence() {
+        let registry = ShortcodeRegistry::new();
+        let tilde = "~~~\n[youtube id=\"abc\"]\n~~~\n";
+        assert_eq!(registry.process(tilde).unwrap(), tilde);
+
+        let unclosed = "```\n[youtube id=\"abc\"]";
+        assert_eq!(registry.process(unclosed).unwrap(), unclosed);
+    }
+
+    #[test]
+    fn test_double_backtick_span_untouched() {
+        let registry = ShortcodeRegistry::new();
+        let input = "Span ``[callout]`x`[/callout]`` stays.";
+        assert_eq!(registry.process(input).unwrap(), input);
+    }
+
+    #[test]
+    fn test_longer_fence_documents_shorter_fence() {
+        let registry = ShortcodeRegistry::new();
+        let input = "`````markdown\n```\n[youtube id=\"abc\"]\n```\n`````\n";
+        assert_eq!(registry.process(input).unwrap(), input);
+    }
+
+    #[test]
+    fn test_multiline_inline_code_span_untouched() {
+        let registry = ShortcodeRegistry::new();
+        let input = "Use `[youtube\nid=\"abc\"]` to embed.";
+        assert_eq!(registry.process(input).unwrap(), input);
+    }
+
+    #[test]
+    fn test_indented_backticks_do_not_open_fence() {
+        let registry = ShortcodeRegistry::new();
+        let input = "    ```\n\n[youtube id=\"abc\"]";
+        let result = registry.process(input).unwrap();
+        assert!(
+            result.contains("youtube.com/embed/abc"),
+            "shortcode after indented backticks must run"
+        );
+    }
+
+    #[test]
+    fn test_backticks_across_paragraphs_do_not_mask_shortcode() {
+        let registry = ShortcodeRegistry::new();
+        let input = "stray ` tick\n\n[youtube id=\"abc\"]\n\nanother ` tick";
+        let result = registry.process(input).unwrap();
+        assert!(
+            result.contains("youtube.com/embed/abc"),
+            "paragraph boundary must stop span search"
+        );
     }
 }
