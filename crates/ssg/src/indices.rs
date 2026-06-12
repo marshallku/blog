@@ -123,6 +123,11 @@ impl IndexGenerator {
             self.generate_tag_page(&tag, metadata)?;
         }
 
+        self.remove_stale_tag_dirs(
+            &PathBuf::from(&self.config.build.output_dir).join("tag"),
+            metadata,
+        );
+
         self.generate_tags_overview(metadata)?;
 
         println!("   ✓ Homepage");
@@ -149,6 +154,8 @@ impl IndexGenerator {
         for tag in metadata.get_tags() {
             self.generate_tag_partial(&tag, metadata)?;
         }
+
+        self.remove_stale_tag_dirs(&self.get_partial_path("tag"), metadata);
 
         self.generate_tags_overview_partial(metadata)?;
 
@@ -282,6 +289,10 @@ impl IndexGenerator {
             fs::write(&output_path, output)?;
         }
 
+        let section_dir = PathBuf::from(&self.config.build.output_dir)
+            .join(self.maybe_encode(&category_info.slug));
+        Self::remove_stale_pagination(&section_dir, total_pages);
+
         Ok(())
     }
 
@@ -351,6 +362,11 @@ impl IndexGenerator {
             fs::create_dir_all(output_path.parent().unwrap())?;
             fs::write(&output_path, output)?;
         }
+
+        let section_dir = PathBuf::from(&self.config.build.output_dir)
+            .join("tag")
+            .join(self.maybe_encode(tag));
+        Self::remove_stale_pagination(&section_dir, total_pages);
 
         Ok(())
     }
@@ -498,6 +514,9 @@ impl IndexGenerator {
             fs::write(&output_path, output)?;
         }
 
+        let section_dir = self.get_partial_path(&self.maybe_encode(&category_info.slug));
+        Self::remove_stale_pagination(&section_dir, total_pages);
+
         Ok(())
     }
 
@@ -559,6 +578,9 @@ impl IndexGenerator {
             fs::write(&output_path, output)?;
         }
 
+        let section_dir = self.get_partial_path(&format!("tag/{}", self.maybe_encode(tag)));
+        Self::remove_stale_pagination(&section_dir, total_pages);
+
         Ok(())
     }
 
@@ -590,6 +612,113 @@ impl IndexGenerator {
         PathBuf::from(&self.config.build.output_dir)
             .join(&self.config.build.partial_dir)
             .join(relative)
+    }
+
+    /// Removes `page/N` directories beyond the current page count: posts
+    /// removed since the last build would otherwise leave orphaned
+    /// pagination pages serving stale content.
+    fn remove_stale_pagination(section_dir: &Path, total_pages: usize) {
+        let page_dir = section_dir.join("page");
+        let Ok(entries) = fs::read_dir(&page_dir) else {
+            return;
+        };
+
+        for entry in entries.flatten() {
+            let is_stale = entry
+                .file_name()
+                .to_str()
+                .and_then(|name| name.parse::<usize>().ok())
+                .is_some_and(|num| num > total_pages);
+
+            if is_stale {
+                if let Err(e) = fs::remove_dir_all(entry.path()) {
+                    eprintln!(
+                        "⚠️  Failed to remove stale pagination {}: {}",
+                        entry.path().display(),
+                        e
+                    );
+                } else {
+                    println!("🧹 Removed stale pagination: {}", entry.path().display());
+                }
+            }
+        }
+
+        // Drops the page/ directory itself once no numbered pages remain
+        let _ = fs::remove_dir(&page_dir);
+    }
+
+    /// Removes listing pages of tags no longer used by any post. Tags may
+    /// contain `/` and nest directories, so every generated `index.html` is
+    /// mapped back to its tag (normalizing a `page/N` suffix) and removed
+    /// when that tag is gone; emptied directories are pruned afterwards.
+    fn remove_stale_tag_dirs(&self, tag_base_dir: &Path, metadata: &MetadataCache) {
+        use walkdir::WalkDir;
+
+        if !tag_base_dir.exists() {
+            return;
+        }
+
+        let current_tags: HashSet<PathBuf> = metadata
+            .get_tags()
+            .iter()
+            .map(|tag| PathBuf::from(self.maybe_encode(tag)))
+            .collect();
+
+        let stale_files: Vec<PathBuf> = WalkDir::new(tag_base_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name() == "index.html")
+            .filter_map(|e| {
+                let dir = e.path().parent()?;
+                let relative = dir.strip_prefix(tag_base_dir).ok()?;
+                // Live when the dir is a tag path itself (covers tags whose
+                // name happens to end in `page/N`) or a pagination dir of one
+                let live = current_tags.contains(relative)
+                    || current_tags.contains(Self::strip_page_suffix(relative));
+                (!live).then(|| e.path().to_path_buf())
+            })
+            .collect();
+
+        for file in stale_files {
+            if let Err(e) = fs::remove_file(&file) {
+                eprintln!(
+                    "⚠️  Failed to remove stale tag page {}: {}",
+                    file.display(),
+                    e
+                );
+                continue;
+            }
+            println!("🧹 Removed stale tag page: {}", file.display());
+
+            let mut dir = file.parent();
+            while let Some(d) = dir {
+                if d == tag_base_dir || fs::remove_dir(d).is_err() {
+                    break;
+                }
+                dir = d.parent();
+            }
+        }
+    }
+
+    /// Maps a pagination directory (`<tag>/page/N`) back to its tag path.
+    fn strip_page_suffix(relative: &Path) -> &Path {
+        let is_page_number = relative
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()));
+        let parent_is_page = relative
+            .parent()
+            .and_then(|p| p.file_name())
+            .is_some_and(|n| n == "page");
+
+        if is_page_number && parent_is_page {
+            relative
+                .parent()
+                .and_then(|p| p.parent())
+                .unwrap_or(relative)
+        } else {
+            relative
+        }
     }
 
     fn build_pagination_context(

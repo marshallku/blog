@@ -199,3 +199,129 @@ fn should_remove_deleted_post_output_even_when_environment_changes() {
     assert!(!env.output_exists("dev/doomed-post/index.html"));
     assert!(env.output_exists("dev/test-post/index.html"));
 }
+
+#[test]
+fn should_remove_stale_pagination_pages_when_post_count_shrinks() {
+    // Arrange - 12 posts (posts_per_page: 10) → 2 pages
+    let env = TestEnvironment::minimal();
+    for i in 1..=11 {
+        env.create_post("dev", &format!("bulk-{}", i), &format!("Bulk {}", i));
+    }
+
+    let result = env.run_build();
+    assert_success(&result);
+    assert!(env.output_exists("dev/page/2/index.html"));
+
+    // Shrink below one page
+    for i in 1..=11 {
+        env.delete_post("dev", &format!("bulk-{}", i));
+    }
+
+    // Act
+    let result = env.run_build();
+
+    // Assert
+    assert_success(&result);
+    assert!(!env.output_exists("dev/page/2/index.html"));
+    assert!(!env.output_exists("dev/page"));
+    assert!(env.output_exists("dev/index.html"));
+}
+
+#[test]
+fn should_remove_tag_dir_when_tag_disappears() {
+    // Arrange - fixture posts use tag "test"; add one with a unique tag
+    let env = TestEnvironment::minimal();
+    env.write_file(
+        "content/posts/dev/tagged.md",
+        r#"---
+title: "Tagged"
+date: 2024-03-01T10:00:00Z
+tags: [vanishing]
+hidden: false
+---
+
+Tagged content.
+"#,
+    );
+
+    let result = env.run_build();
+    assert_success(&result);
+    assert!(env.output_exists("tag/vanishing/index.html"));
+
+    env.delete_post("dev", "tagged");
+
+    // Act
+    let result = env.run_build();
+
+    // Assert
+    assert_success(&result);
+    assert!(!env.output_exists("tag/vanishing"));
+    assert!(env.output_exists("tag/test/index.html"));
+}
+
+#[test]
+fn should_keep_nested_tag_dirs_alive() {
+    // Arrange - a tag containing '/' nests directories under tag/
+    let env = TestEnvironment::minimal();
+    env.write_file(
+        "content/posts/dev/nested-tag.md",
+        r#"---
+title: "Nested Tag"
+date: 2024-03-02T10:00:00Z
+tags: [nested/inner]
+hidden: false
+---
+
+Nested tag content.
+"#,
+    );
+
+    let result = env.run_build();
+    assert_success(&result);
+    assert!(env.output_exists("tag/nested/inner/index.html"));
+
+    // Act - rebuild without changes must not prune the live nested dir
+    let result = env.run_build();
+
+    // Assert
+    assert_success(&result);
+    assert!(env.output_exists("tag/nested/inner/index.html"));
+}
+
+#[test]
+fn should_remove_vanished_nested_tag_under_live_sibling() {
+    // Arrange - two nested tags sharing the top-level segment
+    let env = TestEnvironment::minimal();
+    for (slug, tag) in [("keep-post", "shared/new"), ("drop-post", "shared/old")] {
+        env.write_file(
+            &format!("content/posts/dev/{}.md", slug),
+            &format!(
+                r#"---
+title: "{}"
+date: 2024-03-03T10:00:00Z
+tags: [{}]
+hidden: false
+---
+
+Content.
+"#,
+                slug, tag
+            ),
+        );
+    }
+
+    let result = env.run_build();
+    assert_success(&result);
+    assert!(env.output_exists("tag/shared/old/index.html"));
+    assert!(env.output_exists("tag/shared/new/index.html"));
+
+    env.delete_post("dev", "drop-post");
+
+    // Act
+    let result = env.run_build();
+
+    // Assert - vanished nested tag pruned, live sibling untouched
+    assert_success(&result);
+    assert!(!env.output_exists("tag/shared/old"));
+    assert!(env.output_exists("tag/shared/new/index.html"));
+}
