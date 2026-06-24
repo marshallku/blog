@@ -1,0 +1,38 @@
+@use "../base/palette";
+
+.post-toc {
+    max-width: 880px;
+    margin: 0 auto palette.spacing(xl);
+    padding: palette.spacing(md) palette.spacing(lg);
+    border: 1px solid palette.color(grayscale, 200);
+    border-radius: palette.radius(md);
+    background: palette.color(background-dimmed);
+
+    &__title {
+        margin: 0 0 palette.spacing(sm);
+        font-weight: 700;
+    }
+
+    &__list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    &__item--h3 {
+        padding-left: palette.spacing(md);
+    }
+
+    &__link {
+        display: inline-block;
+        padding: palette.spacing(xs) 0;
+        color: palette.color(list-text);
+        text-decoration: none;
+        transition: color palette.transition(fast) ease;
+
+        &:hover,
+        &--active {
+            color: palette.color(theme);
+        }
+    }
+}

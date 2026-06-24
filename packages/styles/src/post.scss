@@ -6,6 +6,8 @@
 @use "./base/fonts";
 
 @use "./components/post";
+@use "./components/toc";
+@use "./components/share";
 @use "./components/code";
 @use "./components/syntax";
 @use "./components/prev-next-post";

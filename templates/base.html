@@ -42,6 +42,9 @@
     {% endif %}
 </head>
 <body x-data="{ drawerOpen: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 10">
+    <div class="reading-progress" data-reading-progress aria-hidden="true">
+        <div class="reading-progress__bar" data-reading-progress-bar></div>
+    </div>
     <header class="global-navigation" :class="{ 'global-navigation--drawer-open': drawerOpen }">
         <div class="global-navigation__container">
             <div class="global-navigation__left">

@@ -1,0 +1,35 @@
+@use "../base/palette";
+
+.post-share {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: palette.spacing(sm);
+    max-width: 880px;
+    margin: palette.spacing(xl) auto;
+
+    &__label {
+        margin-right: palette.spacing(xs);
+        color: palette.color(text);
+        font-weight: 700;
+    }
+
+    &__button {
+        display: inline-flex;
+        align-items: center;
+        gap: palette.spacing(xs);
+        padding: palette.spacing(xs) palette.spacing(sm);
+        border: 1px solid palette.color(grayscale, 300);
+        border-radius: 9999px;
+        background: transparent;
+        color: palette.color(text);
+        text-decoration: none;
+        cursor: pointer;
+        transition: all palette.transition(fast) ease;
+
+        &:hover {
+            border-color: palette.color(theme);
+            color: palette.color(theme);
+        }
+    }
+}

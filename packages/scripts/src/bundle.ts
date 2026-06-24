@@ -1,4 +1,7 @@
 import { initSpa } from "./spa";
+import { initReadingProgress } from "./reading-progress";
+import { initToc } from "./toc";
+import { initShare } from "./share";
 import { fit, throttle } from "./utils";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -6,6 +9,9 @@ document.addEventListener("DOMContentLoaded", () => {
     initScrollToTop();
     initCodeCopy();
     initSpa();
+    initReadingProgress();
+    initToc();
+    initShare();
 });
 
 function initGlobalNavigation(): void {

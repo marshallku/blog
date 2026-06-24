@@ -2,13 +2,25 @@ use anyhow::Result;
 use pulldown_cmark::{
     CodeBlockKind, CowStr, Event, HeadingLevel, Options, Parser as MdParser, Tag,
 };
+use serde::Serialize;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::path::Path;
 use tera::{Context, Tera};
 
 use crate::image::ImageProcessor;
+use crate::slug;
 use crate::syntax_highlighter::SyntaxHighlighter;
+
+/// A heading extracted from a post, used to build the table of contents.
+/// `slug` is also injected as the heading element's `id`, so anchor links
+/// (`#{slug}`) always resolve.
+#[derive(Debug, Clone, Serialize)]
+pub struct HeadingInfo {
+    pub level: u8,
+    pub text: String,
+    pub slug: String,
+}
 
 const COMPONENT_TAGS: &[&str] = &[
     "img",
@@ -64,7 +76,7 @@ impl Renderer {
         markdown: &str,
         tera: &Tera,
         base_path: &str,
-    ) -> Result<String> {
+    ) -> Result<(String, Vec<HeadingInfo>)> {
         self.render_markdown_with_components_and_images(markdown, tera, base_path, None, None)
     }
 
@@ -75,30 +87,97 @@ impl Renderer {
         base_path: &str,
         cdn_url: Option<&str>,
         content_dir: Option<&Path>,
-    ) -> Result<String> {
+    ) -> Result<(String, Vec<HeadingInfo>)> {
         let options = Options::all();
+        let headings = Self::collect_headings(markdown);
         let parser = MdParser::new_ext(markdown, options);
 
         let mut html_output = String::with_capacity(markdown.len() * 2);
-        Self::push_html_with_markers(&mut html_output, parser);
+        Self::push_html_with_markers(&mut html_output, parser, &headings);
 
         let highlighted = self.highlight_code_blocks(&html_output);
-        Self::post_process_components(&highlighted, tera, base_path, cdn_url, content_dir)
+        let html =
+            Self::post_process_components(&highlighted, tera, base_path, cdn_url, content_dir)?;
+        Ok((html, headings))
+    }
+
+    /// Extract headings from markdown with stable, collision-free anchor slugs.
+    /// An explicit `{#id}` attribute wins over the auto-generated slug.
+    fn collect_headings(markdown: &str) -> Vec<HeadingInfo> {
+        let parser = MdParser::new_ext(markdown, Options::all());
+
+        let mut headings = Vec::new();
+        let mut seen: HashMap<String, usize> = HashMap::new();
+        let mut current: Option<(u8, String, Option<String>)> = None;
+
+        for event in parser {
+            match event {
+                Event::Start(Tag::Heading(level, id, _)) => {
+                    current = Some((
+                        Self::heading_level_num(level),
+                        String::new(),
+                        id.map(|s| s.to_string()),
+                    ));
+                }
+                Event::Text(text) | Event::Code(text) => {
+                    if let Some((_, ref mut acc, _)) = current {
+                        acc.push_str(&text);
+                    }
+                }
+                Event::End(Tag::Heading(..)) => {
+                    if let Some((level, text, explicit_id)) = current.take() {
+                        let base = explicit_id.unwrap_or_else(|| slug::slugify_heading(&text));
+                        let slug = Self::dedupe_slug(&mut seen, base);
+                        headings.push(HeadingInfo {
+                            level,
+                            text: text.trim().to_string(),
+                            slug,
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        headings
+    }
+
+    fn dedupe_slug(seen: &mut HashMap<String, usize>, base: String) -> String {
+        let count = seen.entry(base.clone()).or_insert(0);
+        let slug = if *count == 0 {
+            base.clone()
+        } else {
+            format!("{}-{}", base, count)
+        };
+        *count += 1;
+        slug
     }
 
     /// Custom HTML writer that adds `data-md` attribute to markdown-generated tags.
     /// This allows component templates to distinguish between markdown syntax
     /// (e.g., `![]()`→`<img>`) and raw HTML tags written directly in markdown.
-    fn push_html_with_markers<'a, I>(output: &mut String, iter: I)
+    fn push_html_with_markers<'a, I>(output: &mut String, iter: I, headings: &[HeadingInfo])
     where
         I: Iterator<Item = Event<'a>>,
     {
         let mut in_code_block = false;
+        let mut heading_index = 0usize;
 
         for event in iter {
             match event {
-                Event::Start(tag) => Self::write_start_tag(output, &tag, &mut in_code_block),
-                Event::End(tag) => Self::write_end_tag(output, &tag, &mut in_code_block),
+                Event::Start(tag) => {
+                    let heading_slug = match tag {
+                        Tag::Heading(..) => headings.get(heading_index).map(|h| h.slug.as_str()),
+                        _ => None,
+                    };
+                    Self::write_start_tag(output, &tag, &mut in_code_block, heading_slug);
+                }
+                Event::End(tag) => {
+                    if let Tag::Heading(..) = tag {
+                        heading_index += 1;
+                    }
+                    Self::write_end_tag(output, &tag, &mut in_code_block);
+                }
                 Event::Text(text) => {
                     Self::escape_html(output, &text);
                 }
@@ -131,16 +210,21 @@ impl Renderer {
         }
     }
 
-    fn write_start_tag(output: &mut String, tag: &Tag<'_>, in_code_block: &mut bool) {
+    fn write_start_tag(
+        output: &mut String,
+        tag: &Tag<'_>,
+        in_code_block: &mut bool,
+        heading_slug: Option<&str>,
+    ) {
         match tag {
             Tag::Paragraph => output.push_str("<p data-md>"),
-            Tag::Heading(level, id, _classes) => {
+            Tag::Heading(level, _id, _classes) => {
                 output.push('<');
                 output.push_str(Self::heading_level_str(*level));
                 output.push_str(" data-md");
-                if let Some(id) = id {
+                if let Some(slug) = heading_slug {
                     output.push_str(" id=\"");
-                    Self::escape_html(output, id);
+                    Self::escape_html(output, slug);
                     output.push('"');
                 }
                 output.push('>');
@@ -246,6 +330,17 @@ impl Renderer {
             HeadingLevel::H4 => "h4",
             HeadingLevel::H5 => "h5",
             HeadingLevel::H6 => "h6",
+        }
+    }
+
+    fn heading_level_num(level: HeadingLevel) -> u8 {
+        match level {
+            HeadingLevel::H1 => 1,
+            HeadingLevel::H2 => 2,
+            HeadingLevel::H3 => 3,
+            HeadingLevel::H4 => 4,
+            HeadingLevel::H5 => 5,
+            HeadingLevel::H6 => 6,
         }
     }
 
@@ -855,9 +950,10 @@ mod tests {
     impl Renderer {
         fn render_markdown(&self, markdown: &str) -> String {
             let options = Options::all();
+            let headings = Self::collect_headings(markdown);
             let parser = MdParser::new_ext(markdown, options);
             let mut html_output = String::with_capacity(markdown.len() * 2);
-            Self::push_html_with_markers(&mut html_output, parser);
+            Self::push_html_with_markers(&mut html_output, parser, &headings);
             self.highlight_code_blocks(&html_output)
         }
     }
@@ -870,9 +966,35 @@ mod tests {
 
         // Note: render_markdown is internal test helper that doesn't strip data-md markers
         // The markers are stripped in post_process_components which is called by the public API
-        assert!(html.contains("<h1 data-md>"));
+        // Headings now always receive an anchor id for the table of contents.
+        assert!(html.contains("<h1 data-md id=\"hello\">"));
         assert!(html.contains("Hello"));
         assert!(html.contains("<strong data-md>bold</strong>"));
+    }
+
+    #[test]
+    fn test_headings_get_anchor_ids() {
+        let renderer = Renderer::new();
+        let md = "## Hello World\n\ntext\n\n## Hello World\n\n### 한글 제목";
+        let html = renderer.render_markdown(md);
+
+        assert!(html.contains("<h2 data-md id=\"hello-world\">"));
+        // Duplicate heading text gets a collision suffix
+        assert!(html.contains("<h2 data-md id=\"hello-world-1\">"));
+        // Korean headings are percent-encoded into stable ids
+        assert!(html.contains("<h3 data-md id=\"%ED"));
+    }
+
+    #[test]
+    fn test_collect_headings_matches_injected_ids() {
+        let md = "# Title\n\n## Section A\n\n## Section A";
+        let headings = Renderer::collect_headings(md);
+
+        assert_eq!(headings.len(), 3);
+        assert_eq!(headings[1].slug, "section-a");
+        assert_eq!(headings[2].slug, "section-a-1");
+        assert_eq!(headings[0].level, 1);
+        assert_eq!(headings[1].text, "Section A");
     }
 
     #[test]

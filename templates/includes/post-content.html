@@ -1,6 +1,7 @@
 {% import "macros/post-card.html" as macros %}
 {% import "macros/prev-next-post.html" as nav_macros %}
 {% import "macros/cdn-image.html" as cdn_macros %}
+{% import "macros/toc.html" as toc_macros %}
 
 <article class="post">
     <header class="post-header {% if post.frontmatter.cover_image %}post-header--has-cover{% endif %}">
@@ -20,6 +21,10 @@
             <time datetime="{{ post.frontmatter.date.posted }}" class="post-header__date">
                 {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
             </time>
+            {% if reading_time %}
+            <span> • </span>
+            <span class="post-header__reading-time">{{ reading_time }}분 읽기</span>
+            {% endif %}
         </div>
     </header>
 
@@ -41,8 +46,40 @@
     </div>
     {% endif %}
 
+    {% if toc %}
+    {% set section_headings = toc | filter(attribute="level", value=2) %}
+    {% if section_headings | length > 0 %}
+    {{ toc_macros::table_of_contents(headings=toc) }}
+    {% endif %}
+    {% endif %}
+
     <div class="post__body typography-b1">
         {{ content | safe }}
+    </div>
+
+    {% set enc_category = post.category | urlencode %}
+    {% set enc_slug = post.slug | urlencode %}
+    {% set share_url = config.site_url ~ "/" ~ enc_category ~ "/" ~ enc_slug ~ "/" %}
+    <div class="post-share" data-share data-share-url="{{ share_url }}">
+        <span class="post-share__label typography-c1">공유하기</span>
+        <a class="post-share__button post-share__button--x" target="_blank" rel="noopener noreferrer"
+           href="https://twitter.com/intent/tweet?text={{ post.frontmatter.title | urlencode_strict }}&url={{ share_url | urlencode_strict }}"
+           aria-label="X에 공유">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            <span class="sr-only">X</span>
+        </a>
+        <a class="post-share__button post-share__button--linkedin" target="_blank" rel="noopener noreferrer"
+           href="https://www.linkedin.com/sharing/share-offsite/?url={{ share_url | urlencode_strict }}"
+           aria-label="LinkedIn에 공유">
+            <i class="icon-linkedin"></i>
+            <span class="sr-only">LinkedIn</span>
+        </a>
+        <button type="button" class="post-share__button post-share__button--copy" data-share-copy aria-label="링크 복사">
+            <i class="icon-link"></i>
+            <span class="post-share__copy-label typography-c1">링크 복사</span>
+        </button>
     </div>
 </article>
 

@@ -9,6 +9,7 @@ mod metadata;
 mod navigation;
 mod parallel;
 mod parser;
+mod reading_time;
 mod recent;
 mod renderer;
 mod robots;
@@ -108,7 +109,7 @@ fn build_single_page(
     }
 
     let processed_content = shortcode_registry.process(&page.content)?;
-    let html = renderer.render_markdown_with_components(
+    let (html, _headings) = renderer.render_markdown_with_components(
         &processed_content,
         generator.get_tera(),
         &page.slug,
@@ -302,7 +303,7 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         let base_path = post.category.clone();
         let content_dir = Path::new(&config.build.content_dir);
-        let html = renderer.render_markdown_with_components_and_images(
+        let (html, headings) = renderer.render_markdown_with_components_and_images(
             &processed_content,
             generator.get_tera(),
             &base_path,
@@ -319,13 +320,14 @@ fn build_all(use_cache: bool) -> Result<()> {
         };
         resolve_post_images(&mut post);
 
-        let extra_data = build_post_extra_data(
+        let mut extra_data = build_post_extra_data(
             &post,
             &metadata,
             config.site.cdn_url.as_deref(),
             content_dir,
             Some(&original_paths),
         );
+        extra_data.insert("toc".to_string(), json!(headings));
         let output_path = generator.generate_post(&post, &extra_data)?;
 
         if generator.should_generate_partials() {
@@ -659,7 +661,7 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
 
     let base_path = post.category.clone();
     let content_dir = Path::new(&ctx.config.build.content_dir);
-    let html = try_or_error!(
+    let (html, headings) = try_or_error!(
         path,
         ctx.renderer.render_markdown_with_components_and_images(
             &processed_content,
@@ -679,13 +681,14 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
     };
     resolve_post_images(&mut post);
 
-    let extra_data = build_post_extra_data(
+    let mut extra_data = build_post_extra_data(
         &post,
         ctx.metadata,
         ctx.config.site.cdn_url.as_deref(),
         content_dir,
         Some(&original_paths),
     );
+    extra_data.insert("toc".to_string(), json!(headings));
     let output_path = try_or_error!(path, ctx.generator.generate_post(&post, &extra_data));
 
     if ctx.generator.should_generate_partials() {
@@ -773,7 +776,7 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     let base_path = post.category.clone();
     let content_dir = Path::new(&config.build.content_dir);
-    let html = renderer.render_markdown_with_components_and_images(
+    let (html, headings) = renderer.render_markdown_with_components_and_images(
         &processed_content,
         generator.get_tera(),
         &base_path,
@@ -790,13 +793,14 @@ fn build_single_post(post_path: &str) -> Result<()> {
     };
     resolve_post_images(&mut post);
 
-    let extra_data = build_post_extra_data(
+    let mut extra_data = build_post_extra_data(
         &post,
         &metadata,
         config.site.cdn_url.as_deref(),
         content_dir,
         Some(&original_paths),
     );
+    extra_data.insert("toc".to_string(), json!(headings));
     let output_path = generator.generate_post(&post, &extra_data)?;
 
     println!("\n✅ Built: {}", output_path.display());
@@ -824,6 +828,11 @@ fn build_post_extra_data(
     original_paths: Option<&OriginalImagePaths>,
 ) -> HashMap<String, serde_json::Value> {
     let mut data = HashMap::new();
+
+    data.insert(
+        "reading_time".to_string(),
+        json!(reading_time::estimate(&post.content)),
+    );
 
     if let Some(cat_info) = metadata
         .category_info
