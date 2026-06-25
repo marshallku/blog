@@ -14,45 +14,49 @@
     --syntax-string: #032f62;
     --syntax-keyword: #d73a49;
     --syntax-function: #6f42c1;
-    --syntax-type: #005cc5;
+    --syntax-type: #6f42c1;
     --syntax-constant: #005cc5;
     --syntax-variable: #e36209;
-    --syntax-operator: #d73a49;
+    --syntax-operator: #24292e;
     --syntax-punctuation: #24292e;
-    --syntax-property: #005cc5;
+    --syntax-property: #e36209;
     --syntax-tag: #22863a;
-    --syntax-attribute: #6f42c1;
+    --syntax-attribute: #22863a;
     --syntax-number: #005cc5;
     --syntax-boolean: #005cc5;
-    --syntax-error: #cb2431;
+    --syntax-error: #b31d28;
     --syntax-diff-plus: #22863a;
-    --syntax-diff-minus: #cb2431;
+    --syntax-diff-minus: #b31d28;
     --syntax-diff-delta: #6f42c1;
+    --syntax-diff-plus-bg: #e6ffec;
+    --syntax-diff-minus-bg: #ffeef0;
 }
 
-/* Dark theme (Tokyo Night) */
+/* Dark theme (GitHub Dark) */
 html[data-theme="dark"] .hljs,
 html[data-theme="dark"] .athl {
-    --syntax-bg: #1a1b26;
-    --syntax-fg: #a9b1d6;
-    --syntax-comment: #565f89;
-    --syntax-string: #9ece6a;
-    --syntax-keyword: #bb9af7;
-    --syntax-function: #7aa2f7;
-    --syntax-type: #2ac3de;
-    --syntax-constant: #ff9e64;
-    --syntax-variable: #c0caf5;
-    --syntax-operator: #89ddff;
-    --syntax-punctuation: #a9b1d6;
-    --syntax-property: #73daca;
-    --syntax-tag: #f7768e;
-    --syntax-attribute: #bb9af7;
-    --syntax-number: #ff9e64;
-    --syntax-boolean: #ff9e64;
-    --syntax-error: #f7768e;
-    --syntax-diff-plus: #9ece6a;
-    --syntax-diff-minus: #f7768e;
-    --syntax-diff-delta: #e0af68;
+    --syntax-bg: #0d1117;
+    --syntax-fg: #c9d1d9;
+    --syntax-comment: #8b949e;
+    --syntax-string: #a5d6ff;
+    --syntax-keyword: #ff7b72;
+    --syntax-function: #d2a8ff;
+    --syntax-type: #d2a8ff;
+    --syntax-constant: #79c0ff;
+    --syntax-variable: #ffa657;
+    --syntax-operator: #c9d1d9;
+    --syntax-punctuation: #c9d1d9;
+    --syntax-property: #ffa657;
+    --syntax-tag: #7ee787;
+    --syntax-attribute: #7ee787;
+    --syntax-number: #79c0ff;
+    --syntax-boolean: #79c0ff;
+    --syntax-error: #ffa198;
+    --syntax-diff-plus: #7ee787;
+    --syntax-diff-minus: #ffa198;
+    --syntax-diff-delta: #d2a8ff;
+    --syntax-diff-plus-bg: #0f2916;
+    --syntax-diff-minus-bg: #2d1214;
 }
 
 /* Sepia theme (Solarized Light) */
@@ -78,6 +82,8 @@ html[data-theme="sepia"] .athl {
     --syntax-diff-plus: #859900;
     --syntax-diff-minus: #dc322f;
     --syntax-diff-delta: #b58900;
+    --syntax-diff-plus-bg: #eef3d8;
+    --syntax-diff-minus-bg: #fce4e1;
 }
 
 /* Apply theme colors */
@@ -242,10 +248,12 @@ html[data-theme="sepia"] .athl {
 /* Diff */
 .hljs .diff-plus {
     color: var(--syntax-diff-plus);
+    background-color: var(--syntax-diff-plus-bg);
 }
 
 .hljs .diff-minus {
     color: var(--syntax-diff-minus);
+    background-color: var(--syntax-diff-minus-bg);
 }
 
 .hljs .diff-delta {

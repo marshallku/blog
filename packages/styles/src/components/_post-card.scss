@@ -23,13 +23,19 @@
 .post-card {
     $self: &;
     display: flex;
-    padding: 16px 20px;
+    padding: 16px;
     flex-direction: column;
-    transition: transform 0.15s ease-in-out;
+    border: 1px solid palette.color(border-subtle);
+    border-radius: palette.radius(lg);
+    background-color: palette.color(background);
+    transition:
+        transform var(--duration-fast) var(--ease-snappy),
+        border-color var(--duration-fast) var(--ease-standard);
 
     @include mixins.supports-hover {
         @at-root &:hover {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
+            border-color: palette.color(border-hover);
         }
     }
 
@@ -37,11 +43,11 @@
         position: relative;
         width: 100%;
         height: 0;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
         padding-bottom: 56.25%;
         flex-shrink: 0;
-        border-radius: 4px;
-        transition: transform 0.15s ease-in-out;
+        border-radius: palette.radius(md);
+        transition: transform var(--duration-fast) var(--ease-snappy);
         overflow: hidden;
 
         img {
@@ -52,11 +58,11 @@
             height: 100%;
             left: 0;
             object-fit: cover;
-            transition: transform 0.15s ease-in-out;
+            transition: transform var(--duration-slow) var(--ease-snappy);
 
             @include mixins.supports-hover {
                 @at-root #{$self}:hover & {
-                    transform: scale(1.15);
+                    transform: scale(1.08);
                 }
             }
         }
@@ -70,14 +76,19 @@
 
     &__title {
         @include mixins.limit-line(2);
+        @include fonts.typography(h6);
+        margin-bottom: 8px;
         font-weight: 700;
+        letter-spacing: -0.01em;
     }
 
     &__description {
-        $line-height: map.get(fonts.$typography-height, b2);
+        @include fonts.typography(b2);
+        $line-height: map.get(fonts.$typography-height, b2) * 1em;
         position: relative;
         max-height: 3 * $line-height;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
+        color: palette.color(text-muted);
         overflow: hidden;
 
         &::after {
@@ -97,8 +108,12 @@
     }
 
     &__time {
+        @include fonts.typography(c1);
         display: block;
         margin-top: auto;
+        font-family: var(--font-mono);
+        color: palette.color(text-faint);
+        letter-spacing: 0.02em;
         text-align: right;
     }
 
@@ -107,13 +122,21 @@
         flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 12px;
+        font-family: var(--font-mono);
+
+        a {
+            @include fonts.typography(c1);
+            color: palette.color(accent);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
     }
 }
 
 .related-posts {
     margin-top: 2em;
     padding-top: 1.5em;
-    border-top: 1px solid palette.color(grayscale, 200);
+    border-top: 1px solid palette.color(border-subtle);
 }
 
 .related-posts__title {

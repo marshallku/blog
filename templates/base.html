@@ -16,6 +16,9 @@
     <meta property="og:site_name" content="{{ config.site_title }}">
     {% endblock %}
 
+    {% if config.assets.styles.pretendard %}
+    <link rel="preload" href="{{ config.assets.styles.pretendard | safe }}" as="font" type="font/woff2" crossorigin>
+    {% endif %}
     {% if config.assets.styles.critical %}
     <link rel="stylesheet" href="{{ config.assets.styles.critical | safe }}">
     {% endif %}

@@ -1,6 +1,6 @@
 {
     "name": "@blog/styles",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "private": true,
     "description": "SCSS processing and optimization for the blog",
     "type": "module",
@@ -18,12 +18,13 @@
             "critical": "critical.css",
             "post": "post.css",
             "list": "list.css",
-            "tags": "tags.css"
+            "tags": "tags.css",
+            "pretendard": "PretendardVariable.woff2"
         }
     },
     "scripts": {
-        "build": "sass src/critical.scss:dist/critical.css src/post.scss:dist/post.css src/list.scss:dist/list.css src/tags.scss:dist/tags.css --style=compressed --no-source-map && postcss dist/*.css --dir dist --env production",
-        "dev": "sass src/critical.scss:dist/critical.css src/post.scss:dist/post.css src/list.scss:dist/list.css src/tags.scss:dist/tags.css --watch",
+        "build": "mkdir -p dist && cp src/fonts/*.woff2 dist/ && sass src/critical.scss:dist/critical.css src/post.scss:dist/post.css src/list.scss:dist/list.css src/tags.scss:dist/tags.css --style=compressed --no-source-map && postcss dist/*.css --dir dist --env production",
+        "dev": "mkdir -p dist && cp src/fonts/*.woff2 dist/ && sass src/critical.scss:dist/critical.css src/post.scss:dist/post.css src/list.scss:dist/list.css src/tags.scss:dist/tags.css --watch",
         "clean": "rm -rf dist",
         "lint": "stylelint 'src/**/*.scss'"
     },
