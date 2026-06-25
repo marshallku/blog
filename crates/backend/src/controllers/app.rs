@@ -50,4 +50,12 @@ pub fn app() -> Router<AppState> {
             &format!("{}/like/status", API_VERSION_PREFIX),
             get(super::likes::status::get),
         )
+        .route(
+            &format!("{}/view/hit", API_VERSION_PREFIX),
+            post(super::views::hit::post),
+        )
+        .route(
+            &format!("{}/view/popular", API_VERSION_PREFIX),
+            get(super::views::popular::get),
+        )
 }

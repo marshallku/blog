@@ -6,12 +6,12 @@
     "woff2": "/icon/0.1.0/icons.woff2"
   },
   "scripts": {
-    "version": "0.2.0",
-    "bundle": "/scripts/0.2.0/bundle.js",
-    "index": "/scripts/0.2.0/index.js",
-    "comment": "/scripts/0.2.0/comment.global.js",
-    "like": "/scripts/0.2.0/like.global.js",
-    "islands": "/scripts/0.2.0/islands.js"
+    "version": "0.3.0",
+    "bundle": "/scripts/0.3.0/bundle.js",
+    "index": "/scripts/0.3.0/index.js",
+    "comment": "/scripts/0.3.0/comment.global.js",
+    "like": "/scripts/0.3.0/like.global.js",
+    "islands": "/scripts/0.3.0/islands.js"
   },
   "styles": {
     "version": "0.3.0",

@@ -3,7 +3,7 @@
 {% import "macros/cdn-image.html" as cdn_macros %}
 {% import "macros/toc.html" as toc_macros %}
 
-<article class="post">
+<article class="post"{% if config.api_url %} data-view-slug="/{{ post.category }}/{{ post.slug }}" data-view-api="{{ config.api_url }}"{% endif %}>
     <header class="post-header {% if post.frontmatter.cover_image %}post-header--has-cover{% endif %}">
         {% if post.frontmatter.tags %}
         <div class="post-header__tags">

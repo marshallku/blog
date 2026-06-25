@@ -17,6 +17,7 @@ mod search;
 mod shortcodes;
 mod sitemap;
 mod slug;
+mod slug_index;
 mod syntax_highlighter;
 mod types;
 
@@ -48,6 +49,7 @@ use crate::robots::RobotsGenerator;
 use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
 use crate::sitemap::SitemapGenerator;
+use crate::slug_index::SlugIndexGenerator;
 use crate::types::Post;
 
 const RELATED_POSTS_COUNT: usize = 4;
@@ -380,6 +382,9 @@ fn build_all(use_cache: bool) -> Result<()> {
     let recent_generator = RecentGenerator::new(config.clone());
     recent_generator.generate(&metadata)?;
 
+    let slug_index_generator = SlugIndexGenerator::new(config.clone());
+    slug_index_generator.generate(&metadata)?;
+
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 
@@ -603,6 +608,9 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     let recent_generator = RecentGenerator::new((*config).clone());
     recent_generator.generate(&metadata)?;
+
+    let slug_index_generator = SlugIndexGenerator::new((*config).clone());
+    slug_index_generator.generate(&metadata)?;
 
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;

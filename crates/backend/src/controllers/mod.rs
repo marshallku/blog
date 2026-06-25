@@ -7,3 +7,4 @@ pub mod health;
 pub mod likes;
 pub mod recent;
 pub mod thumbnail;
+pub mod views;
