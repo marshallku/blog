@@ -1,18 +1,15 @@
 @use "../base/palette" as *;
 
-/* Code block — the dev showcase (DESIGN.md §9). Recognizable GitHub theme via
-   --syntax-* vars, hairline border, mono copy button. */
+/* Code block styles */
 pre {
     position: relative;
-    background-color: var(--syntax-bg, #{color(surface)});
-    border: 1px solid color(border);
+    background-color: color(background-dimmed);
     border-radius: radius(md);
-    padding: spacing(md) spacing(lg);
+    padding: spacing(lg);
     overflow-x: auto;
     margin: spacing(lg) 0;
     font-size: 0.875rem;
     line-height: 1.6;
-    tab-size: 4;
 }
 
 pre code {
@@ -21,44 +18,35 @@ pre code {
     font-size: inherit;
 }
 
-/* Copy button — mono caption, top-right */
+/* Copy button */
 .copy-code {
     position: absolute;
     top: spacing(sm);
     right: spacing(sm);
     padding: spacing(xs) spacing(sm);
     background-color: color(background);
-    border: 1px solid color(border);
+    border: 1px solid color(grayscale, 300);
     border-radius: radius(sm);
-    font-family: var(--font-mono);
     font-size: 0.75rem;
-    color: color(text-muted);
     cursor: pointer;
     opacity: 0;
-    transition:
-        opacity var(--duration-fast) var(--ease-standard),
-        border-color var(--duration-fast) var(--ease-standard),
-        color var(--duration-fast) var(--ease-standard);
+    transition: opacity transition(fast);
 
     pre:hover & {
         opacity: 1;
     }
 
     &:hover {
+        background-color: color(background-transparent);
         color: color(text);
-        border-color: color(border-hover);
-    }
-
-    &:focus-visible {
-        opacity: 1;
+        border-color: color(grayscale, 300);
     }
 }
 
-/* Inline code — accent-tint wash, sharp radius */
+/* Inline code */
 :not(pre) > code {
-    font-family: var(--font-mono);
     font-size: 0.875em;
     padding: 0.15em 0.4em;
-    background-color: color(accent-tint);
-    border-radius: radius(xs);
+    background-color: color(background-dimmed);
+    border-radius: radius(sm);
 }

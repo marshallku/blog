@@ -143,10 +143,8 @@ table {
 }
 
 pre,
-code,
-kbd,
-samp {
-    font-family: var(--font-mono);
+code {
+    font-family: "Fira Code", "JetBrains Mono", Consolas, Monaco, monospace;
 }
 
 *,

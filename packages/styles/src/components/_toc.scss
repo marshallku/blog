@@ -1,21 +1,16 @@
 @use "../base/palette";
 
 .post-toc {
-    max-width: var(--measure);
+    max-width: 880px;
     margin: 0 auto palette.spacing(xl);
     padding: palette.spacing(md) palette.spacing(lg);
-    border: 1px solid palette.color(border-subtle);
+    border: 1px solid palette.color(grayscale, 200);
     border-radius: palette.radius(md);
-    background: palette.color(surface);
+    background: palette.color(background-dimmed);
 
     &__title {
         margin: 0 0 palette.spacing(sm);
-        font-family: var(--font-mono);
-        font-size: 0.8125rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: palette.color(text-faint);
+        font-weight: 700;
     }
 
     &__list {
@@ -31,13 +26,13 @@
     &__link {
         display: inline-block;
         padding: palette.spacing(xs) 0;
-        color: palette.color(text-muted);
+        color: palette.color(list-text);
         text-decoration: none;
         transition: color palette.transition(fast) ease;
 
         &:hover,
         &--active {
-            color: palette.color(accent);
+            color: palette.color(theme);
         }
     }
 }

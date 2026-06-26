@@ -6,11 +6,11 @@
 @use "./fonts";
 @use "./variables";
 
-// Pretendard Variable, self-hosted. Declared here (critical.css, loaded on every
-// page) rather than in the shared _fonts partial to avoid duplicating the rule into
-// every bundle. The variable weight axis MUST be `45 920` or WebKit mis-renders;
-// the woff2 sits next to the compiled CSS at /styles/<version>/, so the relative URL
-// resolves after copy-assets.
+// Self-hosted Pretendard Variable. Declared here (critical.css, loaded on every page)
+// rather than in the shared _fonts partial so the rule isn't duplicated into every
+// bundle. The variable weight axis MUST be `45 920` or WebKit mis-renders; the woff2
+// sits next to the compiled CSS at /styles/<version>/, so the relative URL resolves
+// after copy-assets.
 @font-face {
     font-family: "Pretendard Variable";
     font-weight: 45 920;
@@ -72,23 +72,11 @@ body {
 body {
     display: flex;
     flex-direction: column;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-}
-
-h1,
-h2,
-h3,
-h4 {
-    letter-spacing: -0.02em;
-    text-wrap: balance;
 }
 
 a {
     text-decoration: none;
     color: palette.color(text);
-    transition: color var(--duration-fast) var(--ease-standard);
 
     @include mixins.supports-hover {
         &:hover {
@@ -100,18 +88,6 @@ a {
 a,
 button {
     cursor: pointer;
-}
-
-::selection {
-    background: palette.color(accent-tint);
-}
-
-:focus-visible {
-    outline: none;
-    box-shadow:
-        0 0 0 2px palette.color(background),
-        0 0 0 4px palette.color(accent);
-    border-radius: palette.radius(xs);
 }
 
 .sr-only {

@@ -1,10 +1,6 @@
 @use "sass:math";
 @use "sass:map";
 
-// NOTE: the Pretendard `@font-face` lives in `_globals.scss` (critical-only) rather
-// than here — this partial is `@use`d by every entry bundle, so declaring it here
-// would duplicate the rule into post/list/tags CSS. critical.css loads on every page.
-
 @function toRem($size) {
     @return math.div($size, 16px) * 1rem;
 }
@@ -13,32 +9,40 @@
     @return $size * 16px;
 }
 
-// Editorial type scale (DESIGN.md §4.2). Base 17px body, ~1.25 major third for
-// headings. Line-heights are unitless ratios; Korean body gets generous 1.7 leading.
 $typography-size: (
-    h1: toRem(42px),
-    h2: toRem(32px),
-    h3: toRem(24px),
-    h4: toRem(20px),
-    h5: toRem(19px),
-    h6: toRem(17px),
-    b1: toRem(17px),
-    b2: toRem(15px),
-    c1: toRem(13px),
-    c2: toRem(12px),
+    h1: toRem(32.44px),
+    h2: toRem(28.83px),
+    h3: toRem(25.63px),
+    h4: toRem(22.78px),
+    h5: toRem(20.25px),
+    h6: toRem(18px),
+    b1: toRem(16px),
+    b2: toRem(14.22px),
+    c1: toRem(12.64px),
+    c2: toRem(10.86px),
 );
 
 $typography-height: (
-    h1: 1.18,
-    h2: 1.25,
-    h3: 1.33,
-    h4: 1.4,
-    h5: 1.5,
-    h6: 1.6,
-    b1: 1.7,
-    b2: 1.6,
-    c1: 1.5,
-    c2: 1.4,
+    // h1: 150%,
+    h1: toRem(48.66px),
+    // h2: 150%,
+    h2: toRem(43.245px),
+    // h3: 150%,
+    h3: toRem(38.445px),
+    // h4: 150%,
+    h4: toRem(34.17px),
+    // h5: 150%,
+    h5: toRem(30.375px),
+    // h6: 150%,
+    h6: toRem(27px),
+    // b1: 162.5%,
+    b1: toRem(26px),
+    // b2: 162.5%,
+    b2: toRem(23.1075px),
+    // c1: 130%,
+    c1: toRem(16.432px),
+    // c2: 130%,
+    c2: toRem(14.118px)
 );
 
 @mixin typography($key) {

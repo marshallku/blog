@@ -4,11 +4,10 @@
 
 ### Minor Changes
 
-- Editorial design system + Pretendard. Self-hosted Pretendard Variable font, warm
-  stone/ink/sepia semantic token palette with a reserved rose-pink accent, editorial
-  type scale (17px body / 1.7 leading, keep-all), 40rem reading measure, mono-as-accent
-  metadata/labels, GitHub Light/Dark code theme, low-radius surfaces, and tokenized
-  motion/shadows/focus rings.
+- Self-host the Pretendard Variable font. Adds the woff2 to the build/asset pipeline,
+  declares `@font-face` (variable weight `45 920`, `font-display: swap`) in the
+  critical bundle, and preloads it in `base.html` so the existing Pretendard font
+  stack resolves to the bundled font instead of falling back to system fonts.
 
 ## 0.3.0
 

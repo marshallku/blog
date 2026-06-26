@@ -13,8 +13,7 @@
         padding: variables.$global-navigation-height + $padding
             variables.$container-padding $padding;
         text-align: center;
-        background-color: palette.color(surface);
-        border-bottom: 1px solid palette.color(border-subtle);
+        background-color: palette.color(background-dimmed);
 
         &--has-cover {
             padding-bottom: $banner-height + $padding;
@@ -25,38 +24,15 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 8px;
-            margin-bottom: 16px;
-            font-family: var(--font-mono);
 
             a {
-                @include fonts.typography(c1);
-                color: palette.color(accent);
-                letter-spacing: 0.04em;
-                text-transform: uppercase;
+                color: palette.color(link);
             }
         }
 
         &__title {
-            @include fonts.typography(h1);
-            max-width: 18em;
-            margin: 0 auto 16px;
-            font-weight: 800;
-        }
-
-        &__meta {
-            font-family: var(--font-mono);
-            color: palette.color(text-muted);
-            letter-spacing: 0.01em;
-
-            a {
-                color: inherit;
-            }
-
-            @include mixins.supports-hover {
-                a:hover {
-                    color: palette.color(accent);
-                }
-            }
+            margin-bottom: 12px;
+            font-weight: 700;
         }
     }
 
@@ -71,9 +47,8 @@
             height: auto;
             aspect-ratio: 16 / 9;
             object-fit: cover;
-            border-radius: palette.radius(lg);
-            border: 1px solid palette.color(border-subtle);
-            box-shadow: var(--shadow-md);
+            border-radius: 16px;
+            border: 5px solid palette.color(background);
         }
     }
 
@@ -89,47 +64,21 @@
         width: clamp(0px, map.get(palette.$container-width, small), 100%);
         margin: 0 auto;
         padding: 48px variables.$container-padding 12px;
-        letter-spacing: -0.01em;
-        word-break: keep-all;
-        overflow-wrap: break-word;
         -ms-text-size-adjust: 100%;
         -webkit-text-size-adjust: 100%;
-
-        // Reading measure: prose caps at ~40rem (≈40 KR / 70 Latin chars), while
-        // figures, code blocks, and tables break out to the full column.
-        > p,
-        > ul,
-        > ol,
-        > dl,
-        > h1,
-        > h2,
-        > h3,
-        > h4,
-        > h5,
-        > h6,
-        > blockquote {
-            max-width: var(--measure);
-            margin-inline: auto;
-        }
+        word-wrap: break-word;
 
         @for $i from 1 through 6 {
             h#{$i} {
                 @include fonts.typography(h#{$i});
-                margin-top: 2em;
                 margin-bottom: 1em - ($i - 1) * 0.2em;
-                font-weight: if($i <= 1, 800, 700);
-                letter-spacing: -0.02em;
-                scroll-margin-top: calc(var(--nav-height) + 1.5rem);
-
-                &:first-child {
-                    margin-top: 0;
-                }
+                font-weight: 700;
             }
         }
 
         p {
             @include fonts.typography(b1);
-            margin-bottom: 0.9em;
+            margin-bottom: 0.65em;
         }
 
         ul,
@@ -167,64 +116,77 @@
 
         a {
             color: palette.color(link);
-            text-decoration: underline;
-            text-decoration-color: palette.color(accent-tint);
-            text-underline-offset: 0.18em;
-            transition: text-decoration-color var(--duration-fast)
-                var(--ease-standard);
 
             @include mixins.supports-hover {
                 &:hover {
-                    color: palette.color(accent-hover);
-                    text-decoration-color: palette.color(accent);
+                    color: palette.color(highlight);
                 }
             }
         }
 
         figure {
-            margin-bottom: 1.5em;
+            margin-bottom: 1em;
         }
 
         code {
-            font-family: var(--font-mono);
+            font-family: "Fira Code", monospace;
             font-size: 90%;
-            padding: 0.15em 0.4em;
-            border-radius: palette.radius(xs);
-            background-color: palette.color(accent-tint);
+            border-radius: 4px;
+            overflow-x: auto;
+            background-color: palette.color(background-dimmed);
+
+            @at-root html:not([data-theme="dark"]) & {
+                &[data-theme*=" "],
+                &[data-theme*=" "] span {
+                    color: var(--shiki-light);
+                    background-color: var(--shiki-light-bg);
+                }
+            }
+
+            @at-root html[data-theme="dark"] & {
+                &[data-theme*=" "],
+                &[data-theme*=" "] span {
+                    color: var(--shiki-dark);
+                    background-color: var(--shiki-dark-bg);
+                }
+            }
+
+            @at-root html[data-theme="sepia"] & {
+                &[data-theme*=" "],
+                &[data-theme*=" "] span {
+                    color: var(--shiki-sepia);
+                    background-color: var(--shiki-sepia-bg);
+                }
+            }
         }
 
         pre code {
             display: block;
-            padding: 0;
             background-color: inherit;
         }
 
         hr {
-            height: 1px;
-            margin: 2.5em auto;
+            height: 0.25em;
+            margin: 24px 0;
             border: 0;
-            background-color: palette.color(border);
+            border-bottom: 1px solid palette.color(sub-opacity);
+            background-color: palette.color(sub);
         }
 
         ol {
             list-style: decimal;
-            padding-left: 1.5em;
+            margin-left: 1.5em;
         }
 
         ul {
             list-style: disc;
-            padding-left: 1.5em;
-        }
-
-        li {
-            margin-bottom: 0.35em;
+            margin-left: 1.5em;
         }
 
         blockquote {
-            margin: 1.5em auto;
-            padding: 0.2em 0 0.2em 1.25em;
-            border-left: 3px solid palette.color(accent);
-            color: palette.color(text-muted);
+            margin: 0 0 1em;
+            padding: 0.5em 1em;
+            border-left: 0.25em solid palette.color(sub-opacity);
 
             p:last-child {
                 margin-bottom: 0;
@@ -233,20 +195,20 @@
 
         table {
             width: 100%;
-            margin-bottom: 1.5em;
+            margin-bottom: 1em;
             border-collapse: collapse;
             border-spacing: 0;
-            border: 1px solid palette.color(border);
+            border: 1px solid palette.color(sub-opacity);
 
             th,
             td {
                 padding: 0.5em 1em;
-                border: 1px solid palette.color(border);
+                border: 1px solid palette.color(sub-opacity);
             }
 
             th {
                 font-weight: 700;
-                background-color: palette.color(surface);
+                background-color: palette.color(sub-opacity);
             }
         }
 

@@ -62,9 +62,7 @@
     }
 
     &__title {
-        @include fonts.typography(h2);
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        font-weight: 700;
     }
 }
 
@@ -108,28 +106,19 @@
     &__buttons {
         display: inline-flex;
         justify-content: center;
-        border: 1px solid palette.color(border);
-        border-radius: palette.radius(full);
-        background-color: palette.color(background);
+        border: 1px solid palette.color(grayscale, 300);
+        border-radius: 31px;
         overflow: hidden;
 
         button {
             @include fonts.typography(c1);
-            padding: 8px 16px;
             border: none;
             border-radius: 0;
-            border-right: 1px solid palette.color(border-subtle);
-            font-family: var(--font-mono);
-            letter-spacing: 0.02em;
-            color: palette.color(text-muted);
-            transition:
-                background-color var(--duration-fast) var(--ease-standard),
-                color var(--duration-fast) var(--ease-standard);
+            border-right: 1px solid palette.color(grayscale, 300);
 
             @include mixins.supports-hover {
                 &:hover {
-                    background-color: palette.color(surface-hover);
-                    color: palette.color(text);
+                    background-color: palette.color(grayscale, 200);
                 }
             }
 
@@ -138,9 +127,7 @@
             }
 
             &[data-active="true"] {
-                background-color: palette.color(accent-tint);
-                color: palette.color(accent);
-                font-weight: 600;
+                background-color: palette.color(grayscale, 300);
             }
         }
     }
