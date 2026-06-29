@@ -1,16 +1,14 @@
 import { initSpa } from "./spa";
-import { initReadingProgress } from "./reading-progress";
 import { initToc } from "./toc";
 import { initShare } from "./share";
 import { initViewCounter } from "./view";
-import { fit, throttle } from "./utils";
+import { fit } from "./utils";
 
 document.addEventListener("DOMContentLoaded", () => {
     initGlobalNavigation();
     initScrollToTop();
     initCodeCopy();
     initSpa();
-    initReadingProgress();
     initToc();
     initShare();
     initViewCounter();
@@ -35,16 +33,38 @@ function initGlobalNavigation(): void {
 }
 
 function initScrollToTop(): void {
-    const button = document.querySelector<HTMLButtonElement>(".scroll-to-top");
+    const button = document.querySelector<HTMLButtonElement>("[data-scroll-top]");
     if (!button) {
         return;
     }
 
-    const toggleVisibility = throttle(() => {
-        button.classList.toggle("visible", window.scrollY > 300);
-    }, 100);
+    const progress = button.querySelector<SVGCircleElement>(
+        "[data-scroll-progress]"
+    );
+    const circumference = 2 * Math.PI * 20;
 
-    window.addEventListener("scroll", toggleVisibility, { passive: true });
+    const update = (): void => {
+        const scrollable =
+            document.documentElement.scrollHeight - window.innerHeight;
+        const ratio =
+            scrollable > 0
+                ? Math.min(Math.max(window.scrollY / scrollable, 0), 1)
+                : 0;
+
+        if (progress) {
+            progress.style.strokeDashoffset = String(
+                circumference * (1 - ratio)
+            );
+        }
+
+        button.classList.toggle("scroll-to-top--visible", window.scrollY > 300);
+    };
+
+    const onScroll = fit(update);
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
     button.addEventListener("click", () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     });

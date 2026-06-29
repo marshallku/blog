@@ -4,7 +4,7 @@
 $light-palette: (
     theme: #f1718c,
     text: #080808,
-    highlight: #606060,
+    highlight: #e85c7a,
     background: #fff,
     navigation-background: rgba(255, 255, 255, 0.8),
     background-transparent: rgba(255, 255, 255, 0),
@@ -21,7 +21,7 @@ $light-palette: (
     scroll: #aaa,
     masonry-alt: #fff,
     masonry-alt-transparent: rgba(230, 230, 230, 0),
-    link: #0554bb,
+    link: #f1718c,
 
     grayscale: (
         50: #fafafa,
@@ -40,7 +40,7 @@ $light-palette: (
 $dark-palette: (
     theme: #f1718c,
     text: #bbb,
-    highlight: #f1f1f1,
+    highlight: #ffb0c1,
     background: #121212,
     navigation-background: rgba(0, 0, 0, 0.8),
     background-transparent: rgba(18, 18, 18, 0),
@@ -57,7 +57,7 @@ $dark-palette: (
     scroll: #aaa,
     masonry-alt: #262626,
     masonry-alt-transparent: rgba(38, 38, 38, 0),
-    link: #55b1ff,
+    link: #ff8fa6,
 
     grayscale: (
         50: #161616,
@@ -76,7 +76,7 @@ $dark-palette: (
 $sepia-palette: (
     theme: #f1718c,
     text: #080808,
-    highlight: #606060,
+    highlight: #e85c7a,
     background: #f6f1e1,
     navigation-background: rgba(242, 231, 196, 0.8),
     background-transparent: rgba(246, 241, 225, 0),
@@ -93,7 +93,7 @@ $sepia-palette: (
     scroll: #b06457,
     masonry-alt: #e8dbb0,
     masonry-alt-transparent: rgba(232, 219, 176, 0),
-    link: #0021c2,
+    link: #f1718c,
 
     grayscale: (
         50: #fafafa,
@@ -132,10 +132,11 @@ $spacing-size: (
     @return null;
 }
 
+// Sharp / technical — low radius for the developer-credible look.
 $radius-size: (
-    sm: 4px,
-    md: 8px,
-    lg: 12px,
+    sm: 2px,
+    md: 4px,
+    lg: 6px,
 );
 
 @function radius($key) {

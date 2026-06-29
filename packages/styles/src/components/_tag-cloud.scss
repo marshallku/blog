@@ -10,14 +10,17 @@
 
     &__item {
         display: inline-flex;
-        padding: 4px 12px;
+        padding: 4px 10px;
         gap: 6px;
         border: 1px solid palette.color(grayscale, 200);
-        border-radius: 20px;
+        border-radius: palette.radius(sm);
         background-color: palette.color(background);
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
         text-decoration: none;
         transition: border-color palette.transition(fast) ease,
-            background-color palette.transition(fast) ease;
+            background-color palette.transition(fast) ease,
+            color palette.transition(fast) ease;
 
         @include mixins.supports-hover {
             &:hover {

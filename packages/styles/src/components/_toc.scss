@@ -10,7 +10,12 @@
 
     &__title {
         margin: 0 0 palette.spacing(sm);
-        font-weight: 700;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: palette.color(sub);
     }
 
     &__list {

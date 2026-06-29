@@ -6,19 +6,19 @@
     "woff2": "/icon/0.1.0/icons.woff2"
   },
   "scripts": {
-    "version": "0.3.0",
-    "bundle": "/scripts/0.3.0/bundle.js",
-    "index": "/scripts/0.3.0/index.js",
-    "comment": "/scripts/0.3.0/comment.global.js",
-    "like": "/scripts/0.3.0/like.global.js",
-    "islands": "/scripts/0.3.0/islands.js"
+    "version": "0.4.0",
+    "bundle": "/scripts/0.4.0/bundle.js",
+    "index": "/scripts/0.4.0/index.js",
+    "comment": "/scripts/0.4.0/comment.global.js",
+    "like": "/scripts/0.4.0/like.global.js",
+    "islands": "/scripts/0.4.0/islands.js"
   },
   "styles": {
-    "version": "0.4.0",
-    "critical": "/styles/0.4.0/critical.css",
-    "post": "/styles/0.4.0/post.css",
-    "list": "/styles/0.4.0/list.css",
-    "tags": "/styles/0.4.0/tags.css",
-    "pretendard": "/styles/0.4.0/PretendardVariable.woff2"
+    "version": "0.5.0",
+    "critical": "/styles/0.5.0/critical.css",
+    "post": "/styles/0.5.0/post.css",
+    "list": "/styles/0.5.0/list.css",
+    "tags": "/styles/0.5.0/tags.css",
+    "pretendard": "/styles/0.5.0/PretendardVariable.woff2"
   }
 }

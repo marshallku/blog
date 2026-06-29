@@ -46,9 +46,17 @@
         }
 
         a {
-            @include fonts.typography(b2);
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            letter-spacing: 0.02em;
             color: palette.color(text);
             font-weight: 500;
+
+            @include mixins.supports-hover {
+                &:hover {
+                    color: palette.color(highlight);
+                }
+            }
         }
     }
 

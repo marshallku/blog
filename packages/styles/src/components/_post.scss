@@ -13,7 +13,7 @@
         padding: variables.$global-navigation-height + $padding
             variables.$container-padding $padding;
         text-align: center;
-        background-color: palette.color(background-dimmed);
+        border-bottom: 1px solid palette.color(grayscale, 200);
 
         &--has-cover {
             padding-bottom: $banner-height + $padding;
@@ -24,15 +24,32 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 8px;
+            margin-bottom: 14px;
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            letter-spacing: 0.02em;
 
             a {
                 color: palette.color(link);
+
+                @include mixins.supports-hover {
+                    &:hover {
+                        color: palette.color(highlight);
+                    }
+                }
             }
         }
 
         &__title {
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             font-weight: 700;
+        }
+
+        &__meta {
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            letter-spacing: 0.01em;
+            color: palette.color(sub);
         }
     }
 
@@ -47,8 +64,8 @@
             height: auto;
             aspect-ratio: 16 / 9;
             object-fit: cover;
-            border-radius: 16px;
-            border: 5px solid palette.color(background);
+            border-radius: palette.radius(lg);
+            border: 1px solid palette.color(grayscale, 200);
         }
     }
 
@@ -56,6 +73,9 @@
         width: clamp(0px, map.get(palette.$container-width, small), 100%);
         margin: 0 auto;
         padding: 24px variables.$container-padding 0px;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        color: palette.color(sub);
     }
 
     &__body {
@@ -116,6 +136,9 @@
 
         a {
             color: palette.color(link);
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 0.2em;
 
             @include mixins.supports-hover {
                 &:hover {
@@ -129,10 +152,12 @@
         }
 
         code {
-            font-family: "Fira Code", monospace;
+            font-family: var(--font-mono);
             font-size: 90%;
-            border-radius: 4px;
+            padding: 0.1em 0.35em;
+            border-radius: palette.radius(sm);
             overflow-x: auto;
+            color: palette.color(link);
             background-color: palette.color(background-dimmed);
 
             @at-root html:not([data-theme="dark"]) & {
@@ -162,15 +187,16 @@
 
         pre code {
             display: block;
+            padding: 0;
+            color: inherit;
             background-color: inherit;
         }
 
         hr {
-            height: 0.25em;
-            margin: 24px 0;
+            height: 1px;
+            margin: 32px 0;
             border: 0;
-            border-bottom: 1px solid palette.color(sub-opacity);
-            background-color: palette.color(sub);
+            background-color: palette.color(grayscale, 200);
         }
 
         ol {
@@ -185,8 +211,9 @@
 
         blockquote {
             margin: 0 0 1em;
-            padding: 0.5em 1em;
-            border-left: 0.25em solid palette.color(sub-opacity);
+            padding: 0.4em 1em;
+            border-left: 2px solid palette.color(theme);
+            color: palette.color(sub);
 
             p:last-child {
                 margin-bottom: 0;

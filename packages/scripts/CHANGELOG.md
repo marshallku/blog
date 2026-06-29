@@ -1,5 +1,16 @@
 # @blog/scripts
 
+## 0.4.0
+
+### Minor Changes
+
+- Restrained hacker/developer cohesion pass + scroll-progress ring. Unifies the UI on
+  one visual system: monospace as the accent typeface (meta, tags, nav, labels, code),
+  a single brand-pink accent (links/tags/active/hover), sharp low radius, and hairline
+  borders — across post, cards, home tabs, tag cloud, pagination, TOC, share, header.
+  Replaces the top reading-progress bar with a bottom-right circular scroll-to-top
+  button whose SVG ring stroke fills with whole-page scroll progress.
+
 ## 0.3.0
 
 ### Minor Changes

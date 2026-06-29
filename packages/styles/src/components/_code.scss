@@ -3,7 +3,8 @@
 /* Code block styles */
 pre {
     position: relative;
-    background-color: color(background-dimmed);
+    background-color: var(--syntax-bg, #{color(background-dimmed)});
+    border: 1px solid color(grayscale, 200);
     border-radius: radius(md);
     padding: spacing(lg);
     overflow-x: auto;
@@ -27,6 +28,7 @@ pre code {
     background-color: color(background);
     border: 1px solid color(grayscale, 300);
     border-radius: radius(sm);
+    font-family: var(--font-mono);
     font-size: 0.75rem;
     cursor: pointer;
     opacity: 0;

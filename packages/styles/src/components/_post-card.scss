@@ -40,7 +40,8 @@
         margin-bottom: 12px;
         padding-bottom: 56.25%;
         flex-shrink: 0;
-        border-radius: 4px;
+        border: 1px solid palette.color(grayscale, 200);
+        border-radius: palette.radius(md);
         transition: transform 0.15s ease-in-out;
         overflow: hidden;
 
@@ -99,14 +100,31 @@
     &__time {
         display: block;
         margin-top: auto;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.01em;
+        color: palette.color(sub);
         text-align: right;
     }
 
     &__tags {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 10px;
         margin-bottom: 12px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.02em;
+
+        a {
+            color: palette.color(link);
+
+            @include mixins.supports-hover {
+                &:hover {
+                    color: palette.color(highlight);
+                }
+            }
+        }
     }
 }
 

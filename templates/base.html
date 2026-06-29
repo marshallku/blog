@@ -45,9 +45,15 @@
     {% endif %}
 </head>
 <body x-data="{ drawerOpen: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 10">
-    <div class="reading-progress" data-reading-progress aria-hidden="true">
-        <div class="reading-progress__bar" data-reading-progress-bar></div>
-    </div>
+    <button class="scroll-to-top" type="button" aria-label="맨 위로 스크롤" data-scroll-top>
+        <svg class="scroll-to-top__ring" viewBox="0 0 44 44" aria-hidden="true">
+            <circle class="scroll-to-top__track" cx="22" cy="22" r="20"></circle>
+            <circle class="scroll-to-top__progress" cx="22" cy="22" r="20" data-scroll-progress></circle>
+        </svg>
+        <svg class="scroll-to-top__arrow" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5l-7 7 1.41 1.41L11 8.83V19h2V8.83l4.59 4.58L19 12z"></path>
+        </svg>
+    </button>
     <header class="global-navigation" :class="{ 'global-navigation--drawer-open': drawerOpen }">
         <div class="global-navigation__container">
             <div class="global-navigation__left">

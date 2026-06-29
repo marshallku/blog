@@ -10,8 +10,11 @@
 
     &__label {
         margin-right: palette.spacing(xs);
-        color: palette.color(text);
-        font-weight: 700;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: palette.color(sub);
     }
 
     &__button {
@@ -20,7 +23,7 @@
         gap: palette.spacing(xs);
         padding: palette.spacing(xs) palette.spacing(sm);
         border: 1px solid palette.color(grayscale, 300);
-        border-radius: 9999px;
+        border-radius: palette.radius(sm);
         background: transparent;
         color: palette.color(text);
         text-decoration: none;

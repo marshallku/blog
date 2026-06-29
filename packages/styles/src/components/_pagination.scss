@@ -22,20 +22,23 @@
     > a {
         display: inline-block;
         margin: 8px;
+        font-family: var(--font-mono);
         color: palette.color(text);
         text-decoration: none;
 
         &[aria-current="true"] {
             position: relative;
+            color: palette.color(theme);
+            font-weight: 600;
 
             &::after {
                 content: "";
                 position: absolute;
                 top: 50%;
                 left: 50%;
-                width: 1.5em;
-                height: 1.5em;
-                background-color: palette.color(main-opacity);
+                width: 1.6em;
+                height: 1.6em;
+                background-color: palette.color(grayscale, 100);
                 transform: translate3d(-50%, -50%, 0);
                 border-radius: 50%;
                 pointer-events: none;
