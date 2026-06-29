@@ -30,9 +30,7 @@ function discoverPackages() {
     for (const dir of dirs) {
         const packageJsonPath = join(packagesDir, dir, "package.json");
         try {
-            const packageJson = JSON.parse(
-                readFileSync(packageJsonPath, "utf-8")
-            );
+            const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
             if (packageJson.blog?.assets) {
                 packages.push({
@@ -85,9 +83,7 @@ function copyPackageAssets(pkg) {
         }
     }
 
-    console.log(
-        `✅ ${pkg.name}@${pkg.version}: copied ${copied} files to static/${pkg.name}/${pkg.version}/`
-    );
+    console.log(`✅ ${pkg.name}@${pkg.version}: copied ${copied} files to static/${pkg.name}/${pkg.version}/`);
 }
 
 function main() {

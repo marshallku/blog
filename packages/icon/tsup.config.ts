@@ -1,10 +1,10 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
-  format: ["esm"],
-  dts: true,
-  clean: false,
-  minify: true,
-  outDir: "dist",
+    entry: ["src/index.ts"],
+    format: ["esm"],
+    dts: true,
+    clean: false,
+    minify: true,
+    outDir: "dist",
 });

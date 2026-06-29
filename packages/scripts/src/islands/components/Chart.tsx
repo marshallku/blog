@@ -7,9 +7,13 @@ interface ChartProps {
 
 export default function Chart({ data: dataProp, title, type = "bar", color }: ChartProps) {
     // Parse data - can be comma-separated string or array
-    const data: number[] = typeof dataProp === "string"
-        ? dataProp.split(",").map((s) => parseFloat(s.trim())).filter((n) => !isNaN(n))
-        : dataProp;
+    const data: number[] =
+        typeof dataProp === "string"
+            ? dataProp
+                  .split(",")
+                  .map((s) => parseFloat(s.trim()))
+                  .filter((n) => !isNaN(n))
+            : dataProp;
 
     if (!data || data.length === 0) {
         return <div className="chart chart--empty">No data available</div>;

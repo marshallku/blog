@@ -15,10 +15,14 @@
         "build:assets": "pnpm build && pnpm manifest && pnpm copy-assets",
         "changeset": "changeset",
         "version": "changeset version && pnpm manifest",
-        "release": "pnpm build:assets"
+        "release": "pnpm build:assets",
+        "format": "prettier --write \"packages/**/*.{ts,tsx,js,mjs,cjs,scss,css,json}\" \"scripts/**/*.{js,mjs,cjs}\" \"*.{json,yml,yaml}\" \".changeset/*.json\" && cargo fmt --all",
+        "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,mjs,cjs,scss,css,json}\" \"scripts/**/*.{js,mjs,cjs}\" \"*.{json,yml,yaml}\" \".changeset/*.json\" && cargo fmt --all --check",
+        "prepare": "git config core.hooksPath .githooks || true"
     },
     "devDependencies": {
         "@changesets/cli": "^2.29.7",
+        "prettier": "^3.4.2",
         "typescript": "^5.9.3"
     },
     "packageManager": "pnpm@9.15.0",

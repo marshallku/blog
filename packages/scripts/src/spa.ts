@@ -62,10 +62,7 @@ function isInternalLink(link: HTMLAnchorElement): boolean {
     }
 
     const ext = url.pathname.split(".").pop()?.toLowerCase();
-    if (
-        ext &&
-        ["pdf", "zip", "png", "jpg", "jpeg", "gif", "webp"].includes(ext)
-    ) {
+    if (ext && ["pdf", "zip", "png", "jpg", "jpeg", "gif", "webp"].includes(ext)) {
         return false;
     }
 
@@ -130,9 +127,7 @@ function updatePageMeta(): void {
 }
 
 function updatePageStyles(newStylesUrl: string | null): void {
-    const existingLink = document.getElementById(
-        SPA_STYLE_ID
-    ) as HTMLLinkElement | null;
+    const existingLink = document.getElementById(SPA_STYLE_ID) as HTMLLinkElement | null;
     const currentHref = existingLink?.href ?? "";
 
     if (!newStylesUrl) {
@@ -229,9 +224,7 @@ async function navigateTo(url: string, pushState = true): Promise<void> {
         // Parse with the exact selector (not a substring) so unrelated markup like
         // `prev-next-post-post__cover` doesn't count as a cover.
         if (sharedEls.length > 0) {
-            const hasCover = new DOMParser()
-                .parseFromString(html, "text/html")
-                .querySelector(COVER_IMG_SELECTOR);
+            const hasCover = new DOMParser().parseFromString(html, "text/html").querySelector(COVER_IMG_SELECTOR);
             if (!hasCover) {
                 clearShared();
             }
@@ -247,9 +240,7 @@ async function navigateTo(url: string, pushState = true): Promise<void> {
                 // View Transition morphs one into the other. Only when a card was
                 // marked on click (forward into a post) — otherwise plain cross-fade.
                 if (sharedEls.length > 0) {
-                    markShared(
-                        container.querySelector<HTMLElement>(COVER_IMG_SELECTOR)
-                    );
+                    markShared(container.querySelector<HTMLElement>(COVER_IMG_SELECTOR));
                 }
 
                 updatePageMeta();
@@ -264,9 +255,7 @@ async function navigateTo(url: string, pushState = true): Promise<void> {
             window.scrollTo({ top: 0, behavior: "instant" });
 
             if (container) {
-                document.dispatchEvent(
-                    new CustomEvent("spa:navigate", { detail: { container } })
-                );
+                document.dispatchEvent(new CustomEvent("spa:navigate", { detail: { container } }));
             }
         };
 
@@ -331,9 +320,5 @@ export function initSpa(): void {
     document.addEventListener("click", handleLinkClick);
     window.addEventListener("popstate", handlePopState);
 
-    history.replaceState(
-        { url: window.location.href },
-        "",
-        window.location.href
-    );
+    history.replaceState({ url: window.location.href }, "", window.location.href);
 }

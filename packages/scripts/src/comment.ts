@@ -27,17 +27,12 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
 
         async init() {
             await this.loadComments();
-            document
-                .getElementById("comment-list")
-                ?.addEventListener("click", (e) => {
-                    const target = e.target as HTMLElement;
-                    if (target.matches(".comment-bubble__reply-btn")) {
-                        this.setReply(
-                            target.dataset.id || "",
-                            target.dataset.name || ""
-                        );
-                    }
-                });
+            document.getElementById("comment-list")?.addEventListener("click", (e) => {
+                const target = e.target as HTMLElement;
+                if (target.matches(".comment-bubble__reply-btn")) {
+                    this.setReply(target.dataset.id || "", target.dataset.name || "");
+                }
+            });
         },
 
         async loadComments() {
@@ -46,13 +41,12 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
 
             try {
                 const res = await fetch(
-                    `${this.apiUrl}/api/v2/comment/list?postSlug=${encodeURIComponent(this.postSlug)}`
+                    `${this.apiUrl}/api/v2/comment/list?postSlug=${encodeURIComponent(this.postSlug)}`,
                 );
                 if (!res.ok) throw new Error();
                 list.innerHTML = await res.text();
             } catch {
-                list.innerHTML =
-                    '<p class="comment-list__error">댓글을 불러오지 못했습니다.</p>';
+                list.innerHTML = '<p class="comment-list__error">댓글을 불러오지 못했습니다.</p>';
             }
         },
 
@@ -90,9 +84,7 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
                 const html = await res.text();
 
                 if (this.parentId) {
-                    const parent = document.getElementById(
-                        "comment-" + this.parentId
-                    );
+                    const parent = document.getElementById("comment-" + this.parentId);
                     if (!parent) return;
 
                     let replies = parent.nextElementSibling;
@@ -111,8 +103,7 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
                         if (empty) empty.remove();
                         ul.insertAdjacentHTML("afterbegin", html);
                     } else {
-                        list.innerHTML =
-                            '<ul class="comment-list">' + html + "</ul>";
+                        list.innerHTML = '<ul class="comment-list">' + html + "</ul>";
                     }
                 }
 

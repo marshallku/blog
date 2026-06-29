@@ -6,9 +6,7 @@ function setup(): void {
     observer?.disconnect();
     observer = null;
 
-    const links = Array.from(
-        document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")
-    );
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]"));
 
     if (links.length === 0) {
         return;
@@ -46,7 +44,7 @@ function setup(): void {
                 linkBySlug.get(entry.target.id)?.classList.add(ACTIVE_CLASS);
             });
         },
-        { rootMargin: "0px 0px -70% 0px", threshold: 0 }
+        { rootMargin: "0px 0px -70% 0px", threshold: 0 },
     );
 
     headings.forEach((heading) => observer?.observe(heading));

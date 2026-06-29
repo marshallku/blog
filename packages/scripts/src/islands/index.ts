@@ -84,7 +84,7 @@ export function initIslands(container: Element | Document = document): void {
                         }
                     });
                 },
-                { rootMargin: "50px" }
+                { rootMargin: "50px" },
             );
             observer.observe(island);
         }
@@ -92,9 +92,7 @@ export function initIslands(container: Element | Document = document): void {
 }
 
 export function cleanupIslands(container: Element | Document = document): void {
-    const islands = container.querySelectorAll<HTMLElement>(
-        `${ISLAND_SELECTOR}.${HYDRATED_CLASS}`
-    );
+    const islands = container.querySelectorAll<HTMLElement>(`${ISLAND_SELECTOR}.${HYDRATED_CLASS}`);
     islands.forEach(cleanupIsland);
 }
 

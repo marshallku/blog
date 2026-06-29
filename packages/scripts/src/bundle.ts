@@ -15,8 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initGlobalNavigation(): void {
-    const navigation =
-        document.querySelector<HTMLDivElement>(".global-navigation");
+    const navigation = document.querySelector<HTMLDivElement>(".global-navigation");
     if (!navigation) {
         return;
     }
@@ -40,9 +39,7 @@ function initScrollToTop(): void {
 
     // Progress is a rounded <rect>; its perimeter is read from the geometry
     // (getTotalLength) so the dash math stays correct regardless of size/radius.
-    const progress = button.querySelector<SVGGeometryElement>(
-        "[data-scroll-progress]"
-    );
+    const progress = button.querySelector<SVGGeometryElement>("[data-scroll-progress]");
     let perimeter = 0;
 
     const update = (): void => {
@@ -51,12 +48,8 @@ function initScrollToTop(): void {
             progress.style.strokeDasharray = String(perimeter);
         }
 
-        const scrollable =
-            document.documentElement.scrollHeight - window.innerHeight;
-        const ratio =
-            scrollable > 0
-                ? Math.min(Math.max(window.scrollY / scrollable, 0), 1)
-                : 0;
+        const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+        const ratio = scrollable > 0 ? Math.min(Math.max(window.scrollY / scrollable, 0), 1) : 0;
 
         if (progress) {
             progress.style.strokeDashoffset = String(perimeter * (1 - ratio));

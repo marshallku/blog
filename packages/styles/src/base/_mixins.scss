@@ -21,11 +21,7 @@ $breakpoints: (
     $raw-query: map.get($breakpoints, $breakpoint);
 
     @if $raw-query {
-        $query: if(
-            meta.type-of($raw-query) == "string",
-            string.unquote($raw-query),
-            meta.inspect($raw-query)
-        );
+        $query: if(meta.type-of($raw-query) == "string", string.unquote($raw-query), meta.inspect($raw-query));
 
         @media screen and (#{$query}) {
             @content;

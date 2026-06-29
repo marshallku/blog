@@ -1,2 +1,20 @@
+# Build output / generated
+**/dist/
+static/
+target/
+.build-cache/
+db/
+manifest.json
+**/CHANGELOG.md
+pnpm-lock.yaml
+
+# Gitignored content / local docs (not formatted)
+content/
+*.md
+
+# Tera templates (not valid HTML — prettier would mangle the {% %} syntax)
 templates/**/*.html
 crates/backend/templates/**/*.html
+
+# Icon source SVGs
+packages/icon/src/icons/

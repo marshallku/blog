@@ -35,9 +35,7 @@ function discoverPackages() {
     for (const dir of dirs) {
         const packageJsonPath = join(packagesDir, dir, "package.json");
         try {
-            const packageJson = JSON.parse(
-                readFileSync(packageJsonPath, "utf-8")
-            );
+            const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
             // Check for blog.assets field
             if (packageJson.blog?.assets) {

@@ -11,6 +11,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.7
         version: 2.29.7
+      prettier:
+        specifier: ^3.4.2
+        version: 3.9.3
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -1899,6 +1902,11 @@ packages:
   prettier@2.8.8:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
+    hasBin: true
+
+  prettier@3.9.3:
+    resolution: {integrity: sha512-HWmu+K+zvHNpaMfSnYeqdqrDbR16cuIXaPx8WoHaviQkDJh1/0BNtOZmHVQI5jc3wXv0H1yXc9wjvFdXh+n3hQ==}
+    engines: {node: '>=14'}
     hasBin: true
 
   pretty-hrtime@1.0.3:
@@ -4154,6 +4162,8 @@ snapshots:
       source-map-js: 1.2.1
 
   prettier@2.8.8: {}
+
+  prettier@3.9.3: {}
 
   pretty-hrtime@1.0.3: {}
 

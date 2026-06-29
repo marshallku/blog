@@ -119,7 +119,8 @@
             font-family: var(--font-mono);
             letter-spacing: 0.02em;
             color: palette.color(sub);
-            transition: background-color palette.transition(fast) ease,
+            transition:
+                background-color palette.transition(fast) ease,
                 color palette.transition(fast) ease;
 
             @include mixins.supports-hover {

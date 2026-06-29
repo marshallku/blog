@@ -1,9 +1,7 @@
 const counted = new Set<string>();
 
 function ping(): void {
-    const article = document.querySelector<HTMLElement>(
-        "article.post[data-view-slug]"
-    );
+    const article = document.querySelector<HTMLElement>("article.post[data-view-slug]");
 
     if (!article) {
         return;

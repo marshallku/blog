@@ -97,6 +97,7 @@
         "content",
         "examples",
         "packages/icon/src/icons",
-        "static"
+        "static",
+        ".githooks"
     ]
 }

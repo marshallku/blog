@@ -10,8 +10,7 @@
 
     &-header {
         $padding: 36px;
-        padding: variables.$global-navigation-height + $padding
-            variables.$container-padding $padding;
+        padding: variables.$global-navigation-height + $padding variables.$container-padding $padding;
         text-align: center;
         border-bottom: 1px solid palette.color(grayscale, 200);
 

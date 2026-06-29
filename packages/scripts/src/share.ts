@@ -1,9 +1,7 @@
 const COPY_RESET_MS = 2000;
 
 function bindContainer(container: HTMLElement): void {
-    const copyButton = container.querySelector<HTMLButtonElement>(
-        "[data-share-copy]"
-    );
+    const copyButton = container.querySelector<HTMLButtonElement>("[data-share-copy]");
 
     if (!copyButton || copyButton.dataset.bound === "true") {
         return;
@@ -11,11 +9,8 @@ function bindContainer(container: HTMLElement): void {
 
     copyButton.dataset.bound = "true";
 
-    const url =
-        container.getAttribute("data-share-url") || window.location.href;
-    const label = copyButton.querySelector<HTMLElement>(
-        ".post-share__copy-label"
-    );
+    const url = container.getAttribute("data-share-url") || window.location.href;
+    const label = copyButton.querySelector<HTMLElement>(".post-share__copy-label");
 
     copyButton.addEventListener("click", async () => {
         try {
@@ -35,9 +30,7 @@ function bindContainer(container: HTMLElement): void {
 }
 
 function setup(root: ParentNode = document): void {
-    root
-        .querySelectorAll<HTMLElement>("[data-share]")
-        .forEach((container) => bindContainer(container));
+    root.querySelectorAll<HTMLElement>("[data-share]").forEach((container) => bindContainer(container));
 }
 
 export function initShare(): void {

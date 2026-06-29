@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Repo-local pre-commit: auto-format staged files (Rust via rustfmt, JS/TS/SCSS/JSON
+# via prettier), re-stage them, then delegate to the user's global pre-commit hook so
+# its policy checks (e.g. blocking BRIEF/codex-brief files) still run.
+#
+# This repo overrides core.hooksPath to .githooks (set by the `prepare` script), which
+# would otherwise bypass the global hook — hence the explicit delegation below.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+mapfile -t staged < <(git diff --cached --name-only --diff-filter=ACMR)
+if [[ ${#staged[@]} -gt 0 ]]; then
+    rust=()
+    pretty=()
+    for f in "${staged[@]}"; do
+        case "$f" in
+            *.rs) rust+=("$f") ;;
+            *.ts | *.tsx | *.js | *.mjs | *.cjs | *.scss | *.css | *.json | *.yaml | *.yml)
+                [[ -f "$f" ]] && pretty+=("$f")
+                ;;
+        esac
+    done
+
+    targets=("${rust[@]}" "${pretty[@]}")
+    if [[ ${#targets[@]} -gt 0 ]]; then
+        # Refuse to format a partially-staged file: we format the working tree and
+        # `git add` the whole path, which would otherwise pull its *unstaged* hunks
+        # into the commit. Fail closed with guidance instead of corrupting the commit.
+        declare -A unstaged=()
+        while IFS= read -r u; do unstaged["$u"]=1; done < <(git diff --name-only)
+        partial=()
+        for f in "${targets[@]}"; do [[ -n "${unstaged[$f]:-}" ]] && partial+=("$f"); done
+        if [[ ${#partial[@]} -gt 0 ]]; then
+            {
+                echo "✗ pre-commit: these files are partially staged, so auto-format can't run safely:"
+                printf '    %s\n' "${partial[@]}"
+                echo "  Stage them fully (git add <file>) or run 'pnpm format', then retry."
+            } >&2
+            exit 1
+        fi
+
+        # Fail closed when a required formatter is missing — never let unformatted code
+        # through silently. (`prepare` installs prettier on `pnpm install`.)
+        if [[ ${#rust[@]} -gt 0 ]] && ! command -v rustfmt >/dev/null 2>&1; then
+            echo "✗ pre-commit: Rust files are staged but 'rustfmt' is missing — run 'rustup component add rustfmt'." >&2
+            exit 1
+        fi
+        if [[ ${#pretty[@]} -gt 0 && ! -x "$ROOT/node_modules/.bin/prettier" ]]; then
+            echo "✗ pre-commit: JS/TS/SCSS/JSON files are staged but prettier is missing — run 'pnpm install'." >&2
+            exit 1
+        fi
+
+        # Format only the staged files (no whole-workspace side effects), then re-stage.
+        if [[ ${#rust[@]} -gt 0 ]]; then
+            rustfmt --edition 2021 "${rust[@]}"
+            git add -- "${rust[@]}"
+        fi
+        if [[ ${#pretty[@]} -gt 0 ]]; then
+            "$ROOT/node_modules/.bin/prettier" --write --ignore-unknown "${pretty[@]}"
+            git add -- "${pretty[@]}"
+        fi
+    fi
+fi
+
+# Delegate to the global pre-commit hook (policy checks) if present.
+GLOBAL_HOOKS="$(git config --global core.hooksPath 2>/dev/null || true)"
+GLOBAL_HOOKS="${GLOBAL_HOOKS/#\~/$HOME}"
+if [[ -n "$GLOBAL_HOOKS" && -x "$GLOBAL_HOOKS/pre-commit" ]]; then
+    exec "$GLOBAL_HOOKS/pre-commit" "$@"
+fi

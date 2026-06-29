@@ -24,13 +24,12 @@ export function likeButton(postSlug: string, apiUrl: string): LikeButtonData {
             try {
                 const res = await fetch(
                     `${this.apiUrl}/api/v2/like/status?postSlug=${encodeURIComponent(this.postSlug)}`,
-                    { credentials: "include" }
+                    { credentials: "include" },
                 );
                 if (!res.ok) throw new Error();
                 container.innerHTML = await res.text();
             } catch {
-                container.innerHTML =
-                    '<button class="post-like__button" disabled>오류</button>';
+                container.innerHTML = '<button class="post-like__button" disabled>오류</button>';
             } finally {
                 this.loading = false;
             }

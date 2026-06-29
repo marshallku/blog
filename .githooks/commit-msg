@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Repo-local commit-msg: this repo overrides core.hooksPath to .githooks, which would
+# bypass the user's global commit-msg policy hook (e.g. blocking AI co-author
+# trailers). Delegate to it so the policy still applies.
+set -euo pipefail
+
+GLOBAL_HOOKS="$(git config --global core.hooksPath 2>/dev/null || true)"
+GLOBAL_HOOKS="${GLOBAL_HOOKS/#\~/$HOME}"
+if [[ -n "$GLOBAL_HOOKS" && -x "$GLOBAL_HOOKS/commit-msg" ]]; then
+    exec "$GLOBAL_HOOKS/commit-msg" "$@"
+fi

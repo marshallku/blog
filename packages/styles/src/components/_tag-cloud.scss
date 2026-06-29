@@ -18,7 +18,8 @@
         font-family: var(--font-mono);
         font-size: 0.8125rem;
         text-decoration: none;
-        transition: border-color palette.transition(fast) ease,
+        transition:
+            border-color palette.transition(fast) ease,
             background-color palette.transition(fast) ease,
             color palette.transition(fast) ease;
 
