@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Repo-local pre-commit: auto-format staged files (Rust via rustfmt, JS/TS/SCSS/JSON
-# via prettier), re-stage them, then delegate to the user's global pre-commit hook so
-# its policy checks (e.g. blocking BRIEF/codex-brief files) still run.
+# Repo-local pre-commit: auto-format staged files (Rust via `cargo fmt`, JS/TS/SCSS/
+# JSON via prettier), re-stage them, then delegate to the user's global pre-commit hook
+# so its policy checks (e.g. blocking BRIEF/codex-brief files) still run.
 #
 # This repo overrides core.hooksPath to .githooks (set by the `prepare` script), which
 # would otherwise bypass the global hook — hence the explicit delegation below.
@@ -43,8 +43,8 @@ if [[ ${#staged[@]} -gt 0 ]]; then
 
         # Fail closed when a required formatter is missing — never let unformatted code
         # through silently. (`prepare` installs prettier on `pnpm install`.)
-        if [[ ${#rust[@]} -gt 0 ]] && ! command -v rustfmt >/dev/null 2>&1; then
-            echo "✗ pre-commit: Rust files are staged but 'rustfmt' is missing — run 'rustup component add rustfmt'." >&2
+        if [[ ${#rust[@]} -gt 0 ]] && ! command -v cargo >/dev/null 2>&1; then
+            echo "✗ pre-commit: Rust files are staged but 'cargo' is not on PATH — install the Rust toolchain." >&2
             exit 1
         fi
         if [[ ${#pretty[@]} -gt 0 && ! -x "$ROOT/node_modules/.bin/prettier" ]]; then
@@ -52,9 +52,12 @@ if [[ ${#staged[@]} -gt 0 ]]; then
             exit 1
         fi
 
-        # Format only the staged files (no whole-workspace side effects), then re-stage.
+        # Rust: cargo fmt is the canonical formatter (reads workspace + rustfmt.toml +
+        # edition from Cargo.toml, matching CI's `cargo fmt --check`). It formats the
+        # whole workspace, but only staged .rs files are re-added to the commit; the
+        # partial-staging guard above already prevents pulling in unstaged hunks.
         if [[ ${#rust[@]} -gt 0 ]]; then
-            rustfmt --edition 2021 "${rust[@]}"
+            cargo fmt --all
             git add -- "${rust[@]}"
         fi
         if [[ ${#pretty[@]} -gt 0 ]]; then
