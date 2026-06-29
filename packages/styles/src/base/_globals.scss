@@ -108,3 +108,21 @@ button {
         line-height: map.get(fonts.$typography-height, $key);
     }
 }
+
+// View Transitions (SPA): the shared card-thumbnail → post-cover morph. JS assigns the
+// matching `view-transition-name` to both elements during navigation.
+::view-transition-group(post-cover) {
+    animation-duration: 320ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(root),
+    ::view-transition-old(root),
+    ::view-transition-new(root),
+    ::view-transition-group(post-cover),
+    ::view-transition-old(post-cover),
+    ::view-transition-new(post-cover) {
+        animation: none !important;
+    }
+}

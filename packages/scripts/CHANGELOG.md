@@ -1,5 +1,16 @@
 # @blog/scripts
 
+## 0.5.0
+
+### Minor Changes
+
+- Card → post-cover shared-element page transition. SPA navigation now runs through the
+  View Transitions API: clicking a post card's image/title morphs the thumbnail into the
+  post's cover image (matching `view-transition-name`), with a plain cross-fade for all
+  other navigation. Falls back to a plain swap when the API is unsupported or
+  `prefers-reduced-motion` is set; tag-link clicks and cover-less destinations are
+  excluded from the morph.
+
 ## 0.4.0
 
 ### Minor Changes

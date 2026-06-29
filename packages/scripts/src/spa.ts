@@ -12,6 +12,28 @@ declare global {
     };
 }
 
+const SHARED_COVER_NAME = "post-cover";
+const COVER_IMG_SELECTOR = ".post__cover img";
+
+let sharedEls: HTMLElement[] = [];
+
+function prefersReducedMotion(): boolean {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function markShared(el: HTMLElement | null): void {
+    if (!el) {
+        return;
+    }
+    el.style.setProperty("view-transition-name", SHARED_COVER_NAME);
+    sharedEls.push(el);
+}
+
+function clearShared(): void {
+    sharedEls.forEach((el) => el.style.removeProperty("view-transition-name"));
+    sharedEls = [];
+}
+
 interface NavigationState {
     isLoading: boolean;
 }
@@ -184,6 +206,7 @@ function reInitCodeCopy(container: Element): void {
 
 async function navigateTo(url: string, pushState = true): Promise<void> {
     if (state.isLoading) {
+        clearShared();
         return;
     }
 
@@ -201,26 +224,68 @@ async function navigateTo(url: string, pushState = true): Promise<void> {
     try {
         const html = await fetchPartial(url);
 
+        // Destination has no cover → drop the card's shared name so it's a plain
+        // root cross-fade instead of an orphaned morph with no matching target.
+        // Parse with the exact selector (not a substring) so unrelated markup like
+        // `prev-next-post-post__cover` doesn't count as a cover.
+        if (sharedEls.length > 0) {
+            const hasCover = new DOMParser()
+                .parseFromString(html, "text/html")
+                .querySelector(COVER_IMG_SELECTOR);
+            if (!hasCover) {
+                clearShared();
+            }
+        }
+
         const container = main.querySelector<HTMLElement>(".container");
-        if (container) {
-            container.innerHTML = html;
 
-            updatePageMeta();
-            reInitAlpine(container);
-            reInitCodeCopy(container);
+        const applyUpdate = (): void => {
+            if (container) {
+                container.innerHTML = html;
 
-            document.dispatchEvent(
-                new CustomEvent("spa:navigate", { detail: { container } })
-            );
+                // Pair the incoming cover with the clicked card thumbnail so the
+                // View Transition morphs one into the other. Only when a card was
+                // marked on click (forward into a post) — otherwise plain cross-fade.
+                if (sharedEls.length > 0) {
+                    markShared(
+                        container.querySelector<HTMLElement>(COVER_IMG_SELECTOR)
+                    );
+                }
+
+                updatePageMeta();
+                reInitAlpine(container);
+                reInitCodeCopy(container);
+            }
+
+            if (pushState) {
+                history.pushState({ url }, "", url);
+            }
+
+            window.scrollTo({ top: 0, behavior: "instant" });
+
+            if (container) {
+                document.dispatchEvent(
+                    new CustomEvent("spa:navigate", { detail: { container } })
+                );
+            }
+        };
+
+        if (document.startViewTransition && !prefersReducedMotion()) {
+            const transition = document.startViewTransition(applyUpdate);
+            // Hold isLoading (reset in `finally`) until the animation settles, so a
+            // rapid second click can't start a new navigation while shared names are
+            // still live. `updateCallbackDone` rejects only if the DOM swap threw
+            // (real error → outer catch); a skipped visual transition is not an error.
+            await transition.updateCallbackDone;
+            await transition.finished.catch(() => {});
+            clearShared();
+        } else {
+            applyUpdate();
+            clearShared();
         }
-
-        if (pushState) {
-            history.pushState({ url }, "", url);
-        }
-
-        window.scrollTo({ top: 0, behavior: "instant" });
     } catch (error) {
         console.error("SPA navigation failed:", error);
+        clearShared();
         window.location.href = url;
     } finally {
         main.classList.remove("spa-loading");
@@ -244,6 +309,13 @@ function handleLinkClick(event: MouseEvent): void {
 
     if (!isInternalLink(link)) {
         return;
+    }
+
+    // Only morph the cover for the card's post-detail links (image/title), not the
+    // tag links inside the card, which navigate to tag pages that have no cover.
+    const card = link.closest<HTMLElement>(".post-card");
+    if (card && !link.closest(".post-card__tags")) {
+        markShared(card.querySelector<HTMLElement>("img"));
     }
 
     event.preventDefault();
