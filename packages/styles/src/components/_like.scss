@@ -11,7 +11,7 @@
         gap: palette.spacing(xs);
         padding: palette.spacing(sm) palette.spacing(md);
         border: 1px solid palette.color(grayscale, 300);
-        border-radius: 9999px;
+        border-radius: palette.radius(full);
         background: transparent;
         color: palette.color(text);
         cursor: pointer;

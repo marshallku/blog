@@ -1,10 +1,12 @@
 // React Islands styles
 // Loading states and container styling for interactive components
 
+@use "../base/palette";
+
 .react-island {
     min-height: 100px;
     position: relative;
-    border-radius: 8px;
+    border-radius: palette.radius(xl);
     overflow: hidden;
 
     &:not(.react-island--hydrated) {
@@ -29,7 +31,7 @@
         font-family: var(--font-mono);
         font-size: 14px;
         background: var(--bg-code);
-        border-radius: 8px;
+        border-radius: palette.radius(xl);
         overflow: auto;
         white-space: pre-wrap;
     }
@@ -45,7 +47,7 @@
 .chart {
     padding: 16px;
     background: var(--bg-secondary);
-    border-radius: 8px;
+    border-radius: palette.radius(xl);
 
     &__title {
         margin: 0 0 12px;

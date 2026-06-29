@@ -38,12 +38,19 @@ function initScrollToTop(): void {
         return;
     }
 
-    const progress = button.querySelector<SVGCircleElement>(
+    // Progress is a rounded <rect>; its perimeter is read from the geometry
+    // (getTotalLength) so the dash math stays correct regardless of size/radius.
+    const progress = button.querySelector<SVGGeometryElement>(
         "[data-scroll-progress]"
     );
-    const circumference = 2 * Math.PI * 20;
+    let perimeter = 0;
 
     const update = (): void => {
+        if (progress && perimeter === 0) {
+            perimeter = progress.getTotalLength();
+            progress.style.strokeDasharray = String(perimeter);
+        }
+
         const scrollable =
             document.documentElement.scrollHeight - window.innerHeight;
         const ratio =
@@ -52,9 +59,7 @@ function initScrollToTop(): void {
                 : 0;
 
         if (progress) {
-            progress.style.strokeDashoffset = String(
-                circumference * (1 - ratio)
-            );
+            progress.style.strokeDashoffset = String(perimeter * (1 - ratio));
         }
 
         button.classList.toggle("scroll-to-top--visible", window.scrollY > 300);

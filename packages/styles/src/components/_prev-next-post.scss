@@ -13,7 +13,7 @@
     background-color: palette.color(selection);
 
     @include mixins.respond-to(medium) {
-        border-radius: 8px;
+        border-radius: palette.radius(xl);
     }
 
     &-post {

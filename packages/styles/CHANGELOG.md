@@ -1,5 +1,16 @@
 # @blog/styles
 
+## 0.6.0
+
+### Minor Changes
+
+- Make the scroll-to-top button angular and complete the radius scale. The button drops
+  its border and is now a sharp rounded-square (matching the overall vibe), with its
+  scroll-progress drawn as a rounded `<rect>` tracing the outline (perimeter read from
+  geometry). Adds `xl` (8px) and `full` (9999px) to the radius token scale and tokenizes
+  the remaining hardcoded `border-radius` values across components (pills → `full`,
+  8px → `xl`, 4px → `md`); intentional squares/circles stay literal.
+
 ## 0.5.1
 
 ### Patch Changes

@@ -95,7 +95,7 @@
     }
 
     &--radius-capsule {
-        border-radius: 32px;
+        border-radius: palette.radius(full);
     }
 
     &--radius-circle {

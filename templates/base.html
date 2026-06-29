@@ -45,10 +45,12 @@
     {% endif %}
 </head>
 <body x-data="{ drawerOpen: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 10">
+    {# rx="6" mirrors $radius-size `lg` (6px) in _palette.scss — keep in sync with
+       .scroll-to-top border-radius; SVG attrs can't call the Sass radius() function. #}
     <button class="scroll-to-top" type="button" aria-label="맨 위로 스크롤" data-scroll-top>
         <svg class="scroll-to-top__ring" viewBox="0 0 44 44" aria-hidden="true">
-            <circle class="scroll-to-top__track" cx="22" cy="22" r="20"></circle>
-            <circle class="scroll-to-top__progress" cx="22" cy="22" r="20" data-scroll-progress></circle>
+            <rect class="scroll-to-top__track" x="1" y="1" width="42" height="42" rx="6"></rect>
+            <rect class="scroll-to-top__progress" x="1" y="1" width="42" height="42" rx="6" data-scroll-progress></rect>
         </svg>
         <svg class="scroll-to-top__arrow" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 5l-7 7 1.41 1.41L11 8.83V19h2V8.83l4.59 4.58L19 12z"></path>

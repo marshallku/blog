@@ -1,8 +1,12 @@
 @use "../base/palette";
 @use "../base/mixins";
 
-// Bottom-right scroll-to-top button. The SVG ring's stroke is drawn proportionally
-// to whole-page scroll progress (driven from JS via stroke-dashoffset).
+// Bottom-right scroll-to-top button. Angular (sharp) to match the overall vibe — the
+// SVG progress is a rounded *rect* tracing the button outline, its stroke drawn
+// proportionally to whole-page scroll progress (dash length set from JS via
+// getTotalLength). NOTE: the SVG `<rect rx>` in base.html is a hardcoded number that
+// must stay in sync with `palette.radius(lg)` below — SVG attributes can't call the
+// Sass radius() function.
 .scroll-to-top {
     $size: 46px;
     position: fixed;
@@ -14,16 +18,16 @@
     width: $size;
     height: $size;
     padding: 0;
-    border: 1px solid palette.color(grayscale, 200);
-    border-radius: 50%;
+    border: none;
+    border-radius: palette.radius(lg);
     background-color: palette.color(background);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
     opacity: 0;
     visibility: hidden;
     transform: translateY(8px);
     transition: opacity palette.transition(normal) ease,
         transform palette.transition(normal) ease,
-        visibility palette.transition(normal) ease,
-        border-color palette.transition(fast) ease;
+        visibility palette.transition(normal) ease;
 
     &--visible {
         opacity: 1;
@@ -31,18 +35,11 @@
         transform: translateY(0);
     }
 
-    @include mixins.supports-hover {
-        &:hover {
-            border-color: palette.color(theme);
-        }
-    }
-
     &__ring {
         position: absolute;
         inset: 0;
         width: 100%;
         height: 100%;
-        transform: rotate(-90deg);
     }
 
     &__track {
@@ -51,14 +48,11 @@
         stroke-width: 2;
     }
 
-    // circumference = 2 * pi * r(20) = 125.66
     &__progress {
         fill: none;
         stroke: palette.color(theme);
         stroke-width: 2;
         stroke-linecap: round;
-        stroke-dasharray: 125.66;
-        stroke-dashoffset: 125.66;
         transition: stroke-dashoffset 80ms linear;
     }
 

@@ -133,10 +133,13 @@ $spacing-size: (
 }
 
 // Sharp / technical — low radius for the developer-credible look.
+// `full` is for pills/circles only; everything else stays angular.
 $radius-size: (
     sm: 2px,
     md: 4px,
     lg: 6px,
+    xl: 8px,
+    full: 9999px,
 );
 
 @function radius($key) {
