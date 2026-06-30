@@ -34,8 +34,10 @@ pub struct User {
     pub id: Option<ObjectId>,
     /// User name
     pub name: String,
-    #[serde(skip_serializing)]
     /// User password
+    ///
+    /// Persisted to the database but never exposed in API responses; handlers
+    /// build their JSON explicitly rather than serializing `User` directly.
     pub password: String,
     /// Role of the user
     ///
