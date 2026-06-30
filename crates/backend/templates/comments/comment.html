@@ -21,7 +21,7 @@
             <button
                 type="button"
                 class="comment-bubble__reply-btn"
-                data-id="{{ comment._id }}"
+                data-id="{% if comment.parentCommentId %}{{ comment.parentCommentId }}{% else %}{{ comment._id }}{% endif %}"
                 data-name="{{ comment.name }}"
             >답글</button>
         </div>

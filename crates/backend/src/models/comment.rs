@@ -115,6 +115,24 @@ impl Comment {
         Ok(comment.unwrap())
     }
 
+    pub async fn find_by_id(db: &Database, id: &ObjectId) -> Result<Option<Self>, Error> {
+        let collection = db.collection::<Self>(COLLECTION_NAME);
+        collection.find_one(doc! {"_id": id}).await
+    }
+
+    /// Resolves the top-level comment a reply should attach to. Replies are kept
+    /// 1-depth: if `parent_id` points at a comment that is itself a reply, the
+    /// grandparent (the root comment) is returned instead.
+    pub async fn resolve_root_parent(db: &Database, parent_id: ObjectId) -> ObjectId {
+        match Self::find_by_id(db, &parent_id).await {
+            Ok(Some(parent)) => parent
+                .parent_comment_id
+                .filter(|p| *p != ObjectId::default())
+                .unwrap_or(parent_id),
+            _ => parent_id,
+        }
+    }
+
     pub fn to_response(&self) -> CommentResponse {
         CommentResponse {
             id: self.id.unwrap().to_string(),

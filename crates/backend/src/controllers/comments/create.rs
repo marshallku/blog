@@ -50,6 +50,17 @@ pub async fn post(
 ) -> impl IntoResponse {
     let is_root = user.is_some() && user.unwrap().role == UserRole::Root;
     let post_slug = normalize_slug(&payload.post_slug).to_string();
+
+    // Replies are always 1-depth: normalize the parent to the top-level comment
+    // so replying to a reply still threads under the root comment.
+    let parent_comment_id = match payload
+        .parent_comment_id
+        .and_then(|id| ObjectId::parse_str(&id).ok())
+    {
+        Some(parent_id) => Some(Comment::resolve_root_parent(&state.db, parent_id).await),
+        None => None,
+    };
+
     let comment = Comment {
         id: None,
         post_slug,
@@ -57,9 +68,7 @@ pub async fn post(
         email: payload.email.unwrap_or_default(),
         url: payload.url.unwrap_or_default(),
         body: payload.body,
-        parent_comment_id: payload
-            .parent_comment_id
-            .and_then(|id| ObjectId::parse_str(&id).ok()),
+        parent_comment_id,
         by_post_author: is_root,
         created_at: Utc::now(),
         updated_at: Utc::now(),
