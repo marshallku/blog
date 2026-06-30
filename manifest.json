@@ -14,12 +14,12 @@
     "islands": "/scripts/0.5.2/islands.js"
   },
   "styles": {
-    "version": "0.8.3",
-    "critical": "/styles/0.8.3/critical.css",
-    "post": "/styles/0.8.3/post.css",
-    "list": "/styles/0.8.3/list.css",
-    "tags": "/styles/0.8.3/tags.css",
-    "about": "/styles/0.8.3/about.css",
-    "pretendard": "/styles/0.8.3/PretendardVariable.woff2"
+    "version": "0.8.4",
+    "critical": "/styles/0.8.4/critical.css",
+    "post": "/styles/0.8.4/post.css",
+    "list": "/styles/0.8.4/list.css",
+    "tags": "/styles/0.8.4/tags.css",
+    "about": "/styles/0.8.4/about.css",
+    "pretendard": "/styles/0.8.4/PretendardVariable.woff2"
   }
 }

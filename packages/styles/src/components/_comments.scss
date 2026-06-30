@@ -33,7 +33,9 @@
 .comment-composer {
     padding: 16px 18px;
     border-bottom: 1px solid palette.color(sub-opacity);
-    background: palette.color(main-opacity);
+    // Darker than the window (background-dimmed); the inputs sit a step lighter,
+    // matching the mockup's panel2 composer / panel inputs relationship.
+    background: palette.color(background);
 
     &__form {
         display: flex;

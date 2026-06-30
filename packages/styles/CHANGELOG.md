@@ -1,5 +1,11 @@
 # @blog/styles
 
+## 0.8.4
+
+### Patch Changes
+
+- Darken the comment composer background to a panel below the window (was a light tint that read brighter than the mockup).
+
 ## 0.8.3
 
 ### Patch Changes
