@@ -69,5 +69,13 @@ deploy_backend() {
     ./scripts/deploy-backend.sh
 }
 
+pull_repos() {
+    git pull origin master
+    cd content
+    git pull origin master
+    cd ..
+}
+
+pull_repos
 deploy_site
 deploy_backend
