@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically pull and deploy marshallku.com blog
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+# Don't pile up runs if a deploy overruns the interval
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

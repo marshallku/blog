@@ -15,8 +15,14 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+permissions:
+    contents: write
+
 jobs:
-    deploy:
+    # Pull-based deploy: CI only publishes the binary to a rolling release. The
+    # server (behind Tailscale, no public inbound) pulls it on a timer via
+    # scripts/pull-deploy.sh — no SSH from the runner into the network.
+    publish:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
@@ -28,43 +34,27 @@ jobs:
             - name: Build binary
               run: cargo build -p blog-ssg --release
 
-            - name: Setup SSH
+            - name: Stage release artifacts
               run: |
-                  mkdir -p ~/.ssh
-                  echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
-                  chmod 600 ~/.ssh/deploy_key
-                  ssh-keyscan -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+                  mkdir -p release
+                  cp target/release/blog release/blog
+                  echo "${{ github.sha }}" > release/version.txt
 
-            - name: Upload binary to staging path
-              run: |
-                  scp -P ${{ secrets.SERVER_PORT }} -i ~/.ssh/deploy_key \
-                    target/release/blog \
-                    ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/tmp/blog-binary
-
-            # The server checkout is a deploy target: tracked files are reset to
-            # origin/master (content/, config.yaml, .build-cache are gitignored
-            # and untouched). Assets are committed to the repo, so no server-side
-            # pnpm build is needed — update-assets.sh regenerating tracked files
-            # is what used to leave the tree dirty and break pulls.
-            - name: Build and deploy site on server
-              run: |
-                  ssh -p ${{ secrets.SERVER_PORT }} -i ~/.ssh/deploy_key \
-                    ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-                    "cd ~/dev/blog \
-                      && git fetch origin master \
-                      && git reset --hard origin/master \
-                      && ./scripts/update-binary.sh \
-                      && ./scripts/deploy.sh"
-
-            - name: Cleanup SSH key
-              if: always()
-              run: rm -f ~/.ssh/deploy_key
+            - name: Publish rolling release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: deploy-latest
+                  name: Rolling deploy
+                  body: "Latest blog binary. Commit ${{ github.sha }}"
+                  files: |
+                      release/blog
+                      release/version.txt
     send-notification:
-        needs: [deploy]
+        needs: [publish]
         if: ${{ failure() }}
         uses: marshallku/actions/.github/workflows/send-notification.yml@master
         with:
             failed: ${{ contains(join(needs.*.result, ','), 'failure') }}
-            message: "Binary deploy failed"
+            message: "Binary publish failed"
         secrets:
             url: ${{ secrets.DISCORD_WEBHOOK_URI }}

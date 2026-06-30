@@ -1,0 +1,23 @@
+# Install (run on the server, adjust User / WorkingDirectory to your checkout):
+#   sudo cp deploy/systemd/blog-deploy.{service,timer} /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now blog-deploy.timer
+#
+# Trigger an immediate deploy without waiting for the timer:
+#   sudo systemctl start blog-deploy.service
+#   journalctl -u blog-deploy.service -f
+#
+# If the backend image is private, drop its pull token here:
+#   Environment=GH_PACKAGE_TOKEN=ghp_xxx
+# or set DEPLOY_BACKEND=0 to skip backend refresh entirely.
+
+[Unit]
+Description=Pull and deploy marshallku.com blog (site + backend)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=marshall
+WorkingDirectory=/home/marshall/dev/blog
+ExecStart=/home/marshall/dev/blog/scripts/pull-deploy.sh

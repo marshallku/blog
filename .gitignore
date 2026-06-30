@@ -5,6 +5,9 @@
 /blog
 /blog.bak
 
+# Pull-deploy state (last deployed commit sha)
+/.deployed-sha
+
 # Build output
 /dist
 /.build-cache
