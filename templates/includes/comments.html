@@ -1,0 +1,57 @@
+{# Terminal chrome is inlined (not the terminal macro): this include is double-nested
+   (post.html → post-content.html → comments.html) and Tera does not propagate macro
+   imports across nested includes. The .terminal* / .terminal-cmd* classes still apply. #}
+<section class="post-comment" id="comments" x-data="commentForm('/{{ comment_slug }}', '{{ config.api_url }}')">
+    <div class="terminal-cmd terminal-cmd--block"><span class="terminal-cmd__path">~/comments</span> <span class="terminal-cmd__prompt">$</span> tail -f comments.log</div>
+    <div class="terminal comment-thread">
+        <div class="terminal__bar"><span class="terminal__dots"><span></span><span></span><span></span></span><span class="terminal__path">marshall@blog: ~/comments</span><span class="terminal__tag">#comments</span></div>
+
+        <div class="comment-composer">
+            <form class="comment-composer__form" @submit.prevent="submit">
+                <div x-show="parentId" x-cloak class="comment-composer__replying">
+                    <span class="comment-composer__reply-mark">↳</span>
+                    <span class="comment-composer__reply-to" x-text="replyingTo"></span> 님에게 답글
+                    <button type="button" @click="cancelReply" class="comment-composer__cancel">[x]</button>
+                </div>
+                <div class="comment-composer__ids">
+                    <label class="comment-composer__field">
+                        <span class="comment-composer__sigil">~$</span>
+                        <input type="text" id="comment-name" name="name" placeholder="이름 / nickname" x-model="name" class="comment-composer__input">
+                    </label>
+                    <label class="comment-composer__field">
+                        <span class="comment-composer__sigil comment-composer__sigil--at">@</span>
+                        <input type="url" id="comment-url" name="url" placeholder="website (optional)" x-model="url" class="comment-composer__input">
+                    </label>
+                </div>
+                <div class="comment-composer__row">
+                    <figure class="comment-composer__avatar">
+                        <img
+                            :src="'https://api.dicebear.com/9.x/glass/svg?seed=' + encodeURIComponent(name || 'anonymous')"
+                            alt="내 아바타"
+                            width="42"
+                            height="42"
+                        />
+                    </figure>
+                    <textarea
+                        id="comment-body"
+                        name="body"
+                        required
+                        x-model="body"
+                        @keydown.ctrl.enter.prevent="submit"
+                        @keydown.meta.enter.prevent="submit"
+                        placeholder="메시지를 입력하세요…  (⌘/Ctrl + Enter 전송)"
+                        class="comment-composer__textarea"
+                    ></textarea>
+                    <button type="submit" class="comment-composer__send" :disabled="loading || !body">send ↵</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="comment-thread__log">
+            <p class="comment-thread__note">— 작성한 댓글은 수정하거나 삭제할 수 없습니다 —</p>
+            <div id="comment-list">
+                <p class="comment-list__empty">댓글을 불러오는 중...</p>
+            </div>
+        </div>
+    </div>
+</section>

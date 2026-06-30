@@ -1,5 +1,11 @@
 # @blog/styles
 
+## 0.8.1
+
+### Patch Changes
+
+- Restyle the comment thread (and guestbook) as a terminal/chat treatment: glass avatars, pink nicknames, OP bubbles right-aligned with a pink badge + tint, dividers between top-level comments, and a terminal-window composer with `~$`/`@` inputs and a `send ↵` button.
+
 ## 0.8.0
 
 ### Minor Changes

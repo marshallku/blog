@@ -1,32 +1,29 @@
 <li class="comment-bubble{% if comment.byPostAuthor %} comment-bubble--author{% endif %}{% if border %} comment-bubble--border{% endif %}" id="comment-{{ comment._id }}">
     <figure class="comment-bubble__avatar">
         <img
-            src="https://api.dicebear.com/9.x/bottts/svg?seed={{ comment.name | urlencode }}"
+            src="https://api.dicebear.com/9.x/glass/svg?seed={{ comment.name | urlencode }}"
             alt="{{ comment.name }} 님의 아바타"
-            width="40"
-            height="40"
+            width="38"
+            height="38"
             loading="lazy"
         />
     </figure>
-    <div class="comment-bubble__content typography-c1">
-        <div class="comment-bubble__name">
-            {% if comment.url %}
-            <a href="{{ comment.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ comment.name }}</a>
-            {% else %}
-            <span>{{ comment.name }}</span>
-            {% endif %}
+    <div class="comment-bubble__body">
+        <div class="comment-bubble__head">
+            <span class="comment-bubble__name">{{ comment.name }}</span>
+            {% if comment.byPostAuthor %}<span class="comment-bubble__op">OP</span>{% endif %}
+            {% if comment.url %}<a class="comment-bubble__site" href="{{ comment.url }}" target="_blank" rel="noopener noreferrer nofollow">↗ {{ comment.url | replace(from="https://", to="") | replace(from="http://", to="") }}</a>{% endif %}
         </div>
-        <div class="comment-bubble__text typography-b1">{{ comment.body }}</div>
+        <div class="comment-bubble__text">{{ comment.body }}</div>
         <div class="comment-bubble__footer">
-            <time class="comment-bubble__date typography-c1" datetime="{{ comment.createdAt }}">{{ comment.createdAt | date(format="%Y년 %m월 %d일") }}</time>
+            <time class="comment-bubble__date" datetime="{{ comment.createdAt }}">{{ comment.createdAt | date(format="%Y년 %m월 %d일") }}</time>
+            <span class="comment-bubble__sep">·</span>
             <button
                 type="button"
-                class="comment-bubble__reply-btn typography-c1"
+                class="comment-bubble__reply-btn"
                 data-id="{{ comment._id }}"
                 data-name="{{ comment.name }}"
-            >
-                답글
-            </button>    
+            >답글</button>
         </div>
     </div>
 </li>
