@@ -1,0 +1,9 @@
+<div id="partial-content"
+     data-page-title="{{ page.title }} - {{ config.site_title }}"
+     data-page-url="{{ config.site_url }}/{{ slug }}/"
+     data-page-description="{{ page.description | default(value='') }}"
+     data-page-styles="{{ config.assets.styles.about | default(value='') }}">
+
+{% include "includes/about-content.html" %}
+
+</div>

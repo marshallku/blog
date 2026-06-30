@@ -16,7 +16,9 @@ $ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
     --color-text-muted: #999999;
 
     /* Typography */
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-sans:
+        "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo",
+        "Noto Sans KR", sans-serif;
     --font-mono: "JetBrains Mono", "D2Coding", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     /* Headings + UI chrome: mono-led, falling back to Pretendard for Hangul. */
     --font-heading:

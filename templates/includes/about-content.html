@@ -1,0 +1,403 @@
+<main class="about">
+    <section class="about-hero">
+        <div class="about-window">
+            <div class="about-window__bar">
+                <span class="about-window__dots"><span></span><span></span><span></span></span>
+                <span class="about-window__path">marshall@blog: ~/about</span>
+            </div>
+            <div class="about-hero__body">
+                <div class="about-hero__cmd"><span>$</span> whoami --full</div>
+                <h1 class="about-hero__name">Marshall Ku<span class="about-hero__caret" aria-hidden="true"></span></h1>
+                <p class="about-hero__tagline">배움과 도전에 주저 없는 개발자입니다.</p>
+                <div class="about-hero__tags">
+                    <span class="about-hero__tag"><span>#</span>frontend</span>
+                    <span class="about-hero__tag"><span>#</span>devops</span>
+                    <span class="about-hero__tag"><span>#</span>optimization</span>
+                    <span class="about-hero__tag"><span>#</span>5yr-exp</span>
+                    <span class="about-hero__tag"><span>#</span>ai-driven</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-panel about-profile">
+            <div class="about-profile__head">
+                <a class="about-profile__avatar" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">
+                    <img src="/assets/profile.jpg" alt="Marshall Ku" width="58" height="58">
+                </a>
+                <div>
+                    <div class="about-profile__name">Marshall Ku</div>
+                    <div class="about-profile__sub">구영표 · web dev</div>
+                </div>
+            </div>
+            <div class="about-profile__socials">
+                <a class="about-profile__social" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub">[ <i class="icon-github"></i> ]</a>
+                <a class="about-profile__social" href="https://www.linkedin.com/in/marshallku/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn">[ <i class="icon-linkedin"></i> ]</a>
+                <a class="about-profile__social" href="https://marshallku.com" aria-label="Blog">[ blog ]</a>
+                <a class="about-profile__social" href="mailto:marshall@kakao.com" aria-label="Email">[ <i class="icon-mail"></i> ]</a>
+            </div>
+            <div class="about-profile__divider"></div>
+            <div class="about-profile__contacts">
+                <div class="about-profile__contact"><i class="icon-mail"></i> marshall@kakao.com</div>
+                <div class="about-profile__contact"><i class="icon-link"></i> Seoul, Korea</div>
+                <a class="about-profile__contact about-profile__contact--link" href="/"><i class="icon-arrow-forward"></i> {{ blog_posts | default(value="") }} posts · since {{ blog_since | default(value="2018") }}</a>
+            </div>
+            <div class="about-profile__updated">// last update: 2026.06.30</div>
+        </div>
+    </section>
+
+    <section class="about-metrics">
+        <div class="about-panel about-metric"><div class="about-metric__value">5 yr</div><div class="about-metric__label">engineering</div></div>
+        <div class="about-panel about-metric"><div class="about-metric__value">50%↓</div><div class="about-metric__label">bundle size</div></div>
+        <div class="about-panel about-metric"><div class="about-metric__value">70%↓</div><div class="about-metric__label">deploy time</div></div>
+        <div class="about-panel about-metric"><div class="about-metric__value">85%↑</div><div class="about-metric__label">API perf</div></div>
+    </section>
+
+    <section class="about__section">
+        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ cat summary.md</div>
+        <div class="about-panel about-summary">
+            <p>5년 경력의 소프트웨어 엔지니어로서 웹과 하이브리드 앱 환경 모두에서 성공적으로 프로젝트를 수행해왔습니다. 프론트엔드 개발 및 최적화에 능숙하며, 백엔드와 인프라에 대한 이해와 경험을 가지고 있습니다.</p>
+            <p>디자인 시스템 구축, 테스트 코드 도입, 모니터링 툴 도입, CLI 툴 제작, 파이프라인 구축 등을 통해 생산성과 안정성을 향상시켜 왔습니다. 대규모 애플리케이션 최적화에 깊은 관심을 가지고 있으며, Web Vital 최적화와 번들 사이즈 50% 감소 등의 성과를 이루었습니다. 또한 AI를 적극적으로 업무 전반과 일상 영역까지 활용하고 있습니다.</p>
+            <p>문제를 코드로 해결하는 것을 즐기며 새로운 기술을 배우는 데 주저하지 않습니다. 백엔드 개발, CI/CD 파이프라인, 인프라 구축 등 프로덕트 개발의 모든 단계에 관심을 가지고 있으며, 다양한 개인 프로젝트를 통해 On-premise 서버와 클라우드를 직접 관리하며 역량을 강화하고 있습니다.</p>
+        </div>
+    </section>
+
+    <section class="about__section">
+        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ cat stack.json</div>
+        <div class="about-stack">
+            <div class="about-panel about-stack-group">
+                <div class="about-stack-group__cat"><span>▸</span> Frontend</div>
+                <div class="about-stack-group__items">
+                    <span class="about-stack-group__item">React</span>
+                    <span class="about-stack-group__item">Next.js</span>
+                    <span class="about-stack-group__item">TypeScript</span>
+                    <span class="about-stack-group__item">Turborepo</span>
+                    <span class="about-stack-group__item">Vite</span>
+                    <span class="about-stack-group__item">Webpack</span>
+                </div>
+            </div>
+            <div class="about-panel about-stack-group">
+                <div class="about-stack-group__cat"><span>▸</span> Backend</div>
+                <div class="about-stack-group__items">
+                    <span class="about-stack-group__item">Node.js</span>
+                    <span class="about-stack-group__item">NestJS</span>
+                    <span class="about-stack-group__item">Elysia</span>
+                    <span class="about-stack-group__item">Go</span>
+                    <span class="about-stack-group__item">Rust</span>
+                    <span class="about-stack-group__item">Kotlin</span>
+                </div>
+            </div>
+            <div class="about-panel about-stack-group">
+                <div class="about-stack-group__cat"><span>▸</span> Infra / DevOps</div>
+                <div class="about-stack-group__items">
+                    <span class="about-stack-group__item">Docker</span>
+                    <span class="about-stack-group__item">Kubernetes</span>
+                    <span class="about-stack-group__item">ArgoCD</span>
+                    <span class="about-stack-group__item">GitHub Actions</span>
+                    <span class="about-stack-group__item">NGINX</span>
+                    <span class="about-stack-group__item">AWS</span>
+                    <span class="about-stack-group__item">Azure</span>
+                    <span class="about-stack-group__item">Helm</span>
+                </div>
+            </div>
+            <div class="about-panel about-stack-group">
+                <div class="about-stack-group__cat"><span>▸</span> Data &amp; Tools</div>
+                <div class="about-stack-group__items">
+                    <span class="about-stack-group__item">PostgreSQL</span>
+                    <span class="about-stack-group__item">MongoDB</span>
+                    <span class="about-stack-group__item">MySQL</span>
+                    <span class="about-stack-group__item">Redis</span>
+                    <span class="about-stack-group__item">Clickhouse</span>
+                    <span class="about-stack-group__item">Kafka</span>
+                    <span class="about-stack-group__item">SonarQube</span>
+                    <span class="about-stack-group__item">Sentry</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about__section">
+        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ ls --career <span class="about__cmd-comment">// 3 entries</span></div>
+        <div class="about-career">
+            <article class="about-window about-job" x-data="{ open: false }">
+                <div class="about-window__bar">
+                    <span class="about-window__dots"><span></span><span></span><span></span></span>
+                    <span class="about-window__path">~/career/toss</span>
+                    <span class="about-job__tag">current</span>
+                </div>
+                <div class="about-job__body">
+                    <div class="about-job__head">
+                        <h3 class="about-job__company">Viva Republica (Toss)</h3>
+                        <span class="about-job__role">Frontend Developer</span>
+                        <span class="about-job__period">2025.05 — present</span>
+                    </div>
+                    <div class="about-job__metrics">
+                        <div class="about-job__metric"><strong>50%↓</strong><span>bundle (10.1→5.3MB)</span></div>
+                    </div>
+                    <div class="about-job__groups">
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>Log &amp; Data 관련 Product 개발<span class="about-job__count">+6</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>테이블·로그 명세 관리 어드민 FE 개발</div>
+                                <div class="about-job__item"><span>·</span>웹 환경 로그 수집 라이브러리 개발 — DOM 속성 기반 자동 수집, 수동 수집 인터페이스, WebVital 지표 수집 플러그인</div>
+                                <div class="about-job__item"><span>·</span>로그 확인용 Chrome Extension 개발 — UI 로직 웹뷰 분리, Extension↔Webview 통신 인터페이스 설계, 배포 자동화, Plasmo → WXT 마이그레이션</div>
+                                <div class="about-job__item"><span>·</span>Log 명세 확인·코드 수정을 위한 MCP 개발</div>
+                                <div class="about-job__item"><span>·</span>AI 활용 Slack 봇 개발 (Kotlin, Go) — 소스 분석·자연어 작업 지시, Sentry 이슈 분석·수정, Request 대응 자동화</div>
+                                <div class="about-job__item"><span>·</span>어드민 기능 CLI 제공 제품 (Go), Kibana 대체 제품 개발 (TypeScript, Go)</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>사내 공용 AI 하네스 관리 도구 개발<span class="about-job__count">+3</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>Claude Code, Codex 등을 shim wrapping 하는 CLI 개발</div>
+                                <div class="about-job__item"><span>·</span>지표 수집·하네스 관리 API 개발 (TypeScript, MySQL, Clickhouse)</div>
+                                <div class="about-job__item"><span>·</span>사내 AI 관리용 어드민 개발</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>빌드 시스템 및 개발 인프라 개선<span class="about-job__count">+5</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>번들 사이즈 50% 최적화 (10.1MB → 5.3MB)</div>
+                                <div class="about-job__item"><span>·</span>디자인 시스템에 Visual Regression Test 도입</div>
+                                <div class="about-job__item"><span>·</span>Webpack → Vite 마이그레이션</div>
+                                <div class="about-job__item"><span>·</span>Vite Plugin·Service Worker로 Version Skew 시 백화현상 해결</div>
+                                <div class="about-job__item"><span>·</span>Knip 적용 + CI 파이프라인 연동으로 미사용 코드 효율적 제거</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>팀 문화 및 생산성 향상<span class="about-job__count">+3</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>효율적 AI 사용을 위한 SDD 문화 도입</div>
+                                <div class="about-job__item"><span>·</span>Vitepress 기반 팀 위키 도입</div>
+                                <div class="about-job__item"><span>·</span>개발자의 메타화를 통한 생산성 증대 및 코드 리뷰 자동화</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="about-job__toggle" @click="open = !open" x-text="open ? '$ collapse ↑' : '$ cat full.log ↓'">$ cat full.log ↓</button>
+                </div>
+            </article>
+
+            <article class="about-window about-job" x-data="{ open: false }">
+                <div class="about-window__bar">
+                    <span class="about-window__dots"><span></span><span></span><span></span></span>
+                    <span class="about-window__path">~/career/seegene</span>
+                    <span class="about-job__tag">devops</span>
+                </div>
+                <div class="about-job__body">
+                    <div class="about-job__head">
+                        <h3 class="about-job__company">Seegene</h3>
+                        <span class="about-job__role">Application Architect / DevOps</span>
+                        <span class="about-job__period">2024.05 — 2025.04</span>
+                    </div>
+                    <div class="about-job__metrics">
+                        <div class="about-job__metric"><strong>70%↓</strong><span>deploy time</span></div>
+                        <div class="about-job__metric"><strong>85%↑</strong><span>lambda→app perf</span></div>
+                    </div>
+                    <div class="about-job__groups">
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>Insilico Frontend Part Lead<span class="about-job__count">+5</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>외주사 코드로 인한 생산성·성능 저하 → 전체 리팩터링</div>
+                                <div class="about-job__item"><span>·</span>Jotai → Zustand 마이그레이션 및 상태 관리 흐름 최적화</div>
+                                <div class="about-job__item"><span>·</span>Tanstack Query 도입, 단일 SCSS → SCSS Module 전환</div>
+                                <div class="about-job__item"><span>·</span>Code splitting·Lazy loading 번들 최적화, 유닛 테스트 적용</div>
+                                <div class="about-job__item"><span>·</span>Swagger 기반 TS type generator·컴포넌트 boilerplate CLI 개발, 코드 리뷰 문화 정립</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>CI/CD 파이프라인 구축 및 관리<span class="about-job__count">+4</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>배포 파이프라인 속도 평균 70%(8.5분) 개선 (Parallel Build, Cache)</div>
+                                <div class="about-job__item"><span>·</span>Unit / E2E / Visual Regression Test 도입</div>
+                                <div class="about-job__item"><span>·</span>Composite Action·Reusable Workflow로 재사용 가능한 파이프라인 설계</div>
+                                <div class="about-job__item"><span>·</span>Jenkins 스크립트를 GitHub Actions로 교체</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>AWS → Azure 마이그레이션<span class="about-job__count">+5</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>CI/CD 재구축 및 ArgoCD 구축 (GitHub Actions, ArgoCD)</div>
+                                <div class="about-job__item"><span>·</span>Self-hosted GitHub Actions Runner 구축 (AKS, Spot, Helm)</div>
+                                <div class="about-job__item"><span>·</span>FrontDoor·NGINX Ingress 네트워크 구성, WAF/Firewall 정책 구성</div>
+                                <div class="about-job__item"><span>·</span>AWS Lambda 코드를 애플리케이션화하여 85%↑ 성능 개선 (Bun, Elysia, Docker, AKS)</div>
+                                <div class="about-job__item"><span>·</span>모니터링 시스템 구축 (Application Insights, Uptime Kuma), Webhook용 Rust API</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>관리용 소프트웨어 운영 &amp; 기술 홍보<span class="about-job__count">+3</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>전사 GitHub 라이선스 관리 및 갱신 비용 10% 절감</div>
+                                <div class="about-job__item"><span>·</span>SonarQube 구축 및 OneSystem 전체 적용, Black Duck 스캐닝 자동화</div>
+                                <div class="about-job__item"><span>·</span>대외 기술 홍보를 위한 기술 블로그 구축</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="about-job__toggle" @click="open = !open" x-text="open ? '$ collapse ↑' : '$ cat full.log ↓'">$ cat full.log ↓</button>
+                </div>
+            </article>
+
+            <article class="about-window about-job" x-data="{ open: false }">
+                <div class="about-window__bar">
+                    <span class="about-window__dots"><span></span><span></span><span></span></span>
+                    <span class="about-window__path">~/career/jobkorea</span>
+                    <span class="about-job__tag">employee of the year</span>
+                </div>
+                <div class="about-job__body">
+                    <div class="about-job__head">
+                        <h3 class="about-job__company">JobKorea</h3>
+                        <span class="about-job__role">Frontend Developer</span>
+                        <span class="about-job__period">2022.06 — 2024.05</span>
+                    </div>
+                    <div class="about-job__metrics">
+                        <div class="about-job__metric"><strong>80%↓</strong><span>bundle size</span></div>
+                        <div class="about-job__metric"><strong>50%↓</strong><span>work hours</span></div>
+                    </div>
+                    <div class="about-job__groups">
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>보스몬 / 크루몬 개발<span class="about-job__count">+3</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>Turborepo로 Frontend 디자인 시스템 구축, 공통 React UI 컴포넌트 라이브러리 제작</div>
+                                <div class="about-job__item"><span>·</span>애플리케이션 번들 사이즈 50% 최적화 및 Web Vital 최적화</div>
+                                <div class="about-job__item"><span>·</span>Google Analytics·Appsflyer 등 마케팅 툴 연동 모듈 개발, Sentry 모니터링 시스템 구축</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>알바몬 MSA 전환 및 운영<span class="about-job__count">+5</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>공고 목록·상세 페이지 개발, 자동 로그인·앱 연동 등 공통 모듈 개발</div>
+                                <div class="about-job__item"><span>·</span>내부용 git hook·CLI 제작으로 estimated work hours 50%↓ (bash → python 포팅)</div>
+                                <div class="about-job__item"><span>·</span>in-memory cache로 응답 속도 최적화 및 캐시 소거 기능 추가</div>
+                                <div class="about-job__item"><span>·</span>third-party 라이브러리 2개 제작·4개 커스터마이징, 번들 사이즈 80% 최적화</div>
+                                <div class="about-job__item"><span>·</span>약 6개월간 배포 담당 및 전체 서비스 오류·코드 퀄리티 검사</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="about-job__group-title"><span>▸</span>신사업 지원 PoC<span class="about-job__count">+2</span></div>
+                            <div class="about-job__items" x-show="open" x-cloak>
+                                <div class="about-job__item"><span>·</span>Nest.js·socket.io·Redis·MongoDB·ScyllaDB 채팅 서버 구축 PoC</div>
+                                <div class="about-job__item"><span>·</span>Python 로고 리사이징 모듈 PoC</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="about-job__toggle" @click="open = !open" x-text="open ? '$ collapse ↑' : '$ cat full.log ↓'">$ cat full.log ↓</button>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="about__section about-projects" x-data="{ filter: 'all' }">
+        <div class="about-projects__toolbar">
+            <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ ls --projects <span class="about__cmd-comment">// 8 entries</span></div>
+            <div class="about-projects__filters">
+                <button type="button" class="about-projects__filter" :data-active="filter === 'all'" @click="filter = 'all'">전체 <span>8</span></button>
+                <button type="button" class="about-projects__filter" :data-active="filter === 'solo'" @click="filter = 'solo'">개인 <span>6</span></button>
+                <button type="button" class="about-projects__filter" :data-active="filter === 'team'" @click="filter = 'team'">팀 <span>2</span></button>
+            </div>
+        </div>
+        <div class="about-projects__grid">
+            <article class="about-project" data-type="team" x-show="filter === 'all' || filter === 'team'">
+                <div class="about-project__bar"><span>›</span>maji.tsx<span class="about-project__type">team</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#go</span><span>#nextjs</span><span>#argocd</span></div>
+                    <h4 class="about-project__title">Maji</h4>
+                    <p class="about-project__desc">임신·결혼 등 기쁜 소식을 주변에 알리는 서비스. 사진 공유부터 투표까지 담은 초대장을 만듭니다. 팀 내 서비스 개발·인프라를 담당했습니다.</p>
+                    <div class="about-project__tech">Go · React · Next.js · PostgreSQL · Docker · ArgoCD · Cloudflare R2 · Tailscale</div>
+                    <div class="about-project__footer"><span class="about-project__period">2026.03 — now</span><span class="about-project__link">private</span></div>
+                </div>
+            </article>
+            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                <div class="about-project__bar"><span>›</span>gitgarden.rs<span class="about-project__type">solo</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#rust</span><span>#docker</span></div>
+                    <h4 class="about-project__title">Git Garden</h4>
+                    <p class="about-project__desc">GitHub에서 한 활동들을 기반으로 정원을 만들어주는 서비스입니다.</p>
+                    <div class="about-project__tech">Rust · Docker · GitHub Actions · NGINX · Ubuntu</div>
+                    <div class="about-project__footer"><span class="about-project__period">2024.08 — now</span><a class="about-project__link" href="https://github.com/marshallku/gitgarden" target="_blank" rel="noopener noreferrer">repo →</a></div>
+                </div>
+            </article>
+            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                <div class="about-project__bar"><span>›</span>marshallku.com.ts<span class="about-project__type">solo</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#fullstack</span><span>#on-prem</span></div>
+                    <h4 class="about-project__title">marshallku.com</h4>
+                    <p class="about-project__desc">경험과 인사이트를 공유하는 블로그. 글·댓글·파일 서버 등 필요한 스택을 직접 개발해 On-premise 서버와 클라우드에 분산 운영 중입니다.</p>
+                    <div class="about-project__tech">TypeScript · Next.js · NestJS · Rust · MongoDB · Docker · Nginx · Ubuntu</div>
+                    <div class="about-project__footer"><span class="about-project__period">2018.01 — now</span><a class="about-project__link" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">repo →</a></div>
+                </div>
+            </article>
+            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                <div class="about-project__bar"><span>›</span>menu-today.rs<span class="about-project__type">solo</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#rust</span><span>#api</span></div>
+                    <h4 class="about-project__title">Menu Today</h4>
+                    <p class="about-project__desc">랜덤한 메뉴 카드를 SVG로 출력해주는 Rust 기반 API입니다.</p>
+                    <div class="about-project__tech">Rust · Docker · GitHub Actions · NGINX · Ubuntu</div>
+                    <div class="about-project__footer"><span class="about-project__period">2023.12 — now</span><a class="about-project__link" href="https://github.com/marshallku/menu-today" target="_blank" rel="noopener noreferrer">repo →</a></div>
+                </div>
+            </article>
+            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                <div class="about-project__bar"><span>›</span>smooth-zoom.ts<span class="about-project__type">solo</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#library</span><span>#npm</span></div>
+                    <h4 class="about-project__title">Smooth Zoom</h4>
+                    <p class="about-project__desc">Medium·Google Photos처럼 이미지를 부드럽게 확대하는 라이브러리. 월 1.2k 가량 npm 다운로드를 기록 중입니다.</p>
+                    <div class="about-project__tech">TypeScript · Vitest · Rollup · GitHub Actions</div>
+                    <div class="about-project__footer"><span class="about-project__period">2021.02 — now</span><a class="about-project__link" href="https://github.com/marshallku/smooth-zoom" target="_blank" rel="noopener noreferrer">repo →</a></div>
+                </div>
+            </article>
+            <article class="about-project" data-type="team" x-show="filter === 'all' || filter === 'team'">
+                <div class="about-project__bar"><span>›</span>coderland.tsx<span class="about-project__type">team</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#react</span><span>#cicd</span></div>
+                    <h4 class="about-project__title">Coderland</h4>
+                    <p class="about-project__desc">부트캠프 수료생의 성장 문화를 위한 커뮤니티. 공통 UI·유틸·이미지 업로드 서버 구축 및 CI/CD 파이프라인을 설계했습니다.</p>
+                    <div class="about-project__tech">TypeScript · React · Vite · ExpressJS · PHP · MongoDB · GitLab CI</div>
+                    <div class="about-project__footer"><span class="about-project__period">2022</span><a class="about-project__link" href="https://github.com/marshallku/Coderland" target="_blank" rel="noopener noreferrer">repo →</a></div>
+                </div>
+            </article>
+            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                <div class="about-project__bar"><span>›</span>withenglish.ts<span class="about-project__type">solo</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#react</span><span>#edu</span></div>
+                    <h4 class="about-project__title">WithEnglish</h4>
+                    <p class="about-project__desc">영어 단어 암기를 돕고 매일 시험으로 암기 상태를 확인하는 웹 애플리케이션입니다.</p>
+                    <div class="about-project__tech">TypeScript · React · ExpressJS · NGINX · Ubuntu</div>
+                    <div class="about-project__footer"><span class="about-project__period">2021.04 — 2022.01</span><a class="about-project__link" href="https://github.com/marshallku/WithEnglish" target="_blank" rel="noopener noreferrer">repo →</a></div>
+                </div>
+            </article>
+            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                <div class="about-project__bar"><span>›</span>etc.misc<span class="about-project__type">solo</span></div>
+                <div class="about-project__body">
+                    <div class="about-project__tags"><span>#vanilla-ts</span><span>#bot</span></div>
+                    <h4 class="about-project__title">기타</h4>
+                    <p class="about-project__desc">바닐라 TypeScript로 SPA 제작, 최대 200개 이상 서버에서 쓰인 Discord IU Bot을 제작했습니다.</p>
+                    <div class="about-project__tech">TypeScript · Discord.js · SPA</div>
+                    <div class="about-project__footer"><span class="about-project__period">various</span><a class="about-project__link" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">github →</a></div>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="about__section">
+        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ cat misc.log</div>
+        <div class="about-misc">
+            <div class="about-panel about-misc-card">
+                <div class="about-misc-card__label"><span>★</span> honors &amp; awards</div>
+                <div class="about-misc-card__title">올해의 Linker</div>
+                <div class="about-misc-card__meta">Employee of the Year — JobKorea</div>
+                <div class="about-misc-card__date">2023.01</div>
+            </div>
+            <div class="about-panel about-misc-card">
+                <div class="about-misc-card__label"><span>▤</span> education</div>
+                <div class="about-misc-card__title">한국방송통신대학교</div>
+                <div class="about-misc-card__meta">컴퓨터과학과</div>
+                <div class="about-misc-card__date">2020.06 — 2024.08</div>
+            </div>
+            <div class="about-panel about-misc-card">
+                <div class="about-misc-card__label"><span>◇</span> activities</div>
+                <div class="about-misc-card__title">패스트캠퍼스 FE 부트캠프 멘토</div>
+                <div class="about-misc-card__meta">그룹 스터디·팀 프로젝트 멘토링, 과제 코드 리뷰, 오프라인 특강</div>
+                <div class="about-misc-card__date">2023.06 — 2024.05</div>
+            </div>
+        </div>
+    </section>
+</main>

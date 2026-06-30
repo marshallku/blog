@@ -55,6 +55,25 @@ use crate::types::Post;
 const RELATED_POSTS_COUNT: usize = 4;
 const DEV_SERVER_BUFFER_SIZE: usize = 1024;
 
+/// Site-wide data exposed to every page template (e.g. the About page's blog
+/// stats). Computed once after metadata is populated.
+fn build_page_data(metadata: &MetadataCache) -> HashMap<String, serde_json::Value> {
+    use chrono::Datelike;
+
+    let total_posts = metadata.posts.len();
+    let since_year = metadata
+        .posts
+        .iter()
+        .map(|p| p.frontmatter.date.posted.year())
+        .min()
+        .unwrap_or(2018);
+
+    let mut data = HashMap::new();
+    data.insert("blog_posts".to_string(), json!(total_posts));
+    data.insert("blog_since".to_string(), json!(since_year));
+    data
+}
+
 /// Builds custom pages, collecting per-page failures instead of aborting:
 /// one broken page must not prevent indices, feeds, and sitemap generation.
 /// The caller reports the returned errors after all other outputs are done.
@@ -62,6 +81,7 @@ fn build_pages(
     shortcode_registry: &ShortcodeRegistry,
     renderer: &Renderer,
     generator: &Generator,
+    page_data: &HashMap<String, serde_json::Value>,
 ) -> Vec<(std::path::PathBuf, String)> {
     let pages_dir = Path::new("content/pages");
     if !pages_dir.exists() {
@@ -80,7 +100,7 @@ fn build_pages(
         let path = entry.path();
         println!("🔨 Building page: {}", path.display());
 
-        match build_single_page(path, shortcode_registry, renderer, generator) {
+        match build_single_page(path, shortcode_registry, renderer, generator, page_data) {
             Ok(true) => pages_built += 1,
             Ok(false) => {}
             Err(e) => {
@@ -102,6 +122,7 @@ fn build_single_page(
     shortcode_registry: &ShortcodeRegistry,
     renderer: &Renderer,
     generator: &Generator,
+    page_data: &HashMap<String, serde_json::Value>,
 ) -> Result<bool> {
     let mut page = Parser::parse_page_file(path)?;
 
@@ -118,11 +139,11 @@ fn build_single_page(
     )?;
     page.rendered_html = Some(html);
 
-    let output_path = generator.generate_page(&page, &HashMap::new())?;
+    let output_path = generator.generate_page(&page, page_data)?;
     println!("   ✓ {}", output_path.display());
 
     if generator.should_generate_partials() {
-        generator.generate_page_partial(&page, &HashMap::new())?;
+        generator.generate_page_partial(&page, page_data)?;
     }
 
     Ok(true)
@@ -361,7 +382,8 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
     metadata.save()?;
 
-    let page_errors = build_pages(&shortcode_registry, &renderer, &generator);
+    let page_data = build_page_data(&metadata);
+    let page_errors = build_pages(&shortcode_registry, &renderer, &generator, &page_data);
 
     let index_generator = IndexGenerator::new(config.clone())?;
     index_generator.generate_all(&metadata)?;
@@ -594,7 +616,8 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
 
     let renderer = Renderer::new();
     let generator = Generator::new((*config).clone())?;
-    let page_errors = build_pages(&shortcode_registry, &renderer, &generator);
+    let page_data = build_page_data(&metadata);
+    let page_errors = build_pages(&shortcode_registry, &renderer, &generator, &page_data);
 
     let index_generator = IndexGenerator::new((*config).clone())?;
     index_generator.generate_all(&metadata)?;

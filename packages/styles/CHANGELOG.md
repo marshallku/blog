@@ -1,5 +1,11 @@
 # @blog/styles
 
+## 0.8.0
+
+### Minor Changes
+
+- Add the About page terminal/résumé design system (`about.css` route bundle) and re-point `--font-sans` to a Pretendard-led stack.
+
 ## 0.7.0
 
 ### Minor Changes
