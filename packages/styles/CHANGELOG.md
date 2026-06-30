@@ -1,5 +1,11 @@
 # @blog/styles
 
+## 0.8.3
+
+### Patch Changes
+
+- Wrap long code-block lines instead of scrolling horizontally — a horizontal scroll carried the absolutely-positioned terminal header bar off-screen and clipped it.
+
 ## 0.8.2
 
 ### Patch Changes

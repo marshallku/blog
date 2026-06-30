@@ -7,10 +7,15 @@ pre {
     border: 1px solid color(sub-opacity);
     border-radius: radius(md);
     padding: 46px spacing(lg) spacing(lg);
-    overflow-x: auto;
+    overflow-x: hidden;
     margin: spacing(lg) 0;
     font-size: 0.84rem;
     line-height: 1.7;
+
+    // Wrap long lines instead of scrolling: a horizontal scroll would carry the
+    // absolutely-positioned ::before header bar off-screen and clip it.
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 
     &::before {
         content: "";
@@ -33,6 +38,7 @@ pre code {
     padding: 0;
     background: none;
     font-size: inherit;
+    white-space: inherit;
 }
 
 /* Copy button — in the window's title bar */
