@@ -1,5 +1,11 @@
 # @blog/styles
 
+## 0.8.2
+
+### Patch Changes
+
+- Make the comment composer textarea multi-line by default and auto-grow with content (capped, then scrolls), instead of a fixed single-line height that clipped wrapped text on mobile.
+
 ## 0.8.1
 
 ### Patch Changes

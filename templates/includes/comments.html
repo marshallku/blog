@@ -37,6 +37,8 @@
                         name="body"
                         required
                         x-model="body"
+                        x-init="$watch('body', value => { if (!value) $el.style.height = ''; })"
+                        @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 200) + 'px'"
                         @keydown.ctrl.enter.prevent="submit"
                         @keydown.meta.enter.prevent="submit"
                         placeholder="메시지를 입력하세요…  (⌘/Ctrl + Enter 전송)"

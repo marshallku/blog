@@ -147,16 +147,18 @@
     &__textarea {
         flex: 1;
         min-width: 0;
-        min-height: 42px;
-        height: 42px;
+        // Multi-line by default; JS auto-grows up to max-height, then scrolls.
+        min-height: 76px;
+        max-height: 200px;
         padding: 11px 14px;
         resize: vertical;
+        overflow-y: auto;
         background: palette.color(background-dimmed);
         border: 1px solid palette.color(sub-opacity);
         border-radius: palette.radius(md);
         font-family: var(--font-sans);
         font-size: 0.875rem;
-        line-height: 1.4;
+        line-height: 1.5;
         color: palette.color(text);
         outline: none;
 
