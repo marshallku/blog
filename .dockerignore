@@ -1,5 +1,10 @@
 # Build artifacts
 .build-cache/
+target/
+
+# MongoDB runtime data (bind-mounted volumes, root-owned, not needed for builds)
+db/
+config/
 
 # Content (not needed for backend build)
 content/
