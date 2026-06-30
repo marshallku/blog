@@ -79,26 +79,27 @@ $dark-palette: (
     ),
 );
 
-// Sepia — terminal/hacker tone on warm cream. Same structure as light: pink accent,
-// warm-brown hairlines/tints, warm-dark text scale for readable body copy.
+// Sepia — "warm paper, neutral ink": surfaces (background/panels/light grayscale)
+// stay warm cream, but foreground text tokens are neutral dark grays so body and
+// headings don't read as brown. Pink accent unchanged.
 $sepia-palette: (
     theme: #f1718c,
-    text: #2a2113,
+    text: #1c1b19,
     highlight: #e85c7a,
     background: #f6f1e1,
     navigation-background: rgba(246, 241, 225, 0.8),
     background-transparent: rgba(246, 241, 225, 0),
     background-dimmed: #efe7d0,
     selection: #ece0c4,
-    main: #b09a72,
-    main-opacity: rgba(74, 52, 22, 0.06),
-    sub: #8a6a3f,
-    sub-opacity: rgba(74, 52, 22, 0.14),
-    list-text: #4a3a22,
+    main: #b0a99c,
+    main-opacity: rgba(40, 38, 33, 0.06),
+    sub: #6c6a64,
+    sub-opacity: rgba(40, 38, 33, 0.13),
+    list-text: #2e2c28,
     comment: #ece0c4,
     comment-2: #f1ebd8,
-    comment-text: #7a5a30,
-    scroll: #c2ab83,
+    comment-text: #6f6d66,
+    scroll: #bdb6a6,
     masonry-alt: #efe7d0,
     masonry-alt-transparent: rgba(239, 231, 208, 0),
     link: #f1718c,
@@ -108,12 +109,12 @@ $sepia-palette: (
         100: #f3ecd8,
         200: #e7dcc2,
         300: #d8c8a8,
-        400: #b09668,
-        500: #94794a,
-        600: #7a5f33,
-        700: #614a26,
-        800: #43331a,
-        900: #2a2113,
+        400: #a8a399,
+        500: #847f74,
+        600: #66625a,
+        700: #4e4b45,
+        800: #333230,
+        900: #1c1b19,
     ),
 );
 
