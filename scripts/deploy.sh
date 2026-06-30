@@ -4,7 +4,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 BLOG_BIN="${BLOG_BIN:-./blog}"
-WWW_PATH="${WWW_PATH:-/var/www/blog}"
 
 echo "🔨 Building site..."
 
@@ -15,22 +14,10 @@ if [ ! -x "$BLOG_BIN" ]; then
     exit 1
 fi
 
-# Build site to dist/ (incremental: the cache invalidates itself when the
-# binary, templates, config.yaml, or manifest.json change)
+# Build the site in place. nginx serves dist/ directly
+# (root /home/marshall/dev/blog/dist), so the build IS the deploy — no copy
+# step. The incremental cache invalidates itself when the binary, templates,
+# config.yaml, or manifest.json change, and prunes output for deleted posts.
 "$BLOG_BIN" build --incremental
 
-echo "🚀 Deploying to $WWW_PATH..."
-
-# Phase 1: Add new files first (prevents 404 on new assets)
-echo "   Adding new files..."
-rsync -a --ignore-existing dist/ "$WWW_PATH/"
-
-# Phase 2: Update existing files
-echo "   Updating files..."
-rsync -a dist/ "$WWW_PATH/"
-
-# Phase 3: Remove deleted files last
-echo "   Cleaning old files..."
-rsync -a --delete dist/ "$WWW_PATH/"
-
-echo "✅ Deploy complete"
+echo "✅ Site built — served directly from dist/"
