@@ -1,0 +1,13 @@
+{# Shared terminal-window chrome + command-line, used across home and about. #}
+
+{# Window title bar: traffic-light dots, a path label, and an optional right tag.
+   Set dots=false + prefix to render the file-card style bar (e.g. "› file.tsx"). #}
+{% macro window_bar(path, tag="", dots=true, prefix="") %}
+<div class="terminal__bar">{% if dots %}<span class="terminal__dots"><span></span><span></span><span></span></span>{% endif %}{% if prefix %}<span class="terminal__prefix">{{ prefix }}</span>{% endif %}<span class="terminal__path">{{ path }}</span>{% if tag %}<span class="terminal__tag">{{ tag }}</span>{% endif %}</div>
+{% endmacro window_bar %}
+
+{# Command prompt line: optional "~/path", a "$" prompt, the command (may contain
+   markup, e.g. an Alpine x-text span), and an optional "// comment". #}
+{% macro cmd(command, path="", comment="", prompt="$", block=false) %}
+<div class="terminal-cmd{% if block %} terminal-cmd--block{% endif %}">{% if path %}<span class="terminal-cmd__path">{{ path }}</span> {% endif %}<span class="terminal-cmd__prompt">{{ prompt }}</span> {{ command | safe }}{% if comment %} <span class="terminal-cmd__comment">// {{ comment }}</span>{% endif %}</div>
+{% endmacro cmd %}

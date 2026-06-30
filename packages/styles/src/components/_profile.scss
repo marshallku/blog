@@ -1,67 +1,123 @@
 @use "../base/palette";
+@use "../base/mixins";
 
-.profile {
-    $self: &;
-    padding: 0 12px;
-    text-align: center;
+// Shared profile card (home hero + about hero). See macros/profile.html.
+// In critical CSS so both the list bundle (home) and about bundle pick it up.
+.profile-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid palette.color(sub-opacity);
+    border-radius: palette.radius(lg);
+    background: palette.color(background-dimmed);
+    padding: 22px;
 
-    &--size-small {
+    &__head {
         display: flex;
-        text-align: left;
-        gap: 12px;
+        align-items: center;
+        gap: 14px;
     }
 
-    &__figure {
-        margin-bottom: 24px;
-
-        @at-root #{$self}--size-small & {
-            margin-bottom: 0;
-        }
+    &__avatar {
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: palette.radius(lg);
+        overflow: hidden;
+        border: 1px solid palette.color(sub-opacity);
 
         img {
             display: block;
-            margin: 0 auto;
-            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
     }
 
-    &__content {
+    &__name {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        font-size: 1.0625rem;
+        color: palette.color(grayscale, 900);
+    }
+
+    &__sub {
+        margin-top: 3px;
+        font-size: 0.8125rem;
+        color: palette.color(sub);
+    }
+
+    &__divider {
+        height: 1px;
+        margin: 18px 0;
+        background: palette.color(sub-opacity);
+    }
+
+    &__socials {
+        display: flex;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+    }
+
+    &__social {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 8px 4px;
+        border: 1px solid palette.color(sub-opacity);
+        border-radius: palette.radius(md);
+        background: palette.color(main-opacity);
+        white-space: nowrap;
+        color: palette.color(sub);
+        transition:
+            color palette.transition(fast) ease,
+            border-color palette.transition(fast) ease,
+            background-color palette.transition(fast) ease;
+
+        @include mixins.supports-hover {
+            &:hover {
+                color: palette.color(theme);
+                border-color: palette.color(theme);
+            }
+        }
+    }
+
+    &__contacts {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        font-weight: 700;
+        gap: 11px;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
     }
 
     &__contact {
         display: flex;
-        gap: 8px;
         align-items: center;
-        justify-content: center;
+        gap: 10px;
+        color: palette.color(sub);
 
-        @at-root #{$self}--size-small & {
-            justify-content: flex-start;
-            gap: 4px;
+        i {
+            color: palette.color(theme);
         }
 
-        > li > a {
-            display: flex;
-            padding: 8px;
-            align-items: center;
-            border: 1px solid palette.color(sub);
-            border-radius: 50%;
+        &--link {
+            transition: color palette.transition(fast) ease;
 
-            @at-root #{$self}--size-small & {
-                padding: 4px;
-                border: none;
-            }
-
-            > i {
-                font-size: 1.2em;
-
-                @at-root #{$self}--size-small & {
-                    font-size: 0.8em;
+            @include mixins.supports-hover {
+                &:hover {
+                    color: palette.color(theme);
                 }
             }
         }
+    }
+
+    &__updated {
+        margin-top: auto;
+        padding-top: 18px;
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        color: palette.color(grayscale, 400);
     }
 }

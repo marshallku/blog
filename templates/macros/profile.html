@@ -1,43 +1,36 @@
-{# Profile component macro #}
-{# Usage: {{ macros::profile(size, show_content, show_contact) }} #}
+{# Shared profile card: avatar + identity + bracketed socials, with an optional
+   contacts block (about page). Used by home hero and about hero. #}
 
-{% macro profile(size="small", show_content=true, show_contact=true) %}
-<div class="profile profile--size-{{ size }}">
-    <figure class="profile__figure">
-        <a href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">
-            <img src="/assets/profile.jpg" alt="Marshall Ku" class="profile__image" width="65" height="65">
+{% macro card(name, sub, avatar="/assets/profile.jpg", show_blog=false, show_contacts=false, email="marshall@kakao.com", location="", posts="", since="2018", updated="") %}
+<div class="profile-card">
+    <div class="profile-card__head">
+        <a class="profile-card__avatar" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">
+            <img src="{{ avatar }}" alt="{{ name }}" width="56" height="56">
         </a>
-    </figure>
-    {% if show_content %}
-    <div class="profile__content">
-        <p class="typograpy-b1">Marshall Ku / 구영표</p>
-        {% if show_contact %}
-        <ul class="profile__contact">
-            <li>
-                <a href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer nofollow">
-                    <i class="icon-github"></i>
-                    <span class="sr-only">GitHub</span>
-                </a>
-            </li>
-            <li>
-                <a
-                    href="https://www.linkedin.com/in/marshallku/"
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                >
-                    <i class="icon-linkedin"></i>
-                    <span class="sr-only">LinkedIn</span>
-                </a>
-            </li>
-            <li>
-                <a href="mailto:marshall@kakao.com">
-                    <i class="icon-mail"></i>
-                    <span class="sr-only">marshall@kakao.com</span>
-                </a>
-            </li>
-        </ul>
-        {% endif %}
+        <div>
+            <div class="profile-card__name">{{ name }}</div>
+            <div class="profile-card__sub">{{ sub }}</div>
+        </div>
     </div>
+
+    <div class="profile-card__divider"></div>
+
+    <div class="profile-card__socials">
+        <a class="profile-card__social" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub">[ <i class="icon-github"></i> ]</a>
+        <a class="profile-card__social" href="https://www.linkedin.com/in/marshallku/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn">[ <i class="icon-linkedin"></i> ]</a>
+        {% if show_blog %}<a class="profile-card__social" href="https://marshallku.com" aria-label="Blog">[ blog ]</a>{% endif %}
+        <a class="profile-card__social" href="mailto:{{ email }}" aria-label="Email">[ <i class="icon-mail"></i> ]</a>
+    </div>
+
+    {% if show_contacts %}
+    <div class="profile-card__divider"></div>
+
+    <div class="profile-card__contacts">
+        <div class="profile-card__contact"><i class="icon-mail"></i> {{ email }}</div>
+        {% if location %}<div class="profile-card__contact"><i class="icon-link"></i> {{ location }}</div>{% endif %}
+        <a class="profile-card__contact profile-card__contact--link" href="/"><i class="icon-arrow-forward"></i> {{ posts }} posts · since {{ since }}</a>
+    </div>
+    {% if updated %}<div class="profile-card__updated">// last update: {{ updated }}</div>{% endif %}
     {% endif %}
 </div>
-{% endmacro profile %}
+{% endmacro card %}

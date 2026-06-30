@@ -58,19 +58,15 @@ const DEV_SERVER_BUFFER_SIZE: usize = 1024;
 /// Site-wide data exposed to every page template (e.g. the About page's blog
 /// stats). Computed once after metadata is populated.
 fn build_page_data(metadata: &MetadataCache) -> HashMap<String, serde_json::Value> {
-    use chrono::Datelike;
+    // Blog's actual start year (the oldest *migrated* post is newer, so this is
+    // pinned rather than derived from post dates).
+    const BLOG_SINCE_YEAR: u32 = 2018;
 
     let total_posts = metadata.posts.len();
-    let since_year = metadata
-        .posts
-        .iter()
-        .map(|p| p.frontmatter.date.posted.year())
-        .min()
-        .unwrap_or(2018);
 
     let mut data = HashMap::new();
     data.insert("blog_posts".to_string(), json!(total_posts));
-    data.insert("blog_since".to_string(), json!(since_year));
+    data.insert("blog_since".to_string(), json!(BLOG_SINCE_YEAR));
     data
 }
 

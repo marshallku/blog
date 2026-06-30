@@ -1,13 +1,13 @@
+{% import "macros/terminal.html" as terminal %}
+{% import "macros/profile.html" as profile %}
+
 <main class="about">
     <section class="about-hero">
-        <div class="about-window">
-            <div class="about-window__bar">
-                <span class="about-window__dots"><span></span><span></span><span></span></span>
-                <span class="about-window__path">marshall@blog: ~/about</span>
-            </div>
+        <div class="terminal">
+            {{ terminal::window_bar(path="marshall@blog: ~/about") }}
             <div class="about-hero__body">
-                <div class="about-hero__cmd"><span>$</span> whoami --full</div>
-                <h1 class="about-hero__name">Marshall Ku<span class="about-hero__caret" aria-hidden="true"></span></h1>
+                {{ terminal::cmd(command="whoami --full", block=true) }}
+                <h1 class="about-hero__name">Marshall Ku<span class="terminal-caret" aria-hidden="true"></span></h1>
                 <p class="about-hero__tagline">배움과 도전에 주저 없는 개발자입니다.</p>
                 <div class="about-hero__tags">
                     <span class="about-hero__tag"><span>#</span>frontend</span>
@@ -19,30 +19,17 @@
             </div>
         </div>
 
-        <div class="about-panel about-profile">
-            <div class="about-profile__head">
-                <a class="about-profile__avatar" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">
-                    <img src="/assets/profile.jpg" alt="Marshall Ku" width="58" height="58">
-                </a>
-                <div>
-                    <div class="about-profile__name">Marshall Ku</div>
-                    <div class="about-profile__sub">구영표 · web dev</div>
-                </div>
-            </div>
-            <div class="about-profile__socials">
-                <a class="about-profile__social" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub">[ <i class="icon-github"></i> ]</a>
-                <a class="about-profile__social" href="https://www.linkedin.com/in/marshallku/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn">[ <i class="icon-linkedin"></i> ]</a>
-                <a class="about-profile__social" href="https://marshallku.com" aria-label="Blog">[ blog ]</a>
-                <a class="about-profile__social" href="mailto:marshall@kakao.com" aria-label="Email">[ <i class="icon-mail"></i> ]</a>
-            </div>
-            <div class="about-profile__divider"></div>
-            <div class="about-profile__contacts">
-                <div class="about-profile__contact"><i class="icon-mail"></i> marshall@kakao.com</div>
-                <div class="about-profile__contact"><i class="icon-link"></i> Seoul, Korea</div>
-                <a class="about-profile__contact about-profile__contact--link" href="/"><i class="icon-arrow-forward"></i> {{ blog_posts | default(value="") }} posts · since {{ blog_since | default(value="2018") }}</a>
-            </div>
-            <div class="about-profile__updated">// last update: 2026.06.30</div>
-        </div>
+        {{ profile::card(
+            name="Marshall Ku",
+            sub="구영표 · web dev",
+            show_blog=true,
+            show_contacts=true,
+            email="marshall@kakao.com",
+            location="Seoul, Korea",
+            posts=blog_posts | default(value=""),
+            since=blog_since | default(value="2018"),
+            updated="2026.06.30"
+        ) }}
     </section>
 
     <section class="about-metrics">
@@ -53,7 +40,7 @@
     </section>
 
     <section class="about__section">
-        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ cat summary.md</div>
+        {{ terminal::cmd(path="~/about", command="cat summary.md", block=true) }}
         <div class="about-panel about-summary">
             <p>5년 경력의 소프트웨어 엔지니어로서 웹과 하이브리드 앱 환경 모두에서 성공적으로 프로젝트를 수행해왔습니다. 프론트엔드 개발 및 최적화에 능숙하며, 백엔드와 인프라에 대한 이해와 경험을 가지고 있습니다.</p>
             <p>디자인 시스템 구축, 테스트 코드 도입, 모니터링 툴 도입, CLI 툴 제작, 파이프라인 구축 등을 통해 생산성과 안정성을 향상시켜 왔습니다. 대규모 애플리케이션 최적화에 깊은 관심을 가지고 있으며, Web Vital 최적화와 번들 사이즈 50% 감소 등의 성과를 이루었습니다. 또한 AI를 적극적으로 업무 전반과 일상 영역까지 활용하고 있습니다.</p>
@@ -62,7 +49,7 @@
     </section>
 
     <section class="about__section">
-        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ cat stack.json</div>
+        {{ terminal::cmd(path="~/about", command="cat stack.json", block=true) }}
         <div class="about-stack">
             <div class="about-panel about-stack-group">
                 <div class="about-stack-group__cat"><span>▸</span> Frontend</div>
@@ -116,14 +103,10 @@
     </section>
 
     <section class="about__section">
-        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ ls --career <span class="about__cmd-comment">// 3 entries</span></div>
+        {{ terminal::cmd(path="~/about", command="ls --career", comment="3 entries", block=true) }}
         <div class="about-career">
-            <article class="about-window about-job" x-data="{ open: false }">
-                <div class="about-window__bar">
-                    <span class="about-window__dots"><span></span><span></span><span></span></span>
-                    <span class="about-window__path">~/career/toss</span>
-                    <span class="about-job__tag">current</span>
-                </div>
+            <article class="terminal about-job" x-data="{ open: false }">
+                {{ terminal::window_bar(path="~/career/toss", tag="current") }}
                 <div class="about-job__body">
                     <div class="about-job__head">
                         <h3 class="about-job__company">Viva Republica (Toss)</h3>
@@ -176,12 +159,8 @@
                 </div>
             </article>
 
-            <article class="about-window about-job" x-data="{ open: false }">
-                <div class="about-window__bar">
-                    <span class="about-window__dots"><span></span><span></span><span></span></span>
-                    <span class="about-window__path">~/career/seegene</span>
-                    <span class="about-job__tag">devops</span>
-                </div>
+            <article class="terminal about-job" x-data="{ open: false }">
+                {{ terminal::window_bar(path="~/career/seegene", tag="devops") }}
                 <div class="about-job__body">
                     <div class="about-job__head">
                         <h3 class="about-job__company">Seegene</h3>
@@ -235,12 +214,8 @@
                 </div>
             </article>
 
-            <article class="about-window about-job" x-data="{ open: false }">
-                <div class="about-window__bar">
-                    <span class="about-window__dots"><span></span><span></span><span></span></span>
-                    <span class="about-window__path">~/career/jobkorea</span>
-                    <span class="about-job__tag">employee of the year</span>
-                </div>
+            <article class="terminal about-job" x-data="{ open: false }">
+                {{ terminal::window_bar(path="~/career/jobkorea", tag="employee of the year") }}
                 <div class="about-job__body">
                     <div class="about-job__head">
                         <h3 class="about-job__company">JobKorea</h3>
@@ -286,7 +261,7 @@
 
     <section class="about__section about-projects" x-data="{ filter: 'all' }">
         <div class="about-projects__toolbar">
-            <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ ls --projects <span class="about__cmd-comment">// 8 entries</span></div>
+            {{ terminal::cmd(path="~/about", command="ls --projects", comment="8 entries") }}
             <div class="about-projects__filters">
                 <button type="button" class="about-projects__filter" :data-active="filter === 'all'" @click="filter = 'all'">전체 <span>8</span></button>
                 <button type="button" class="about-projects__filter" :data-active="filter === 'solo'" @click="filter = 'solo'">개인 <span>6</span></button>
@@ -294,8 +269,8 @@
             </div>
         </div>
         <div class="about-projects__grid">
-            <article class="about-project" data-type="team" x-show="filter === 'all' || filter === 'team'">
-                <div class="about-project__bar"><span>›</span>maji.tsx<span class="about-project__type">team</span></div>
+            <article class="terminal about-project" data-type="team" x-show="filter === 'all' || filter === 'team'">
+                {{ terminal::window_bar(path="maji.tsx", tag="team", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#go</span><span>#nextjs</span><span>#argocd</span></div>
                     <h4 class="about-project__title">Maji</h4>
@@ -304,8 +279,8 @@
                     <div class="about-project__footer"><span class="about-project__period">2026.03 — now</span><span class="about-project__link">private</span></div>
                 </div>
             </article>
-            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
-                <div class="about-project__bar"><span>›</span>gitgarden.rs<span class="about-project__type">solo</span></div>
+            <article class="terminal about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                {{ terminal::window_bar(path="gitgarden.rs", tag="solo", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#rust</span><span>#docker</span></div>
                     <h4 class="about-project__title">Git Garden</h4>
@@ -314,8 +289,8 @@
                     <div class="about-project__footer"><span class="about-project__period">2024.08 — now</span><a class="about-project__link" href="https://github.com/marshallku/gitgarden" target="_blank" rel="noopener noreferrer">repo →</a></div>
                 </div>
             </article>
-            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
-                <div class="about-project__bar"><span>›</span>marshallku.com.ts<span class="about-project__type">solo</span></div>
+            <article class="terminal about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                {{ terminal::window_bar(path="marshallku.com.ts", tag="solo", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#fullstack</span><span>#on-prem</span></div>
                     <h4 class="about-project__title">marshallku.com</h4>
@@ -324,8 +299,8 @@
                     <div class="about-project__footer"><span class="about-project__period">2018.01 — now</span><a class="about-project__link" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">repo →</a></div>
                 </div>
             </article>
-            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
-                <div class="about-project__bar"><span>›</span>menu-today.rs<span class="about-project__type">solo</span></div>
+            <article class="terminal about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                {{ terminal::window_bar(path="menu-today.rs", tag="solo", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#rust</span><span>#api</span></div>
                     <h4 class="about-project__title">Menu Today</h4>
@@ -334,8 +309,8 @@
                     <div class="about-project__footer"><span class="about-project__period">2023.12 — now</span><a class="about-project__link" href="https://github.com/marshallku/menu-today" target="_blank" rel="noopener noreferrer">repo →</a></div>
                 </div>
             </article>
-            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
-                <div class="about-project__bar"><span>›</span>smooth-zoom.ts<span class="about-project__type">solo</span></div>
+            <article class="terminal about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                {{ terminal::window_bar(path="smooth-zoom.ts", tag="solo", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#library</span><span>#npm</span></div>
                     <h4 class="about-project__title">Smooth Zoom</h4>
@@ -344,8 +319,8 @@
                     <div class="about-project__footer"><span class="about-project__period">2021.02 — now</span><a class="about-project__link" href="https://github.com/marshallku/smooth-zoom" target="_blank" rel="noopener noreferrer">repo →</a></div>
                 </div>
             </article>
-            <article class="about-project" data-type="team" x-show="filter === 'all' || filter === 'team'">
-                <div class="about-project__bar"><span>›</span>coderland.tsx<span class="about-project__type">team</span></div>
+            <article class="terminal about-project" data-type="team" x-show="filter === 'all' || filter === 'team'">
+                {{ terminal::window_bar(path="coderland.tsx", tag="team", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#react</span><span>#cicd</span></div>
                     <h4 class="about-project__title">Coderland</h4>
@@ -354,8 +329,8 @@
                     <div class="about-project__footer"><span class="about-project__period">2022</span><a class="about-project__link" href="https://github.com/marshallku/Coderland" target="_blank" rel="noopener noreferrer">repo →</a></div>
                 </div>
             </article>
-            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
-                <div class="about-project__bar"><span>›</span>withenglish.ts<span class="about-project__type">solo</span></div>
+            <article class="terminal about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                {{ terminal::window_bar(path="withenglish.ts", tag="solo", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#react</span><span>#edu</span></div>
                     <h4 class="about-project__title">WithEnglish</h4>
@@ -364,8 +339,8 @@
                     <div class="about-project__footer"><span class="about-project__period">2021.04 — 2022.01</span><a class="about-project__link" href="https://github.com/marshallku/WithEnglish" target="_blank" rel="noopener noreferrer">repo →</a></div>
                 </div>
             </article>
-            <article class="about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
-                <div class="about-project__bar"><span>›</span>etc.misc<span class="about-project__type">solo</span></div>
+            <article class="terminal about-project" data-type="solo" x-show="filter === 'all' || filter === 'solo'">
+                {{ terminal::window_bar(path="etc.misc", tag="solo", dots=false, prefix="›") }}
                 <div class="about-project__body">
                     <div class="about-project__tags"><span>#vanilla-ts</span><span>#bot</span></div>
                     <h4 class="about-project__title">기타</h4>
@@ -378,7 +353,7 @@
     </section>
 
     <section class="about__section">
-        <div class="about__cmd"><span class="about__cmd-path">~/about</span> $ cat misc.log</div>
+        {{ terminal::cmd(path="~/about", command="cat misc.log", block=true) }}
         <div class="about-misc">
             <div class="about-panel about-misc-card">
                 <div class="about-misc-card__label"><span>★</span> honors &amp; awards</div>

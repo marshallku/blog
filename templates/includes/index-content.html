@@ -1,43 +1,26 @@
 {% import "macros/post-card.html" as macros %}
+{% import "macros/terminal.html" as terminal %}
+{% import "macros/profile.html" as profile %}
 
 <section class="blog-banner">
     <div class="blog-banner__hero">
-        <div class="hero-terminal">
-            <div class="hero-terminal__bar">
-                <span class="hero-terminal__dots"><span></span><span></span><span></span></span>
-                <span class="hero-terminal__path">marshall@blog: ~/posts</span>
-            </div>
-            <div class="hero-terminal__body">
-                <div class="hero-terminal__cmd"><span class="hero-terminal__prompt">$</span> whoami --blog</div>
+        <div class="terminal">
+            {{ terminal::window_bar(path="marshall@blog: ~/posts") }}
+            <div class="terminal__body">
+                {{ terminal::cmd(command="whoami --blog", block=true) }}
                 <h1 class="blog-banner__title">{{ config.site_title }}</h1>
-                <p class="blog-banner__description"><span class="hero-terminal__typed" data-typed="{{ config.description }}">{{ config.description }}</span><span class="hero-terminal__caret" aria-hidden="true"></span></p>
+                <p class="blog-banner__description"><span class="hero-terminal__typed" data-typed="{{ config.description }}">{{ config.description }}</span><span class="terminal-caret" aria-hidden="true"></span></p>
             </div>
         </div>
-        <div class="hero-profile">
-            <div class="hero-profile__head">
-                <a class="hero-profile__avatar" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer">
-                    <img src="/assets/profile.jpg" alt="Marshall Ku" width="54" height="54">
-                </a>
-                <div class="hero-profile__id">
-                    <div class="hero-profile__name">Marshall Ku</div>
-                    <div class="hero-profile__sub">구영표</div>
-                </div>
-            </div>
-            <div class="hero-profile__divider"></div>
-            <div class="hero-profile__socials">
-                <a class="hero-profile__social" href="https://github.com/marshallku" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub">[ <i class="icon-github"></i> ]</a>
-                <a class="hero-profile__social" href="https://www.linkedin.com/in/marshallku/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn">[ <i class="icon-linkedin"></i> ]</a>
-                <a class="hero-profile__social" href="mailto:marshall@kakao.com" aria-label="Email">[ <i class="icon-mail"></i> ]</a>
-            </div>
-        </div>
+        {{ profile::card(name="Marshall Ku", sub="구영표") }}
     </div>
 </section>
 
 <section class="home-post-list" x-data="{ activeTab: 'all' }">
     <div class="home-post-list__toolbar">
-        <div class="home-post-list__cmd">
-            <span class="home-post-list__path">~/posts</span> $ ls --filter=<span class="home-post-list__filter" x-text="activeTab"></span> <span class="home-post-list__comment">// {{ posts | length }} entries</span>
-        </div>
+        {% set post_count = posts | length %}
+        {% set entries_label = post_count ~ " entries" %}
+        {{ terminal::cmd(path="~/posts", command='ls --filter=<span class="terminal-cmd__hl" x-text="activeTab"></span>', comment=entries_label) }}
         <div class="tabs">
             <div class="tabs__buttons">
                 <button
