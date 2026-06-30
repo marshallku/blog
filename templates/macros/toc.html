@@ -1,11 +1,11 @@
 {% macro table_of_contents(headings) %}
 <nav class="post-toc" aria-label="목차">
-    <p class="post-toc__title typography-c1">목차</p>
+    <div class="post-toc__bar"><span class="post-toc__icon">▤</span> 목차 — tree ./article</div>
     <ul class="post-toc__list">
         {% for heading in headings %}
         {% if heading.level == 2 or heading.level == 3 %}
         <li class="post-toc__item post-toc__item--h{{ heading.level }}">
-            <a href="#{{ heading.slug }}" class="post-toc__link typography-c1" data-toc-link="{{ heading.slug }}">{{ heading.text }}</a>
+            <a href="#{{ heading.slug }}" class="post-toc__link" data-toc-link="{{ heading.slug }}">{{ heading.text }}</a>
         </li>
         {% endif %}
         {% endfor %}

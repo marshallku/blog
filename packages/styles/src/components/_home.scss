@@ -7,79 +7,237 @@
 
 .blog-banner {
     padding-top: variables.$global-navigation-height;
-    position: relative;
 
-    &__header {
-        position: relative;
-        display: flex;
+    &__hero {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
         width: clamp(0px, map.get(palette.$container-width, "large"), 100%);
-        margin: 0 auto 12px;
-        padding: 360px 20px 0;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
+        margin: 0 auto;
+        padding: 52px 20px 22px;
 
         @include mixins.respond-to(medium) {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-    }
-
-    &__image {
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        position: absolute;
-        top: -40px;
-        left: 0;
-        width: 100%;
-        height: calc(100% + 40px);
-        opacity: 0.25;
-        filter: blur(9px);
-        pointer-events: none;
-
-        circle {
-            opacity: 0;
-            animation: 1s ease-in-out forwards fade-in;
-        }
-    }
-
-    &__container {
-        width: clamp(0px, map.get(palette.$container-width, "large"), 100%);
-        margin: 36px auto 48px;
-
-        &--padding {
-            padding: 0 12px;
+            grid-template-columns: 1.4fr 1fr;
+            align-items: stretch;
         }
     }
 
     &__title {
+        font-family: var(--font-heading);
+        margin: 0 0 12px;
+        font-size: clamp(1.6rem, 4vw, 1.95rem);
         font-weight: 700;
+        letter-spacing: -0.04em;
+        line-height: 1.12;
+        color: palette.color(grayscale, 900);
+    }
+
+    &__description {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: palette.color(sub);
+        min-height: 1.5em;
+    }
+}
+
+.hero-terminal {
+    border: 1px solid palette.color(sub-opacity);
+    border-radius: 6px;
+    background: palette.color(background-dimmed);
+    overflow: hidden;
+
+    &__bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        background: palette.color(main-opacity);
+        border-bottom: 1px solid palette.color(sub-opacity);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: palette.color(comment-text);
+    }
+
+    &__dots {
+        display: flex;
+        gap: 6px;
+
+        span {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: palette.color(grayscale, 300);
+        }
+
+        span:last-child {
+            background: palette.color(theme);
+            opacity: 0.6;
+        }
+    }
+
+    &__body {
+        padding: 26px;
+        font-family: var(--font-mono);
+    }
+
+    &__cmd {
+        margin-bottom: 14px;
+        font-size: 12.5px;
+        color: palette.color(comment-text);
+    }
+
+    &__prompt {
+        color: palette.color(theme);
+    }
+
+    &__caret {
+        display: inline-block;
+        width: 9px;
+        height: 17px;
+        margin-left: 2px;
+        transform: translateY(3px);
+        background: palette.color(theme);
+        animation: terminal-blink 1.1s steps(1) infinite;
+    }
+}
+
+@keyframes terminal-blink {
+    0%,
+    49% {
+        opacity: 1;
+    }
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-terminal__caret {
+        animation: none;
+    }
+}
+
+.hero-profile {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    border: 1px solid palette.color(sub-opacity);
+    border-radius: 6px;
+    background: palette.color(background-dimmed);
+    padding: 24px;
+
+    &__head {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    &__avatar {
+        flex-shrink: 0;
+        width: 54px;
+        height: 54px;
+        border-radius: 5px;
+        overflow: hidden;
+        border: 1px solid palette.color(sub-opacity);
+
+        img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    &__name {
+        font-family: var(--font-mono);
+        font-weight: 500;
+        font-size: 0.9375rem;
+        color: palette.color(text);
+    }
+
+    &__sub {
+        margin-top: 2px;
+        font-size: 0.8125rem;
+        color: palette.color(sub);
+    }
+
+    &__divider {
+        height: 1px;
+        background: palette.color(sub-opacity);
+    }
+
+    &__socials {
+        display: flex;
+        gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+    }
+
+    &__social {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 8px 0;
+        border: 1px solid palette.color(sub-opacity);
+        border-radius: palette.radius(md);
+        color: palette.color(sub);
+        transition:
+            color palette.transition(fast) ease,
+            border-color palette.transition(fast) ease,
+            background-color palette.transition(fast) ease;
+
+        @include mixins.supports-hover {
+            &:hover {
+                color: palette.color(theme);
+                border-color: palette.color(theme);
+                background: palette.color(main-opacity);
+            }
+        }
     }
 }
 
 .home-post-list {
     width: clamp(0px, map.get(palette.$container-width, large), 100%);
-    margin: 36px auto 48px;
+    margin: 6px auto 48px;
+    padding: 0 20px;
 
-    &__toggle-button-group {
+    &__toolbar {
         display: flex;
-        justify-content: center;
-        margin-bottom: 12px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    &__cmd {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: palette.color(comment-text);
+    }
+
+    &__path {
+        color: palette.color(theme);
+    }
+
+    &__filter {
+        color: palette.color(grayscale, 800);
+    }
+
+    &__comment {
+        color: palette.color(grayscale, 400);
     }
 
     &__view-more {
         display: flex;
         justify-content: center;
-        margin-top: 12px;
+        margin-top: 16px;
     }
 
     &__view-more-button {
@@ -90,53 +248,45 @@
             transition: transform 0.2s ease-in-out;
         }
 
-        &:hover {
-            i {
-                transform: translateX(4px);
-            }
+        &:hover i {
+            transform: translateX(4px);
         }
     }
 }
 
 .tabs {
     display: flex;
-    justify-content: center;
-    margin-bottom: 12px;
+    justify-content: flex-start;
 
     &__buttons {
         display: inline-flex;
-        justify-content: center;
-        border: 1px solid palette.color(grayscale, 300);
-        border-radius: palette.radius(md);
-        overflow: hidden;
+        gap: 6px;
 
         button {
             @include fonts.typography(c1);
-            padding: 7px 16px;
-            border: none;
-            border-radius: 0;
-            border-right: 1px solid palette.color(grayscale, 200);
+            padding: 6px 12px;
+            border: 1px solid palette.color(sub-opacity);
+            border-radius: palette.radius(sm);
+            background: transparent;
             font-family: var(--font-mono);
             letter-spacing: 0.02em;
             color: palette.color(sub);
             transition:
                 background-color palette.transition(fast) ease,
-                color palette.transition(fast) ease;
+                color palette.transition(fast) ease,
+                border-color palette.transition(fast) ease;
 
             @include mixins.supports-hover {
                 &:hover {
-                    background-color: palette.color(grayscale, 100);
                     color: palette.color(text);
+                    border-color: palette.color(main-opacity);
                 }
             }
 
-            &:last-child {
-                border-right: none;
-            }
-
             &[data-active="true"] {
-                background-color: palette.color(grayscale, 100);
                 color: palette.color(theme);
+                border-color: palette.color(theme);
+                background: palette.color(main-opacity);
                 font-weight: 600;
             }
         }

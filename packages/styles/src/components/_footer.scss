@@ -23,7 +23,8 @@
     }
 
     &__content {
-        padding: 24px 48px;
+        // extra bottom padding clears the fixed status bar (always-visible footer)
+        padding: 24px 48px 68px;
     }
 
     &__contact {

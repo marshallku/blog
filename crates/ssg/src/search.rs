@@ -108,7 +108,12 @@ mod tests {
             comments: true,
         };
 
-        metadata.upsert_post("test-post".to_string(), "dev".to_string(), frontmatter);
+        metadata.upsert_post(
+            "test-post".to_string(),
+            "dev".to_string(),
+            frontmatter,
+            Some(1),
+        );
 
         metadata
     }

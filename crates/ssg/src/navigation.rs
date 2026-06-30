@@ -169,6 +169,7 @@ mod tests {
             PostMetadata {
                 slug: "post-1".to_string(),
                 category: "dev".to_string(),
+                reading_time: 1,
                 frontmatter: Frontmatter {
                     title: "Post 1".to_string(),
                     date: PostDate {
@@ -187,6 +188,7 @@ mod tests {
             PostMetadata {
                 slug: "post-2".to_string(),
                 category: "dev".to_string(),
+                reading_time: 1,
                 frontmatter: Frontmatter {
                     title: "Post 2".to_string(),
                     date: PostDate {
@@ -205,6 +207,7 @@ mod tests {
             PostMetadata {
                 slug: "post-3".to_string(),
                 category: "dev".to_string(),
+                reading_time: 1,
                 frontmatter: Frontmatter {
                     title: "Post 3".to_string(),
                     date: PostDate {

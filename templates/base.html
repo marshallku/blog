@@ -19,6 +19,9 @@
     {% if config.assets.styles.pretendard %}
     <link rel="preload" href="{{ config.assets.styles.pretendard | safe }}" as="font" type="font/woff2" crossorigin>
     {% endif %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
     {% if config.assets.styles.critical %}
     <link rel="stylesheet" href="{{ config.assets.styles.critical | safe }}">
     {% endif %}
@@ -45,6 +48,10 @@
     {% endif %}
 </head>
 <body x-data="{ drawerOpen: false, scrolled: false }" @scroll.window="scrolled = window.scrollY > 10">
+    <div class="bg-decoration" aria-hidden="true">
+        <div class="bg-decoration__grid"></div>
+        <div class="bg-decoration__glow"></div>
+    </div>
     {# rx="6" mirrors $radius-size `lg` (6px) in _palette.scss — keep in sync with
        .scroll-to-top border-radius; SVG attrs can't call the Sass radius() function. #}
     <button class="scroll-to-top" type="button" aria-label="맨 위로 스크롤" data-scroll-top>
@@ -218,6 +225,17 @@
             <p class="footer__copyright">&copy; 2025 {{ config.author }}</p>
         </div>
     </footer>
+
+    <aside class="status-bar" aria-hidden="true">
+        <div class="status-bar__group">
+            <span class="status-bar__item status-bar__item--live"><span class="status-bar__dot"></span>online</span>
+            <span class="status-bar__item">build <span class="status-bar__hl" data-build>a3f9c1</span></span>
+        </div>
+        <div class="status-bar__group">
+            <span class="status-bar__item">marshallku.com</span>
+            <span class="status-bar__item" data-clock>--:--:--</span>
+        </div>
+    </aside>
 
     {% if config.assets.scripts.bundle %}
     <script src="{{ config.assets.scripts.bundle }}" type="module"></script>

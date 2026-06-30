@@ -9,6 +9,8 @@ pub struct PostMetadata {
     pub slug: String,
     pub category: String,
     pub frontmatter: Frontmatter,
+    #[serde(default)]
+    pub reading_time: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,13 +53,31 @@ impl MetadataCache {
         &self.category_info
     }
 
-    pub fn upsert_post(&mut self, slug: String, category: String, frontmatter: Frontmatter) {
+    pub fn upsert_post(
+        &mut self,
+        slug: String,
+        category: String,
+        frontmatter: Frontmatter,
+        reading_time: Option<u32>,
+    ) {
+        // A `None` reading_time preserves the value from an earlier pass; the
+        // metadata-population loop always supplies it, later re-upserts don't.
+        let reading_time = reading_time
+            .or_else(|| {
+                self.posts
+                    .iter()
+                    .find(|p| p.slug == slug)
+                    .map(|p| p.reading_time)
+            })
+            .unwrap_or(0);
+
         self.posts.retain(|p| p.slug != slug);
 
         self.posts.push(PostMetadata {
             slug,
             category,
             frontmatter,
+            reading_time,
         });
 
         self.recalculate_stats();
@@ -164,7 +184,7 @@ mod tests {
         let mut cache = MetadataCache::new();
 
         let (category, fm) = create_test_post("dev", vec!["rust", "webdev"]);
-        cache.upsert_post("test-post".to_string(), category, fm);
+        cache.upsert_post("test-post".to_string(), category, fm, Some(1));
 
         assert_eq!(cache.posts.len(), 1);
         assert_eq!(cache.categories.get("dev"), Some(&1));
@@ -179,9 +199,9 @@ mod tests {
         let (cat2, fm2) = create_test_post("chat", vec![]);
         let (cat3, fm3) = create_test_post("dev", vec![]);
 
-        cache.upsert_post("post1".to_string(), cat1, fm1);
-        cache.upsert_post("post2".to_string(), cat2, fm2);
-        cache.upsert_post("post3".to_string(), cat3, fm3);
+        cache.upsert_post("post1".to_string(), cat1, fm1, Some(1));
+        cache.upsert_post("post2".to_string(), cat2, fm2, Some(1));
+        cache.upsert_post("post3".to_string(), cat3, fm3, Some(1));
 
         let dev_posts = cache.get_posts_by_category("dev");
         assert_eq!(dev_posts.len(), 2);
@@ -195,9 +215,9 @@ mod tests {
         let (cat2, fm2) = create_test_post("dev", vec!["rust", "webdev"]);
         let (cat3, fm3) = create_test_post("chat", vec!["webdev"]);
 
-        cache.upsert_post("post1".to_string(), cat1, fm1);
-        cache.upsert_post("post2".to_string(), cat2, fm2);
-        cache.upsert_post("post3".to_string(), cat3, fm3);
+        cache.upsert_post("post1".to_string(), cat1, fm1, Some(1));
+        cache.upsert_post("post2".to_string(), cat2, fm2, Some(1));
+        cache.upsert_post("post3".to_string(), cat3, fm3, Some(1));
 
         let rust_posts = cache.get_posts_by_tag("rust");
         assert_eq!(rust_posts.len(), 2);
@@ -220,7 +240,7 @@ mod tests {
                 hidden: false,
                 comments: true,
             };
-            cache.upsert_post(slug.to_string(), "dev".to_string(), frontmatter);
+            cache.upsert_post(slug.to_string(), "dev".to_string(), frontmatter, Some(1));
         }
 
         let recent: Vec<_> = cache

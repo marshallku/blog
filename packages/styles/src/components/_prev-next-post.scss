@@ -5,60 +5,63 @@
 
 .prev-next-post {
     display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     width: clamp(0px, map.get(palette.$container-width, small), 100%);
     margin: 48px auto;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    overflow: hidden;
-    background-color: palette.color(selection);
-
-    @include mixins.respond-to(medium) {
-        border-radius: palette.radius(xl);
-    }
+    padding: 0 16px;
 
     &-post {
         $post: &;
 
         position: relative;
         display: flex;
-        width: 100%;
-        margin-left: auto;
+        flex: 1 1 240px;
+        min-width: 0;
         flex-direction: column;
-        align-items: flex-end;
         justify-content: center;
-        text-align: right;
-        background-color: #000;
-        color: #fff;
         overflow: hidden;
-        flex-grow: 1;
-        flex-wrap: wrap;
+        border: 1px solid palette.color(sub-opacity);
+        border-radius: palette.radius(lg);
+        background: palette.color(background-dimmed);
+        color: palette.color(text);
+        text-align: right;
+        transition:
+            border-color 0.18s ease,
+            transform 0.18s ease;
 
         &:hover {
-            color: #fff;
+            color: palette.color(text);
         }
 
         &--previous {
-            margin-left: 0;
-            align-items: flex-start;
             text-align: left;
+        }
+
+        @include mixins.supports-hover {
+            &:hover {
+                transform: translateY(-2px);
+                border-color: color-mix(in srgb, palette.color(theme) 55%, transparent);
+            }
+
+            &:hover #{$post}__cover {
+                opacity: 0.16;
+            }
         }
 
         &__meta {
             position: relative;
+            z-index: 1;
             width: 100%;
-            padding: 24px 16px;
-
-            background: linear-gradient(-90deg, #000c, #0003 80%);
-
-            #{$post}--previous & {
-                background: linear-gradient(90deg, #000c, #0003 80%);
-            }
+            padding: 18px;
         }
 
         &__label {
             display: flex;
             align-items: center;
             flex-direction: row-reverse;
+            font-family: var(--font-mono);
+            color: palette.color(comment-text);
 
             i {
                 margin-left: 4px;
@@ -79,36 +82,28 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            margin-top: 4px;
+            margin-top: 6px;
+            font-family: var(--font-heading);
             font-weight: 700;
+            color: palette.color(grayscale, 900);
         }
 
         &__cover {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
+            z-index: 0;
             width: 100%;
             height: 100%;
-            opacity: 0.25;
+            opacity: 0.1;
             pointer-events: none;
             object-fit: cover;
-            transition: transform 0.15s ease-in-out;
-
-            @include mixins.supports-hover {
-                @at-root #{$post}:hover & {
-                    transform: scale(1.15);
-                }
-            }
+            transition: opacity 0.18s ease;
 
             img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
             }
-        }
-
-        @include mixins.respond-to(medium) {
-            width: 50%;
         }
     }
 }

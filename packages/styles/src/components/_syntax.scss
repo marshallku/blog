@@ -30,10 +30,10 @@
     --syntax-diff-delta: #6f42c1;
 }
 
-/* Dark theme (Tokyo Night) */
+/* Dark theme (Tokyo Night, on terminal-dark surface) */
 html[data-theme="dark"] .hljs,
 html[data-theme="dark"] .athl {
-    --syntax-bg: #1a1b26;
+    --syntax-bg: #08090c;
     --syntax-fg: #a9b1d6;
     --syntax-comment: #565f89;
     --syntax-string: #9ece6a;

@@ -1,43 +1,79 @@
 @use "../base/palette";
+@use "../base/mixins";
 
 .post-toc {
-    max-width: 880px;
-    margin: 0 auto palette.spacing(xl);
-    padding: palette.spacing(md) palette.spacing(lg);
-    border: 1px solid palette.color(grayscale, 200);
-    border-radius: palette.radius(md);
+    width: clamp(0px, 760px, 100%);
+    margin: 18px auto 44px;
+    border: 1px solid palette.color(sub-opacity);
+    border-radius: palette.radius(lg);
     background: palette.color(background-dimmed);
+    overflow: hidden;
 
-    &__title {
-        margin: 0 0 palette.spacing(sm);
+    &__bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        background: palette.color(main-opacity);
+        border-bottom: 1px solid palette.color(sub-opacity);
         font-family: var(--font-mono);
-        font-size: 0.8125rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: palette.color(sub);
+        font-size: 0.6875rem;
+        color: palette.color(comment-text);
+    }
+
+    &__icon {
+        color: palette.color(theme);
     }
 
     &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
         margin: 0;
-        padding: 0;
+        padding: 12px 16px;
         list-style: none;
+        font-family: var(--font-mono);
+        font-size: 0.84rem;
     }
 
     &__item--h3 {
-        padding-left: palette.spacing(md);
+        padding-left: 18px;
+        font-size: 0.78rem;
     }
 
     &__link {
-        display: inline-block;
-        padding: palette.spacing(xs) 0;
-        color: palette.color(list-text);
+        display: block;
+        padding: 4px 0;
+        color: palette.color(sub);
         text-decoration: none;
         transition: color palette.transition(fast) ease;
 
-        &:hover,
+        &::before {
+            content: "· ";
+            opacity: 0.4;
+        }
+
+        @include mixins.supports-hover {
+            &:hover {
+                color: palette.color(text);
+            }
+        }
+
         &--active {
             color: palette.color(theme);
+
+            &::before {
+                content: "▸ ";
+                opacity: 0.7;
+            }
         }
+    }
+
+    &__item--h3 &__link::before {
+        content: "└ ";
+    }
+
+    &__item--h3 &__link--active::before {
+        content: "▸ ";
     }
 }

@@ -1,16 +1,32 @@
 @use "../base/palette" as *;
 
-/* Code block styles */
+/* Code block — terminal window (traffic-light header bar via ::before) */
 pre {
     position: relative;
     background-color: var(--syntax-bg, #{color(background-dimmed)});
-    border: 1px solid color(grayscale, 200);
+    border: 1px solid color(sub-opacity);
     border-radius: radius(md);
-    padding: spacing(lg);
+    padding: 46px spacing(lg) spacing(lg);
     overflow-x: auto;
     margin: spacing(lg) 0;
-    font-size: 0.875rem;
-    line-height: 1.6;
+    font-size: 0.84rem;
+    line-height: 1.7;
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 32px;
+        border-bottom: 1px solid color(sub-opacity);
+        background-color: color(main-opacity);
+        background-image:
+            radial-gradient(circle 4px at 16px 16px, #5a5d64 99%, transparent 100%),
+            radial-gradient(circle 4px at 33px 16px, #5a5d64 99%, transparent 100%),
+            radial-gradient(circle 4px at 50px 16px, color(theme) 99%, transparent 100%);
+        background-repeat: no-repeat;
+    }
 }
 
 pre code {
@@ -19,29 +35,31 @@ pre code {
     font-size: inherit;
 }
 
-/* Copy button */
+/* Copy button — in the window's title bar */
 .copy-code {
     position: absolute;
-    top: spacing(sm);
+    top: 5px;
     right: spacing(sm);
+    z-index: 1;
     padding: spacing(xs) spacing(sm);
     background-color: color(background);
-    border: 1px solid color(grayscale, 300);
+    border: 1px solid color(sub-opacity);
     border-radius: radius(sm);
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    color: color(sub);
     cursor: pointer;
     opacity: 0;
     transition: opacity transition(fast);
 
-    pre:hover & {
+    pre:hover &,
+    &:focus-visible {
         opacity: 1;
     }
 
     &:hover {
-        background-color: color(background-transparent);
-        color: color(text);
-        border-color: color(grayscale, 300);
+        color: color(theme);
+        border-color: color(theme);
     }
 }
 

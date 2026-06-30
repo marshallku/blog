@@ -241,6 +241,7 @@ mod tests {
         PostMetadata {
             slug: slug.to_string(),
             category: category.to_string(),
+            reading_time: 1,
             frontmatter: Frontmatter {
                 title: format!("Test Post {}", slug),
                 date: PostDate::new(Utc::now()),

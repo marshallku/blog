@@ -269,7 +269,13 @@ fn build_all(use_cache: bool) -> Result<()> {
             if !post.frontmatter.hidden {
                 existing_sources.insert(normalize_path(entry.path()));
                 resolve_post_images(&mut post);
-                metadata.upsert_post(post.slug, post.category, post.frontmatter);
+                let reading_time = reading_time::estimate(&post.content);
+                metadata.upsert_post(
+                    post.slug,
+                    post.category,
+                    post.frontmatter,
+                    Some(reading_time),
+                );
             }
         }
     }
@@ -342,6 +348,7 @@ fn build_all(use_cache: bool) -> Result<()> {
             post.slug.clone(),
             post.category.clone(),
             post.frontmatter.clone(),
+            None,
         );
 
         built_count += 1;
@@ -458,7 +465,13 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
             if !post.frontmatter.hidden {
                 existing_sources.insert(normalize_path(path));
                 resolve_post_images(&mut post);
-                metadata.upsert_post(post.slug, post.category, post.frontmatter);
+                let reading_time = reading_time::estimate(&post.content);
+                metadata.upsert_post(
+                    post.slug,
+                    post.category,
+                    post.frontmatter,
+                    Some(reading_time),
+                );
             }
         }
     }
@@ -551,7 +564,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                 output_path,
             } => {
                 println!("🔨 Built: {}", path.display());
-                metadata.upsert_post(slug, category, *frontmatter);
+                metadata.upsert_post(slug, category, *frontmatter, None);
                 cache
                     .lock()
                     .unwrap()

@@ -3,49 +3,42 @@
 
 {% macro post_card(post, show_category=false) %}
 <article class="post-card">
-    {% if post.thumbnail_metadata %}
-    <a href="/{{ post.category }}/{{ post.slug }}/">
-        <figure class="post-card__image">
+    {% if post.thumbnail_metadata or post.frontmatter.og_image %}
+    <a class="post-card__image-link" href="/{{ post.category }}/{{ post.slug }}/" tabindex="-1" aria-hidden="true">
+        <figure class="post-card__image" data-filename="{{ post.slug }}.png">
+            {% if post.thumbnail_metadata %}
             <picture>
                 <source type="image/webp" srcset="{{ post.thumbnail_metadata.webp_src }}">
                 <source srcset="{{ post.thumbnail_metadata.src }}">
-                <img
-                    src="{{ post.thumbnail_metadata.src }}"
-                    alt="{{ post.frontmatter.title }}"
-                    loading="lazy"
-                />
+                <img src="{{ post.thumbnail_metadata.src }}" alt="{{ post.frontmatter.title }}" loading="lazy" />
             </picture>
-        </figure>
-    </a>
-    {% elif post.frontmatter.og_image %}
-    <a href="/{{ post.category }}/{{ post.slug }}/">
-        <figure class="post-card__image">
-            <img
-                src="{{ post.frontmatter.og_image }}"
-                alt="{{ post.frontmatter.title }}"
-                loading="lazy"
-            />
+            {% else %}
+            <img src="{{ post.frontmatter.og_image }}" alt="{{ post.frontmatter.title }}" loading="lazy" />
+            {% endif %}
         </figure>
     </a>
     {% endif %}
-    <header class="post-card__header">
+    <div class="post-card__body">
+        {% if post.frontmatter.tags %}
+        <div class="post-card__tags">
+            {% for tag in post.frontmatter.tags %}
+            <a href="/tag/{{ tag }}/"><span class="post-card__hash">#</span>{{ tag | urldecode }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
         <a href="/{{ post.category }}/{{ post.slug }}/">
-            <h2 class="post-card__title typography-h2">{{ post.frontmatter.title }}</h2>
+            <h2 class="post-card__title">{{ post.frontmatter.title }}</h2>
         </a>
         {% if post.frontmatter.description %}
-        <p class="post-card__description typography-b2">{{ post.frontmatter.description }}</p>
+        <p class="post-card__description">{{ post.frontmatter.description }}</p>
         {% endif %}
-        <!-- Tag list -->
-        {% if post.frontmatter.tags %}
-            <div class="post-card__tags typography-c1">
-                {% for tag in post.frontmatter.tags %}
-                <a href="/tag/{{ tag }}/"># {{ tag | urldecode }}</a>
-                {% endfor %}
-            </div>
-        {% endif %}
-        <time class="post-card__time typography-c1" datetime="{{ post.frontmatter.date.posted }}">
-            {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
-        </time>
-    </header>
+        <a class="post-card__footer" href="/{{ post.category }}/{{ post.slug }}/">
+            <span class="post-card__date">
+                <time datetime="{{ post.frontmatter.date.posted }}">{{ post.frontmatter.date.posted | date(format="%Y.%m.%d") }}</time>
+                {% if post.reading_time %}<span class="post-card__sep">·</span>{{ post.reading_time }}분{% endif %}
+            </span>
+            <span class="post-card__read">read →</span>
+        </a>
+    </div>
 </article>
 {% endmacro post_card %}

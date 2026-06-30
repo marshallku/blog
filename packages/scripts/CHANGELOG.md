@@ -1,5 +1,16 @@
 # @blog/scripts
 
+## 0.5.2
+
+### Patch Changes
+
+- Refine the hacker/terminal design pass on post detail, cards, and home, and adapt the light/sepia palettes to match.
+
+    - Post detail: comment-style last-modified line, smaller mono meta row, terminal-window TOC (`tree ./article` with `▸/·/└` markers), and prev/next cards retoned to the token-based hacker look.
+    - Cards: filename label truncates with ellipsis; footer shows reading time (`N분`), backed by a new `reading_time` field on `PostMetadata`.
+    - Home: hero description typewriter effect + live status-bar clock, profile restructured (image + `[ icon ]` socials), and a flex filter toolbar that wraps on mobile.
+    - Light and sepia palettes re-pointed to cohesive terminal tones (decoupled hairline/tint tokens); code-block and hero header bars tokenized so they read on every theme.
+
 ## 0.5.1
 
 ### Patch Changes

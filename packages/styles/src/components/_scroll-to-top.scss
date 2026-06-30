@@ -11,7 +11,7 @@
     $size: 36px;
     position: fixed;
     right: 20px;
-    bottom: 20px;
+    bottom: 46px; // clear the fixed 30px status bar
     z-index: 1100;
     display: grid;
     place-items: center;

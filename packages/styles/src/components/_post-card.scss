@@ -6,11 +6,11 @@
 
 .post-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 0.75em;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 18px;
 
     &__more {
-        margin-top: 12px;
+        margin-top: 16px;
         text-align: center;
 
         button > i,
@@ -20,118 +20,163 @@
     }
 }
 
+// Terminal-style post card (see Home.dc mockup).
 .post-card {
     $self: &;
     display: flex;
-    padding: 16px 20px;
     flex-direction: column;
-    transition: transform 0.15s ease-in-out;
+    background: palette.color(grayscale, 50);
+    border: 1px solid palette.color(sub-opacity);
+    border-radius: 6px;
+    overflow: hidden;
+    transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
 
     @include mixins.supports-hover {
-        @at-root &:hover {
-            transform: translateY(-5px);
+        &:hover {
+            transform: translateY(-3px);
+            border-color: color-mix(in srgb, palette.color(theme) 55%, transparent);
+            box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7);
         }
+
+        &:hover #{$self}__image img {
+            transform: scale(1.06);
+        }
+    }
+
+    &__image-link {
+        display: block;
     }
 
     &__image {
         position: relative;
         width: 100%;
         height: 0;
-        margin-bottom: 12px;
-        padding-bottom: 56.25%;
-        flex-shrink: 0;
-        border: 1px solid palette.color(grayscale, 200);
-        border-radius: palette.radius(md);
-        transition: transform 0.15s ease-in-out;
+        padding-bottom: 52%;
+        border-bottom: 1px solid palette.color(sub-opacity);
         overflow: hidden;
+
+        &::before {
+            content: "› " attr(data-filename);
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            z-index: 2;
+            max-width: calc(100% - 20px);
+            box-sizing: border-box;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0.3px;
+            color: palette.color(grayscale, 700);
+            background: palette.color(navigation-background);
+            backdrop-filter: blur(3px);
+            padding: 2px 7px;
+            border: 1px solid palette.color(sub-opacity);
+            border-radius: 3px;
+        }
 
         img {
             position: absolute;
-            top: 0;
+            inset: 0;
             display: block;
             width: 100%;
             height: 100%;
-            left: 0;
             object-fit: cover;
-            transition: transform 0.15s ease-in-out;
-
-            @include mixins.supports-hover {
-                @at-root #{$self}:hover & {
-                    transform: scale(1.15);
-                }
-            }
+            transition: transform 0.18s ease;
         }
     }
 
-    &__header {
+    &__body {
         display: flex;
         flex-direction: column;
-        flex-grow: 1;
-    }
-
-    &__title {
-        @include mixins.limit-line(2);
-        font-weight: 700;
-    }
-
-    &__description {
-        $line-height: map.get(fonts.$typography-height, b2);
-        position: relative;
-        max-height: 3 * $line-height;
-        margin-bottom: 12px;
-        overflow: hidden;
-
-        &::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 30%;
-            height: $line-height;
-            background-image: linear-gradient(
-                45deg,
-                palette.color(background-transparent),
-                palette.color(background) 90%
-            );
-            pointer-events: none;
-        }
-    }
-
-    &__time {
-        display: block;
-        margin-top: auto;
-        font-family: var(--font-mono);
-        font-size: 0.75rem;
-        letter-spacing: 0.01em;
-        color: palette.color(sub);
-        text-align: right;
+        gap: 10px;
+        padding: 16px;
+        flex: 1;
     }
 
     &__tags {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 12px;
+        gap: 8px;
         font-family: var(--font-mono);
-        font-size: 0.75rem;
-        letter-spacing: 0.02em;
+        font-size: 11px;
 
         a {
-            color: palette.color(link);
+            color: palette.color(sub);
 
             @include mixins.supports-hover {
                 &:hover {
-                    color: palette.color(highlight);
+                    color: palette.color(text);
                 }
             }
         }
+    }
+
+    &__hash {
+        color: palette.color(theme);
+        opacity: 0.8;
+    }
+
+    &__title {
+        @include mixins.limit-line(2);
+        font-family: var(--font-heading);
+        font-size: 1.03rem;
+        font-weight: 700;
+        line-height: 1.35;
+        letter-spacing: -0.01em;
+        color: palette.color(grayscale, 900);
+    }
+
+    &__description {
+        @include mixins.limit-line(2);
+        font-size: 0.84rem;
+        line-height: 1.6;
+        color: palette.color(sub);
+    }
+
+    &__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: auto;
+        padding-top: 10px;
+        border-top: 1px solid palette.color(sub-opacity);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: palette.color(comment-text);
+    }
+
+    &__date {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__sep {
+        opacity: 0.5;
+    }
+
+    &__read {
+        flex-shrink: 0;
+        color: palette.color(theme);
+        opacity: 0.85;
     }
 }
 
 .related-posts {
     margin-top: 2em;
     padding-top: 1.5em;
-    border-top: 1px solid palette.color(grayscale, 200);
+    border-top: 1px solid palette.color(sub-opacity);
 }
 
 .related-posts__title {

@@ -5,6 +5,7 @@
 
 <article class="post"{% if config.api_url %} data-view-slug="/{{ post.category }}/{{ post.slug }}" data-view-api="{{ config.api_url }}"{% endif %}>
     <header class="post-header {% if post.frontmatter.cover_image %}post-header--has-cover{% endif %}">
+        <div class="post-header__breadcrumb"><span class="post-header__path">~/{{ post.category }}/{{ post.slug }}</span> $ cat article.md</div>
         {% if post.frontmatter.tags %}
         <div class="post-header__tags">
             {% for tag in post.frontmatter.tags %}
@@ -13,23 +14,23 @@
         </div>
         {% endif %}
         <h1 class="post-header__title typography-h1">{{ post.frontmatter.title }}</h1>
-        <div class="post-header__meta typography-c1">
+        <div class="post-header__meta">
             <span class="post-header__category">
                 <a href="/{{ post.category }}/">{{ category_info.name | default(value=post.category) }}</a>
             </span>
-            <span> • </span>
+            <span class="post-header__sep">·</span>
             <time datetime="{{ post.frontmatter.date.posted }}" class="post-header__date">
-                {{ post.frontmatter.date.posted | date(format="%Y년 %m월 %d일") }}
+                {{ post.frontmatter.date.posted | date(format="%Y.%m.%d") }}
             </time>
             {% if reading_time %}
-            <span> • </span>
+            <span class="post-header__sep">·</span>
             <span class="post-header__reading-time">{{ reading_time }}분 읽기</span>
             {% endif %}
         </div>
     </header>
 
     {% if post.frontmatter.cover_image %}
-    <figure class="post__cover">
+    <figure class="post__cover" data-filename="{{ post.slug }}.png">
         {% if cover_image_metadata %}
         {{ cdn_macros::cdn_picture_full(metadata=cover_image_metadata, alt=post.frontmatter.title, class="featured-image") }}
         {% else %}
@@ -38,13 +39,10 @@
     </figure>
     {% endif %}
 
-    {% if post.frontmatter.date.modified %}
-    <div class="post__meta typography-c1">
-        <time datetime="{{ post.frontmatter.date.modified }}">
-            최종 수정일: {{ post.frontmatter.date.modified | date(format="%Y년 %m월 %d일") }}
-        </time>
+    {% set updated_date = post.frontmatter.date.modified | default(value=post.frontmatter.date.posted) %}
+    <div class="post__updated">
+        <time datetime="{{ updated_date }}">// 최종 수정일: {{ updated_date | date(format="%Y.%m.%d") }}</time>
     </div>
-    {% endif %}
 
     {% if toc %}
     {% set section_headings = toc | filter(attribute="level", value=2) %}

@@ -1,0 +1,93 @@
+@use "../base/palette";
+
+// Ambient terminal/hacker chrome shared across pages (see Home.dc/Post.dc mockups):
+// a faint grid background, a soft accent glow, and a fixed bottom status bar.
+
+.bg-decoration {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+
+    &__grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(128, 128, 128, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(128, 128, 128, 0.05) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, #000 30%, transparent 100%);
+        -webkit-mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, #000 30%, transparent 100%);
+    }
+
+    &__glow {
+        position: absolute;
+        top: -260px;
+        left: 50%;
+        width: 900px;
+        height: 520px;
+        transform: translateX(-50%);
+        background: radial-gradient(
+            ellipse at center,
+            color-mix(in srgb, palette.color(theme) 15%, transparent),
+            transparent 70%
+        );
+        filter: blur(20px);
+    }
+}
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: 30px;
+    padding: 0 18px;
+    background: palette.color(navigation-background);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid palette.color(sub-opacity);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: palette.color(comment-text);
+    overflow: hidden;
+    white-space: nowrap;
+
+    &__group {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    &__item--live {
+        color: palette.color(sub);
+    }
+
+    &__hl {
+        color: palette.color(theme);
+    }
+
+    &__dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: palette.color(theme);
+        box-shadow: 0 0 6px palette.color(theme);
+    }
+
+    @media (max-width: 560px) {
+        display: none;
+    }
+}
