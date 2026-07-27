@@ -72,7 +72,7 @@ impl FeedGenerator {
             let post_path = post_paths
                 .get(&post_meta.slug)
                 .ok_or_else(|| anyhow::anyhow!("Post file not found: {}", post_meta.slug))?;
-            let post = Parser::parse_file(post_path)
+            let post = Parser::parse_file(post_path, &config.languages)
                 .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
             let rendered_content = Self::render_markdown_simple(&post.content);
@@ -210,7 +210,7 @@ impl FeedGenerator {
                 let post_path = post_paths
                     .get(&post_meta.slug)
                     .ok_or_else(|| anyhow::anyhow!("Post file not found: {}", post_meta.slug))?;
-                let post = Parser::parse_file(post_path)
+                let post = Parser::parse_file(post_path, &config.languages)
                     .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
                 let rendered_content = Self::render_markdown_simple(&post.content);
@@ -342,7 +342,7 @@ impl FeedGenerator {
             let post_path = post_paths
                 .get(&post_meta.slug)
                 .ok_or_else(|| anyhow::anyhow!("Post file not found: {}", post_meta.slug))?;
-            let post = Parser::parse_file(post_path)
+            let post = Parser::parse_file(post_path, &config.languages)
                 .with_context(|| format!("Failed to parse post: {}", post_meta.slug))?;
 
             let rendered_content = Self::render_markdown_simple(&post.content);

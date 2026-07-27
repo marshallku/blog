@@ -17,11 +17,11 @@
 {% block meta %}
     {{ super() }}
 
-    <link rel="canonical" href="{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/">
+    <link rel="canonical" href="{{ config.site_url }}{{ lang_prefix | default(value='') }}/{{ post.category }}/{{ post.slug }}/">
 
     <meta property="og:title" content="{{ post.frontmatter.title }}">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/">
+    <meta property="og:url" content="{{ config.site_url }}{{ lang_prefix | default(value='') }}/{{ post.category }}/{{ post.slug }}/">
     <meta property="og:site_name" content="{{ config.site_title }}">
     {% if post.frontmatter.description %}
     <meta property="og:description" content="{{ post.frontmatter.description }}">
@@ -53,7 +53,7 @@
         "@context": "https://schema.org",
         "@type": "Article",
         "headline": "{{ post.frontmatter.title }}",
-        "url": "{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/",
+        "url": "{{ config.site_url }}{{ lang_prefix | default(value='') }}/{{ post.category }}/{{ post.slug }}/",
         "datePublished": "{{ post.frontmatter.date.posted }}",
         {% if post.frontmatter.date.modified %}
         "dateModified": "{{ post.frontmatter.date.modified }}",
@@ -77,7 +77,7 @@
         },
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": "{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/"
+            "@id": "{{ config.site_url }}{{ lang_prefix | default(value='') }}/{{ post.category }}/{{ post.slug }}/"
         }
     }
     </script>

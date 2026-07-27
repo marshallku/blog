@@ -1,4 +1,4 @@
-use crate::config::SsgConfig;
+use crate::config::{lang_to_og_locale, SsgConfig};
 use crate::slug;
 use crate::types::{Page, Post};
 use anyhow::{Context, Result};
@@ -35,6 +35,14 @@ impl Generator {
         context.insert("slug", &post.slug);
         context.insert("category", &post.category);
         context.insert("content", html);
+        context.insert("lang", &post.lang);
+        context.insert("og_locale", &lang_to_og_locale(&post.lang));
+        context.insert(
+            "lang_prefix",
+            &self
+                .lang_path_prefix(&post.lang)
+                .map_or(String::new(), |p| format!("/{}", p)),
+        );
         context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
@@ -65,6 +73,14 @@ impl Generator {
         context.insert("slug", &post.slug);
         context.insert("category", &post.category);
         context.insert("content", html);
+        context.insert("lang", &post.lang);
+        context.insert("og_locale", &lang_to_og_locale(&post.lang));
+        context.insert(
+            "lang_prefix",
+            &self
+                .lang_path_prefix(&post.lang)
+                .map_or(String::new(), |p| format!("/{}", p)),
+        );
         context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
@@ -162,21 +178,33 @@ impl Generator {
         let category = self.maybe_encode(&post.category);
         let slug = self.maybe_encode(&post.slug);
 
-        PathBuf::from(&self.config.build.output_dir)
-            .join(category)
-            .join(slug)
-            .join("index.html")
+        let mut path = PathBuf::from(&self.config.build.output_dir);
+        if let Some(prefix) = self.lang_path_prefix(&post.lang) {
+            path.push(prefix);
+        }
+        path.join(category).join(slug).join("index.html")
     }
 
     fn get_post_partial_path(&self, post: &Post) -> PathBuf {
         let category = self.maybe_encode(&post.category);
         let slug = self.maybe_encode(&post.slug);
 
-        PathBuf::from(&self.config.build.output_dir)
-            .join(&self.config.build.partial_dir)
-            .join(category)
-            .join(slug)
-            .join("index.html")
+        let mut path =
+            PathBuf::from(&self.config.build.output_dir).join(&self.config.build.partial_dir);
+        if let Some(prefix) = self.lang_path_prefix(&post.lang) {
+            path.push(prefix);
+        }
+        path.join(category).join(slug).join("index.html")
+    }
+
+    /// URL/path prefix segment for a language: `None` for the default language
+    /// (served at the root), otherwise the language code (`/en/...`).
+    fn lang_path_prefix<'a>(&self, lang: &'a str) -> Option<&'a str> {
+        if self.config.languages.is_default(lang) {
+            None
+        } else {
+            Some(lang)
+        }
     }
 
     fn get_page_path(&self, page: &Page) -> PathBuf {

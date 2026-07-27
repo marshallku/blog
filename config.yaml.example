@@ -25,3 +25,12 @@ build:
 
     # Directory name for partial files (relative to output_dir)
     partial_dir: "html"
+
+# Multilingual configuration
+languages:
+    # Language served at the site root (no URL prefix)
+    default: "ko"
+    # All published languages, including the default. Non-default languages are
+    # served under a same-named path prefix (e.g. /en/dev/foo/) and authored as
+    # a co-located "foo.<lang>.md" file next to the default "foo.md".
+    supported: ["ko", "en"]

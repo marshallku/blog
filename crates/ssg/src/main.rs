@@ -273,6 +273,8 @@ fn build_all(use_cache: bool) -> Result<()> {
         eprintln!("   Create a category by adding a subdirectory with markdown files:");
         eprintln!("   mkdir -p {}/dev", config.build.content_dir);
     }
+    let category_slugs: Vec<String> = categories.iter().map(|c| c.slug.clone()).collect();
+    config.validate_against_categories(&category_slugs)?;
     metadata.set_category_info(categories);
 
     let mut existing_sources = std::collections::HashSet::new();
@@ -282,17 +284,22 @@ fn build_all(use_cache: bool) -> Result<()> {
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
     {
-        if let Ok(mut post) = Parser::parse_file(entry.path()) {
+        if let Ok(mut post) = Parser::parse_file(entry.path(), &config.languages) {
             if !post.frontmatter.hidden {
                 existing_sources.insert(normalize_path(entry.path()));
-                resolve_post_images(&mut post);
-                let reading_time = reading_time::estimate(&post.content);
-                metadata.upsert_post(
-                    post.slug,
-                    post.category,
-                    post.frontmatter,
-                    Some(reading_time),
-                );
+                // Non-default-language posts still render (below), but stay out of
+                // the default-language metadata so Korean listings, feeds, sitemap,
+                // and tag/category stats are not polluted by translations.
+                if config.languages.is_default(&post.lang) {
+                    resolve_post_images(&mut post);
+                    let reading_time = reading_time::estimate(&post.content);
+                    metadata.upsert_post(
+                        post.slug,
+                        post.category,
+                        post.frontmatter,
+                        Some(reading_time),
+                    );
+                }
             }
         }
     }
@@ -316,13 +323,15 @@ fn build_all(use_cache: bool) -> Result<()> {
 
         println!("🔨 Building: {}", path.display());
 
-        let mut post = Parser::parse_file(path)?;
+        let mut post = Parser::parse_file(path, &config.languages)?;
 
         if post.frontmatter.hidden {
             println!("   ⚠  Hidden - skipping output");
             skipped_count += 1;
             continue;
         }
+
+        let is_default_lang = config.languages.is_default(&post.lang);
 
         let processed_content = shortcode_registry.process(&post.content)?;
 
@@ -351,6 +360,7 @@ fn build_all(use_cache: bool) -> Result<()> {
             config.site.cdn_url.as_deref(),
             content_dir,
             Some(&original_paths),
+            is_default_lang,
         );
         extra_data.insert("toc".to_string(), json!(headings));
         let output_path = generator.generate_post(&post, &extra_data)?;
@@ -359,14 +369,21 @@ fn build_all(use_cache: bool) -> Result<()> {
             generator.generate_post_partial(&post, &extra_data)?;
         }
 
-        cache.update_entry(path, file_hash, output_path.to_string_lossy().to_string());
+        if let Some(stale) =
+            cache.update_entry(path, file_hash, output_path.to_string_lossy().to_string())
+        {
+            remove_generated_output(&stale, &config);
+        }
 
-        metadata.upsert_post(
-            post.slug.clone(),
-            post.category.clone(),
-            post.frontmatter.clone(),
-            None,
-        );
+        // Translations are not tracked in the default-language metadata.
+        if is_default_lang {
+            metadata.upsert_post(
+                post.slug.clone(),
+                post.category.clone(),
+                post.frontmatter.clone(),
+                None,
+            );
+        }
 
         built_count += 1;
     }
@@ -458,6 +475,8 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     let environment_hash = compute_environment_hash(posts_dir)?;
 
     let categories = discover_categories(posts_dir)?;
+    let category_slugs: Vec<String> = categories.iter().map(|c| c.slug.clone()).collect();
+    config.validate_against_categories(&category_slugs)?;
     let mut metadata = MetadataCache::new();
     metadata.set_category_info(categories);
 
@@ -479,17 +498,21 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     let mut existing_sources = std::collections::HashSet::new();
 
     for path in &file_paths {
-        if let Ok(mut post) = Parser::parse_file(path) {
+        if let Ok(mut post) = Parser::parse_file(path, &config.languages) {
             if !post.frontmatter.hidden {
                 existing_sources.insert(normalize_path(path));
-                resolve_post_images(&mut post);
-                let reading_time = reading_time::estimate(&post.content);
-                metadata.upsert_post(
-                    post.slug,
-                    post.category,
-                    post.frontmatter,
-                    Some(reading_time),
-                );
+                // Keep translations out of the default-language metadata (see the
+                // serial build for rationale); they still render below.
+                if config.languages.is_default(&post.lang) {
+                    resolve_post_images(&mut post);
+                    let reading_time = reading_time::estimate(&post.content);
+                    metadata.upsert_post(
+                        post.slug,
+                        post.category,
+                        post.frontmatter,
+                        Some(reading_time),
+                    );
+                }
             }
         }
     }
@@ -577,16 +600,25 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                 path,
                 slug,
                 category,
+                lang,
                 frontmatter,
                 file_hash,
                 output_path,
             } => {
                 println!("🔨 Built: {}", path.display());
-                metadata.upsert_post(slug, category, *frontmatter, None);
-                cache
+                // Only default-language posts populate the metadata used for
+                // listings/feeds/sitemap; translations render to /<lang>/ but are
+                // not tracked here.
+                if config.languages.is_default(&lang) {
+                    metadata.upsert_post(slug, category, *frontmatter, None);
+                }
+                let stale = cache
                     .lock()
                     .unwrap()
                     .update_entry(&path, file_hash, output_path);
+                if let Some(stale) = stale {
+                    remove_generated_output(&stale, &config);
+                }
             }
             BuildResult::Skipped { path, reason } => match reason {
                 SkipReason::Cached => println!("⏭  Skipped (unchanged): {}", path.display()),
@@ -688,7 +720,7 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
         }
     }
 
-    let mut post = try_or_error!(path, Parser::parse_file(path));
+    let mut post = try_or_error!(path, Parser::parse_file(path, &ctx.config.languages));
 
     if post.frontmatter.hidden {
         return BuildResult::Skipped {
@@ -696,6 +728,8 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
             reason: SkipReason::Draft,
         };
     }
+
+    let is_default_lang = ctx.config.languages.is_default(&post.lang);
 
     let processed_content = try_or_error!(path, ctx.shortcode_registry.process(&post.content));
 
@@ -727,6 +761,7 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
         ctx.config.site.cdn_url.as_deref(),
         content_dir,
         Some(&original_paths),
+        is_default_lang,
     );
     extra_data.insert("toc".to_string(), json!(headings));
     let output_path = try_or_error!(path, ctx.generator.generate_post(&post, &extra_data));
@@ -744,6 +779,7 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
         path: path.to_path_buf(),
         slug: post.slug,
         category: post.category,
+        lang: post.lang,
         frontmatter: Box::new(post.frontmatter),
         file_hash,
         output_path: output_path.to_string_lossy().to_string(),
@@ -757,16 +793,23 @@ fn remove_stale_outputs(
     existing_sources: &std::collections::HashSet<String>,
     config: &SsgConfig,
 ) {
-    let output_dir = Path::new(&config.build.output_dir);
-
     for output_path in cache.prune_deleted(existing_sources) {
-        let output_path = Path::new(&output_path);
-        remove_output_file(output_path, output_dir);
+        remove_generated_output(&output_path, config);
+    }
+}
 
-        if let Ok(relative) = output_path.strip_prefix(output_dir) {
-            let partial_path = output_dir.join(&config.build.partial_dir).join(relative);
-            remove_output_file(&partial_path, output_dir);
-        }
+/// Deletes a generated HTML file and its SPA partial, plus any directories left
+/// empty by the removal. Used both when a source is deleted and when a source's
+/// output path changes (e.g. a post gains an `/en/` prefix).
+fn remove_generated_output(output_path: &str, config: &SsgConfig) {
+    let output_dir = Path::new(&config.build.output_dir);
+    let output_path = Path::new(output_path);
+
+    remove_output_file(output_path, output_dir);
+
+    if let Ok(relative) = output_path.strip_prefix(output_dir) {
+        let partial_path = output_dir.join(&config.build.partial_dir).join(relative);
+        remove_output_file(&partial_path, output_dir);
     }
 }
 
@@ -806,11 +849,13 @@ fn build_single_post(post_path: &str) -> Result<()> {
         anyhow::bail!("Post file not found: {}", post_path);
     }
 
-    let mut post = Parser::parse_file(path)?;
+    let mut post = Parser::parse_file(path, &config.languages)?;
 
     if post.frontmatter.hidden {
         println!("⚠  This is a hidden post");
     }
+
+    let is_default_lang = config.languages.is_default(&post.lang);
 
     let processed_content = shortcode_registry.process(&post.content)?;
 
@@ -839,6 +884,7 @@ fn build_single_post(post_path: &str) -> Result<()> {
         config.site.cdn_url.as_deref(),
         content_dir,
         Some(&original_paths),
+        is_default_lang,
     );
     extra_data.insert("toc".to_string(), json!(headings));
     let output_path = generator.generate_post(&post, &extra_data)?;
@@ -866,6 +912,7 @@ fn build_post_extra_data(
     cdn_url: Option<&str>,
     content_dir: &Path,
     original_paths: Option<&OriginalImagePaths>,
+    include_siblings: bool,
 ) -> HashMap<String, serde_json::Value> {
     let mut data = HashMap::new();
 
@@ -880,6 +927,43 @@ fn build_post_extra_data(
         .find(|c| c.slug == post.category)
     {
         data.insert("category_info".to_string(), json!(cat_info));
+    }
+
+    // Cover/OG image CDN metadata is language-independent, so it is always built.
+    if let (Some(url), Some(paths)) = (cdn_url, original_paths) {
+        let image_processor = ImageProcessor::new(Some(url.to_string()));
+        let base_path = post.category.clone();
+        let post_content_dir = content_dir.join(&post.category);
+
+        if let Some(ref cover_src) = paths.cover_image {
+            if let Ok(Some(metadata)) =
+                image_processor.process_image(cover_src, &post_content_dir, &base_path)
+            {
+                data.insert("cover_image_metadata".to_string(), json!(metadata));
+            }
+        }
+
+        if let Some(ref og_src) = paths.og_image {
+            if let Ok(Some(metadata)) =
+                image_processor.process_thumbnail(og_src, &post_content_dir, &base_path)
+            {
+                data.insert("og_image_metadata".to_string(), json!(metadata));
+            }
+        }
+    }
+
+    // Navigation and related posts are drawn from the default-language metadata,
+    // which does not contain translations. Suppress them for non-default-language
+    // posts (WU1) to avoid linking a translation to unrelated Korean posts; proper
+    // per-language navigation lands with the localized listing work.
+    if !include_siblings {
+        data.insert("prev_post".to_string(), json!(null));
+        data.insert("next_post".to_string(), json!(null));
+        data.insert(
+            "related_posts".to_string(),
+            json!(Vec::<RelatedPostData>::new()),
+        );
+        return data;
     }
 
     // Build navigation with or without CDN processing
@@ -898,31 +982,6 @@ fn build_post_extra_data(
     };
     data.insert("prev_post".to_string(), json!(navigation.prev));
     data.insert("next_post".to_string(), json!(navigation.next));
-
-    // Process cover image for CDN if available
-    if let (Some(url), Some(paths)) = (cdn_url, original_paths) {
-        let image_processor = ImageProcessor::new(Some(url.to_string()));
-        let base_path = post.category.clone();
-        let post_content_dir = content_dir.join(&post.category);
-
-        // Process cover image (full responsive)
-        if let Some(ref cover_src) = paths.cover_image {
-            if let Ok(Some(metadata)) =
-                image_processor.process_image(cover_src, &post_content_dir, &base_path)
-            {
-                data.insert("cover_image_metadata".to_string(), json!(metadata));
-            }
-        }
-
-        // Process og_image for post card thumbnails
-        if let Some(ref og_src) = paths.og_image {
-            if let Ok(Some(metadata)) =
-                image_processor.process_thumbnail(og_src, &post_content_dir, &base_path)
-            {
-                data.insert("og_image_metadata".to_string(), json!(metadata));
-            }
-        }
-    }
 
     let mut related: Vec<_> = metadata
         .posts

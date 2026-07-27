@@ -85,15 +85,25 @@ impl BuildCache {
         }
     }
 
-    pub fn update_entry(&mut self, path: &Path, hash: String, output: String) {
-        self.entries.insert(
+    /// Records a build result. If this replaces an entry whose output path was
+    /// different (e.g. a post moved to a `/en/` prefix after enabling a
+    /// language), the previous output path is returned so the caller can delete
+    /// the now-orphaned file — `prune_deleted` cannot, because the source still
+    /// exists.
+    pub fn update_entry(&mut self, path: &Path, hash: String, output: String) -> Option<String> {
+        let previous = self.entries.insert(
             normalize_path(path),
             CacheEntry {
                 file_hash: hash,
-                output_path: output,
+                output_path: output.clone(),
                 built_at: chrono::Utc::now().to_rfc3339(),
             },
         );
+
+        match previous {
+            Some(old) if old.output_path != output => Some(old.output_path),
+            _ => None,
+        }
     }
 
     /// Removes entries whose source path is no longer in `existing_sources`
@@ -238,6 +248,36 @@ mod tests {
 
         assert!(!cache.needs_rebuild(path, "abc123"));
         assert!(cache.needs_rebuild(path, "different_hash"));
+    }
+
+    #[test]
+    fn test_update_entry_reports_changed_output_path() {
+        let mut cache = BuildCache::new("env_hash");
+        let path = Path::new("content/posts/chat/foo.en.md");
+
+        // First build (before `en` was configured) landed at the root path.
+        let stale = cache.update_entry(
+            path,
+            "hash1".to_string(),
+            "dist/chat/foo.en/index.html".to_string(),
+        );
+        assert_eq!(stale, None);
+
+        // Rebuild after enabling `en` moves it under /en/; the old path is returned.
+        let stale = cache.update_entry(
+            path,
+            "hash1".to_string(),
+            "dist/en/chat/foo/index.html".to_string(),
+        );
+        assert_eq!(stale, Some("dist/chat/foo.en/index.html".to_string()));
+
+        // A rebuild that keeps the same output path reports nothing to clean.
+        let stale = cache.update_entry(
+            path,
+            "hash2".to_string(),
+            "dist/en/chat/foo/index.html".to_string(),
+        );
+        assert_eq!(stale, None);
     }
 
     #[test]

@@ -67,6 +67,9 @@ pub struct Frontmatter {
 pub struct Post {
     pub slug: String,
     pub category: String,
+    /// Language code (e.g. "ko", "en"). The default language is served at the
+    /// site root; others are served under a `/<lang>/` URL prefix.
+    pub lang: String,
     pub frontmatter: Frontmatter,
     pub content: String,
     #[serde(skip_serializing_if = "Option::is_none")]

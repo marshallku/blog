@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="{{ lang | default(value=config.default_language) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +12,7 @@
     <meta name="description" content="{% block description %}{{ config.author }}'s blog{% endblock %}">
     <meta name="author" content="{{ config.author }}">
     <meta name="robots" content="index, follow">
-    <meta property="og:locale" content="ko_KR">
+    <meta property="og:locale" content="{{ og_locale | default(value=config.default_og_locale) }}">
     <meta property="og:site_name" content="{{ config.site_title }}">
     {% endblock %}
 

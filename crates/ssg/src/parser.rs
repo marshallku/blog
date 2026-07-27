@@ -1,3 +1,4 @@
+use crate::config::LanguagesConfig;
 use crate::types::{Frontmatter, Page, PageFrontmatter, Post};
 use anyhow::{Context, Result};
 use std::fs;
@@ -6,22 +7,40 @@ use std::path::Path;
 pub struct Parser;
 
 impl Parser {
-    pub fn parse_file(path: &Path) -> Result<Post> {
+    pub fn parse_file(path: &Path, languages: &LanguagesConfig) -> Result<Post> {
         let content = fs::read_to_string(path)
             .with_context(|| format!("Failed to read {}", path.display()))?;
 
         let (frontmatter_str, markdown) = Self::split_frontmatter(&content)?;
         let frontmatter = Self::parse_frontmatter(frontmatter_str)?;
-        let slug = Self::path_to_slug(path)?;
+        let file_stem = Self::path_to_slug(path)?;
+        let (slug, lang) = Self::detect_language(&file_stem, languages);
         let category = Self::extract_category(path)?;
 
         Ok(Post {
             slug,
             category,
+            lang,
             frontmatter,
             content: markdown.to_string(),
             rendered_html: None,
         })
+    }
+
+    /// Split a file stem like `hello.en` into `("hello", "en")` when the trailing
+    /// segment is a configured non-default language; otherwise the whole stem is
+    /// the slug and the default language applies. Only known language codes are
+    /// stripped, so an ordinary filename that happens to contain a dot (e.g.
+    /// `v1.2-notes`) is left untouched.
+    fn detect_language(file_stem: &str, languages: &LanguagesConfig) -> (String, String) {
+        for lang in languages.non_default() {
+            if let Some(base) = file_stem.strip_suffix(&format!(".{}", lang)) {
+                if !base.is_empty() {
+                    return (base.to_string(), lang.clone());
+                }
+            }
+        }
+        (file_stem.to_string(), languages.default.clone())
     }
 
     fn extract_category(path: &Path) -> Result<String> {
@@ -244,5 +263,49 @@ Content without closing delimiter"#;
         let path = Path::new("content/articles/dev/hello-world.md");
         let result = Parser::extract_category(path);
         assert!(result.is_err(), "Should fail when 'posts' not in path");
+    }
+
+    fn langs(default: &str, supported: &[&str]) -> LanguagesConfig {
+        LanguagesConfig {
+            default: default.to_string(),
+            supported: supported.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn test_detect_language_default_when_no_suffix() {
+        let (slug, lang) = Parser::detect_language("hello-world", &langs("ko", &["ko", "en"]));
+        assert_eq!(slug, "hello-world");
+        assert_eq!(lang, "ko");
+    }
+
+    #[test]
+    fn test_detect_language_strips_known_suffix() {
+        let (slug, lang) = Parser::detect_language("hello-world.en", &langs("ko", &["ko", "en"]));
+        assert_eq!(slug, "hello-world");
+        assert_eq!(lang, "en");
+    }
+
+    #[test]
+    fn test_detect_language_ignores_unconfigured_suffix() {
+        // "en" not in supported → treated as part of the slug, default language.
+        let (slug, lang) = Parser::detect_language("hello-world.en", &langs("ko", &["ko"]));
+        assert_eq!(slug, "hello-world.en");
+        assert_eq!(lang, "ko");
+    }
+
+    #[test]
+    fn test_detect_language_ignores_dot_in_ordinary_name() {
+        let (slug, lang) = Parser::detect_language("v1.2-notes", &langs("ko", &["ko", "en"]));
+        assert_eq!(slug, "v1.2-notes");
+        assert_eq!(lang, "ko");
+    }
+
+    #[test]
+    fn test_detect_language_bare_suffix_is_not_a_translation() {
+        // ".en" with an empty base is not a valid translation filename.
+        let (slug, lang) = Parser::detect_language(".en", &langs("ko", &["ko", "en"]));
+        assert_eq!(slug, ".en");
+        assert_eq!(lang, "ko");
     }
 }

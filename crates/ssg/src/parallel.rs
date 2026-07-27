@@ -10,6 +10,7 @@ pub enum BuildResult {
         path: PathBuf,
         slug: String,
         category: String,
+        lang: String,
         frontmatter: Box<Frontmatter>,
         file_hash: String,
         output_path: String,

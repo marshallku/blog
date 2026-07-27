@@ -48,6 +48,92 @@ pub struct SearchConfig {
     pub enabled: bool,
 }
 
+/// Multilingual configuration. The `default` language is served at the site
+/// root (`/dev/foo/`); every other supported language is served under a
+/// same-named path prefix (`/en/dev/foo/`) and authored as a co-located
+/// `foo.<lang>.md` file next to the default `foo.md`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LanguagesConfig {
+    /// Language served at the site root (no URL prefix). Default: "ko".
+    #[serde(default = "default_language")]
+    pub default: String,
+    /// All languages the site publishes, including the default. Default: ["ko"].
+    #[serde(default = "default_supported_languages")]
+    pub supported: Vec<String>,
+}
+
+impl Default for LanguagesConfig {
+    fn default() -> Self {
+        Self {
+            default: default_language(),
+            supported: default_supported_languages(),
+        }
+    }
+}
+
+impl LanguagesConfig {
+    /// Validate that language codes are safe URL/path segments and internally
+    /// consistent. Language codes become filesystem path components and URL
+    /// prefixes, so an unchecked value like `..` could escape `dist`.
+    pub fn validate(&self) -> Result<()> {
+        let is_valid_code = |s: &str| {
+            !s.is_empty()
+                && s.chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        };
+
+        for lang in &self.supported {
+            if !is_valid_code(lang) {
+                anyhow::bail!(
+                    "Invalid language code '{}': must be non-empty lowercase ascii, digits, or '-'",
+                    lang
+                );
+            }
+        }
+
+        if !is_valid_code(&self.default) {
+            anyhow::bail!("Invalid default language '{}'", self.default);
+        }
+
+        if !self.supported.iter().any(|l| l == &self.default) {
+            anyhow::bail!(
+                "Default language '{}' is not in the supported list {:?}",
+                self.default,
+                self.supported
+            );
+        }
+
+        let mut seen = std::collections::HashSet::new();
+        for lang in &self.supported {
+            if !seen.insert(lang) {
+                anyhow::bail!("Duplicate language '{}' in supported list", lang);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn is_default(&self, lang: &str) -> bool {
+        lang == self.default
+    }
+
+    /// Supported languages other than the default, in config order.
+    pub fn non_default(&self) -> impl Iterator<Item = &String> {
+        self.supported.iter().filter(move |l| *l != &self.default)
+    }
+}
+
+/// Map a language code to its Open Graph `og:locale` form. Known languages get
+/// a full region tag; anything else falls back to the bare code.
+pub fn lang_to_og_locale(lang: &str) -> String {
+    match lang {
+        "ko" => "ko_KR".to_string(),
+        "en" => "en_US".to_string(),
+        "ja" => "ja_JP".to_string(),
+        other => other.to_string(),
+    }
+}
+
 /// Assets configuration from manifest.json
 /// Dynamic structure: { "package_name": { "asset_key": "path", ... }, ... }
 /// Example: { "styles": { "version": "0.1.0", "theme": "/styles/0.1.0/theme.css" } }
@@ -106,6 +192,8 @@ pub struct SsgConfig {
     pub build: BuildConfig,
     #[serde(default)]
     pub assets: AssetsConfig,
+    #[serde(default)]
+    pub languages: LanguagesConfig,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -118,9 +206,69 @@ pub struct TemplateConfig<'a> {
     pub api_url: Option<&'a str>,
     pub google_analytics_id: Option<&'a str>,
     pub contacts: &'a Contacts,
+    /// Language served at the site root; the `lang`/`og_locale` fallback for
+    /// templates (index/category/tag/pages) that don't inject a per-post value.
+    pub default_language: &'a str,
+    pub default_og_locale: String,
 }
 
+/// Top-level output path segments the generator reserves for structural pages,
+/// independent of `partial_dir`. A non-default language code becomes a
+/// top-level segment (`/en/...`) and must not collide with these.
+const RESERVED_PATH_SEGMENTS: &[&str] = &["tag", "tags", "page"];
+
 impl SsgConfig {
+    /// Cross-section validation that `LanguagesConfig::validate` cannot do alone:
+    /// a non-default language code becomes a top-level path segment, so it must
+    /// not collide with the SPA partial directory or reserved listing segments,
+    /// or one output would silently overwrite the other.
+    pub fn validate(&self) -> Result<()> {
+        self.languages.validate()?;
+
+        for lang in self.languages.non_default() {
+            if lang == &self.build.partial_dir {
+                anyhow::bail!(
+                    "Language code '{}' collides with build.partial_dir; translations would \
+                     overwrite SPA partials",
+                    lang
+                );
+            }
+            if RESERVED_PATH_SEGMENTS.contains(&lang.as_str()) {
+                anyhow::bail!(
+                    "Language code '{}' collides with a reserved path segment {:?}",
+                    lang,
+                    RESERVED_PATH_SEGMENTS
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Rejects a non-default language code that collides with a content category
+    /// (top-level or the first segment of a nested one). Without this, a Korean
+    /// post in an `en/...` category and an `<slug>.en.md` translation would both
+    /// map to `/en/...` and silently overwrite each other. Categories are
+    /// discovered at build time, so this runs separately from `validate`.
+    pub fn validate_against_categories(&self, category_slugs: &[String]) -> Result<()> {
+        for lang in self.languages.non_default() {
+            let nested_prefix = format!("{}/", lang);
+            for slug in category_slugs {
+                if slug == lang || slug.starts_with(&nested_prefix) {
+                    anyhow::bail!(
+                        "Language code '{}' collides with content category '{}'; a translation and \
+                         an '{}' category post would map to the same /{}/ output path",
+                        lang,
+                        slug,
+                        lang,
+                        lang
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn to_template_config(&self) -> TemplateConfig<'_> {
         TemplateConfig {
             site_title: &self.site.title,
@@ -131,6 +279,8 @@ impl SsgConfig {
             api_url: self.site.api_url.as_deref(),
             google_analytics_id: self.site.google_analytics_id.as_deref(),
             contacts: &self.site.contacts,
+            default_language: &self.languages.default,
+            default_og_locale: lang_to_og_locale(&self.languages.default),
         }
     }
 }
@@ -202,6 +352,14 @@ fn default_partial_dir() -> String {
     "html".to_string()
 }
 
+fn default_language() -> String {
+    "ko".to_string()
+}
+
+fn default_supported_languages() -> Vec<String> {
+    vec![default_language()]
+}
+
 pub fn load_config() -> Result<SsgConfig> {
     let config_path = Path::new("config.yaml");
 
@@ -221,6 +379,10 @@ pub fn load_config() -> Result<SsgConfig> {
             serde_json::from_str(&manifest_content).context("Failed to parse manifest.json")?;
     }
 
+    config
+        .validate()
+        .context("Invalid languages configuration")?;
+
     Ok(config)
 }
 
@@ -233,5 +395,124 @@ mod tests {
         let config = SsgConfig::default();
         assert_eq!(config.site.title, "marshallku blog");
         assert_eq!(config.build.posts_per_page, 10);
+        assert_eq!(config.languages.default, "ko");
+        assert_eq!(config.languages.supported, vec!["ko".to_string()]);
+    }
+
+    #[test]
+    fn test_languages_validate_ok() {
+        let langs = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "en".to_string()],
+        };
+        assert!(langs.validate().is_ok());
+    }
+
+    #[test]
+    fn test_languages_default_must_be_supported() {
+        let langs = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["en".to_string()],
+        };
+        assert!(langs.validate().is_err());
+    }
+
+    #[test]
+    fn test_languages_reject_path_traversal() {
+        let langs = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "..".to_string()],
+        };
+        assert!(langs.validate().is_err());
+    }
+
+    #[test]
+    fn test_languages_reject_duplicates() {
+        let langs = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "en".to_string(), "en".to_string()],
+        };
+        assert!(langs.validate().is_err());
+    }
+
+    #[test]
+    fn test_non_default_languages() {
+        let langs = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "en".to_string(), "ja".to_string()],
+        };
+        let non_default: Vec<_> = langs.non_default().cloned().collect();
+        assert_eq!(non_default, vec!["en".to_string(), "ja".to_string()]);
+    }
+
+    #[test]
+    fn test_lang_to_og_locale() {
+        assert_eq!(lang_to_og_locale("ko"), "ko_KR");
+        assert_eq!(lang_to_og_locale("en"), "en_US");
+        assert_eq!(lang_to_og_locale("fr"), "fr");
+    }
+
+    #[test]
+    fn test_config_rejects_language_colliding_with_partial_dir() {
+        let mut config = SsgConfig::default();
+        config.build.partial_dir = "html".to_string();
+        config.languages = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "html".to_string()],
+        };
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_rejects_language_colliding_with_reserved_segment() {
+        let mut config = SsgConfig::default();
+        config.languages = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "tag".to_string()],
+        };
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_accepts_normal_languages() {
+        let mut config = SsgConfig::default();
+        config.languages = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "en".to_string()],
+        };
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validate_against_categories_detects_collision() {
+        let mut config = SsgConfig::default();
+        config.languages = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "en".to_string()],
+        };
+        // A top-level category named "en" collides with the /en/ prefix.
+        assert!(config
+            .validate_against_categories(&["en".to_string(), "dev".to_string()])
+            .is_err());
+        // A nested category "en/chat" also collides on its first segment.
+        assert!(config
+            .validate_against_categories(&["en/chat".to_string()])
+            .is_err());
+    }
+
+    #[test]
+    fn test_validate_against_categories_allows_disjoint() {
+        let mut config = SsgConfig::default();
+        config.languages = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "en".to_string()],
+        };
+        assert!(config
+            .validate_against_categories(&[
+                "dev".to_string(),
+                "chat".to_string(),
+                "gallery".to_string(),
+            ])
+            .is_ok());
     }
 }

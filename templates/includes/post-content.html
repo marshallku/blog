@@ -57,7 +57,8 @@
 
     {% set enc_category = post.category | urlencode %}
     {% set enc_slug = post.slug | urlencode %}
-    {% set share_url = config.site_url ~ "/" ~ enc_category ~ "/" ~ enc_slug ~ "/" %}
+    {% set lang_prefix_str = lang_prefix | default(value="") %}
+    {% set share_url = config.site_url ~ lang_prefix_str ~ "/" ~ enc_category ~ "/" ~ enc_slug ~ "/" %}
     <div class="post-share" data-share data-share-url="{{ share_url }}">
         <span class="post-share__label typography-c1">공유하기</span>
         <a class="post-share__button post-share__button--x" target="_blank" rel="noopener noreferrer"
