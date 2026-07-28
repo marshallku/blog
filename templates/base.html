@@ -122,6 +122,14 @@
                 </div>
             </nav>
             <div class="global-navigation__right">
+                {% if config.languages | length > 1 %}
+                <div class="language-toggle" data-language-toggle data-default-lang="{{ config.default_language }}" role="group" aria-label="Language">
+                    {% set current_lang = lang | default(value=config.default_language) %}
+                    {% for l in config.languages %}
+                    <button type="button" class="language-toggle__option{% if l.code == current_lang %} language-toggle__option--current{% endif %}" data-lang-switch="{{ l.code }}" lang="{{ l.code }}"{% if l.code == current_lang %} aria-current="true"{% endif %}>{{ l.code | upper }}</button>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 <button type="button" class="theme-toggle" aria-label="{{ t.toggle_theme }}" title="{{ t.toggle_theme }}">
                     <svg class="theme-toggle__icon" xmlns="http://www.w3.org/2000/svg" version="1.1" x="0" y="0" viewBox="0 0 20 20" width="30" height="30">
                         <circle class="theme-toggle__ray" cx="10" cy="10" r="6"></circle>

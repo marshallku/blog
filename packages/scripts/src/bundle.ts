@@ -2,6 +2,7 @@ import { initSpa } from "./spa";
 import { initToc } from "./toc";
 import { initShare } from "./share";
 import { initViewCounter } from "./view";
+import { initLanguageToggle } from "./language-toggle";
 import { fit } from "./utils";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -12,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initToc();
     initShare();
     initViewCounter();
+    initLanguageToggle();
     initStatusBarClock();
     initHeroTyping();
 });

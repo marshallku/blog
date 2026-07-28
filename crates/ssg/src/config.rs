@@ -207,6 +207,13 @@ pub struct SsgConfig {
     pub languages: LanguagesConfig,
 }
 
+/// A selectable language for the navigation language toggle.
+#[derive(Debug, Clone, Serialize)]
+pub struct LanguageOption {
+    pub code: String,
+    pub label: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct TemplateConfig<'a> {
     pub site_title: &'a str,
@@ -221,6 +228,9 @@ pub struct TemplateConfig<'a> {
     /// templates (index/category/tag/pages) that don't inject a per-post value.
     pub default_language: &'a str,
     pub default_og_locale: String,
+    /// All supported languages (code + display name) for the nav toggle. Empty
+    /// or single-entry means the toggle is hidden.
+    pub languages: Vec<LanguageOption>,
 }
 
 /// Top-level output path segments the generator reserves for structural pages,
@@ -292,6 +302,15 @@ impl SsgConfig {
             contacts: &self.site.contacts,
             default_language: &self.languages.default,
             default_og_locale: lang_to_og_locale(&self.languages.default),
+            languages: self
+                .languages
+                .supported
+                .iter()
+                .map(|code| LanguageOption {
+                    code: code.clone(),
+                    label: lang_display_name(code),
+                })
+                .collect(),
         }
     }
 }
