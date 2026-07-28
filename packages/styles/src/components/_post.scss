@@ -76,6 +76,27 @@
         &__sep {
             opacity: 0.5;
         }
+
+        &__languages {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        &__lang {
+            color: palette.color(sub);
+
+            @include mixins.supports-hover {
+                &:hover {
+                    color: palette.color(theme);
+                }
+            }
+
+            &--current {
+                color: palette.color(theme);
+                font-weight: 700;
+            }
+        }
     }
 
     &__cover {

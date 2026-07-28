@@ -18,6 +18,11 @@
     {{ super() }}
 
     <link rel="canonical" href="{{ config.site_url }}{{ lang_prefix | default(value='') }}/{{ post.category }}/{{ post.slug }}/">
+    {% if hreflang_alternates %}
+    {% for alt in hreflang_alternates %}
+    <link rel="alternate" hreflang="{{ alt.hreflang }}" href="{{ alt.href }}">
+    {% endfor %}
+    {% endif %}
 
     <meta property="og:title" content="{{ post.frontmatter.title }}">
     <meta property="og:type" content="article">

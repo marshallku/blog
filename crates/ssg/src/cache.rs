@@ -9,6 +9,12 @@ pub struct BuildCache {
     pub version: String,
     #[serde(default)]
     pub environment_hash: String,
+    /// Fingerprint of the multilingual topology (which posts have which
+    /// languages). Cross-file: a post's output depends on its siblings, so a
+    /// change here invalidates the whole cache even when individual file hashes
+    /// are unchanged.
+    #[serde(default)]
+    pub translation_topology: String,
     pub entries: HashMap<String, CacheEntry>,
     #[serde(skip)]
     force_rebuild_all: bool,
@@ -47,6 +53,7 @@ impl BuildCache {
                 Self {
                     version: env!("CARGO_PKG_VERSION").to_string(),
                     environment_hash: environment_hash.to_string(),
+                    translation_topology: old.translation_topology,
                     entries: old.entries,
                     force_rebuild_all: true,
                 }
@@ -62,8 +69,32 @@ impl BuildCache {
         Self {
             version: env!("CARGO_PKG_VERSION").to_string(),
             environment_hash: environment_hash.to_string(),
+            translation_topology: String::new(),
             entries: HashMap::new(),
             force_rebuild_all: false,
+        }
+    }
+
+    /// Compares the current multilingual topology fingerprint against the cached
+    /// one. A change means some post's set of available languages changed, so its
+    /// counterparts must rebuild even though their own file hashes are unchanged;
+    /// this forces a full rebuild. Returns true when a rebuild was triggered.
+    /// Skips silently on a fresh cache (empty stored fingerprint) since nothing
+    /// is cached to invalidate.
+    pub fn reconcile_translation_topology(&mut self, fingerprint: &str) -> bool {
+        if self.translation_topology == fingerprint {
+            return false;
+        }
+
+        let had_previous = !self.translation_topology.is_empty();
+        self.translation_topology = fingerprint.to_string();
+
+        if had_previous {
+            println!("♻️  Cache invalidated (translations changed) - full rebuild");
+            self.force_rebuild_all = true;
+            true
+        } else {
+            false
         }
     }
 
@@ -302,6 +333,24 @@ mod tests {
         assert_eq!(cache.entries.len(), 1);
         assert!(cache.needs_rebuild(Path::new("content/posts/dev/deleted.md"), "hash2"));
         assert!(!cache.needs_rebuild(Path::new("content/posts/dev/kept.md"), "hash1"));
+    }
+
+    #[test]
+    fn test_reconcile_translation_topology() {
+        // Fresh cache: recording an initial fingerprint does not force a rebuild
+        // (nothing is cached yet).
+        let mut cache = BuildCache::new("env");
+        assert!(!cache.reconcile_translation_topology("fp1"));
+
+        // With an entry cached and the same fingerprint on a subsequent build,
+        // the entry stays valid.
+        cache.update_entry(Path::new("a.md"), "h".to_string(), "out".to_string());
+        assert!(!cache.reconcile_translation_topology("fp1"));
+        assert!(!cache.needs_rebuild(Path::new("a.md"), "h"));
+
+        // Changed fingerprint (a translation was added/removed): force full rebuild.
+        assert!(cache.reconcile_translation_topology("fp2"));
+        assert!(cache.needs_rebuild(Path::new("a.md"), "h"));
     }
 
     #[test]

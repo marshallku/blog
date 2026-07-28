@@ -3,6 +3,7 @@ mod category;
 mod config;
 mod feeds;
 mod generator;
+mod i18n;
 mod image;
 mod indices;
 mod metadata;
@@ -35,6 +36,7 @@ use crate::category::{discover_categories, validate_category};
 use crate::config::{load_config, SsgConfig};
 use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
+use crate::i18n::TranslationIndex;
 use crate::image::{ImageProcessor, ThumbnailMetadata};
 use crate::indices::IndexGenerator;
 use crate::metadata::{compare_posts_desc, MetadataCache};
@@ -165,6 +167,7 @@ struct PostProcessingContext<'a> {
     config: &'a SsgConfig,
     cache: &'a Arc<Mutex<BuildCache>>,
     metadata: &'a MetadataCache,
+    translation_index: &'a TranslationIndex,
     use_cache: bool,
 }
 
@@ -278,6 +281,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     metadata.set_category_info(categories);
 
     let mut existing_sources = std::collections::HashSet::new();
+    let mut translation_index = TranslationIndex::new();
 
     for entry in WalkDir::new(posts_dir)
         .into_iter()
@@ -287,6 +291,9 @@ fn build_all(use_cache: bool) -> Result<()> {
         if let Ok(mut post) = Parser::parse_file(entry.path(), &config.languages) {
             if !post.frontmatter.hidden {
                 existing_sources.insert(normalize_path(entry.path()));
+                // Every published language version is recorded so posts can link
+                // to their translations (language switcher + hreflang).
+                translation_index.record(&post.category, &post.slug, &post.lang);
                 // Non-default-language posts still render (below), but stay out of
                 // the default-language metadata so Korean listings, feeds, sitemap,
                 // and tag/category stats are not polluted by translations.
@@ -303,6 +310,11 @@ fn build_all(use_cache: bool) -> Result<()> {
             }
         }
     }
+
+    // A post's switcher/hreflang depends on its sibling translations, which its
+    // own file hash doesn't capture; fold the translation topology into cache
+    // validity so adding/removing a translation rebuilds its counterparts.
+    cache.reconcile_translation_topology(&translation_index.topology_fingerprint());
 
     let mut built_count = 0;
     let mut skipped_count = 0;
@@ -361,6 +373,9 @@ fn build_all(use_cache: bool) -> Result<()> {
             content_dir,
             Some(&original_paths),
             is_default_lang,
+            &translation_index,
+            &config.languages,
+            &config.site.url,
         );
         extra_data.insert("toc".to_string(), json!(headings));
         let output_path = generator.generate_post(&post, &extra_data)?;
@@ -496,11 +511,13 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         .collect();
 
     let mut existing_sources = std::collections::HashSet::new();
+    let mut translation_index = TranslationIndex::new();
 
     for path in &file_paths {
         if let Ok(mut post) = Parser::parse_file(path, &config.languages) {
             if !post.frontmatter.hidden {
                 existing_sources.insert(normalize_path(path));
+                translation_index.record(&post.category, &post.slug, &post.lang);
                 // Keep translations out of the default-language metadata (see the
                 // serial build for rationale); they still render below.
                 if config.languages.is_default(&post.lang) {
@@ -517,7 +534,15 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         }
     }
 
+    // See the serial build: translations are a cross-file dependency, so a change
+    // in the language topology must invalidate the cached counterparts.
+    cache
+        .lock()
+        .unwrap()
+        .reconcile_translation_topology(&translation_index.topology_fingerprint());
+
     let metadata_for_nav = Arc::new(metadata.clone());
+    let translation_index = Arc::new(translation_index);
 
     let progress = Arc::new(BuildProgress::new());
 
@@ -540,6 +565,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         let shortcode_registry = Arc::clone(&shortcode_registry);
         let progress = Arc::clone(&progress);
         let metadata_for_nav = Arc::clone(&metadata_for_nav);
+        let translation_index = Arc::clone(&translation_index);
 
         pool.spawn(move || {
             let renderer = Renderer::new();
@@ -569,6 +595,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
                     config: &config,
                     cache: &cache,
                     metadata: &metadata_for_nav,
+                    translation_index: &translation_index,
                     use_cache,
                 };
                 let result = process_post_parallel(&path, &ctx);
@@ -762,6 +789,9 @@ fn process_post_parallel(path: &Path, ctx: &PostProcessingContext) -> BuildResul
         content_dir,
         Some(&original_paths),
         is_default_lang,
+        ctx.translation_index,
+        &ctx.config.languages,
+        &ctx.config.site.url,
     );
     extra_data.insert("toc".to_string(), json!(headings));
     let output_path = try_or_error!(path, ctx.generator.generate_post(&post, &extra_data));
@@ -834,6 +864,28 @@ fn remove_output_file(path: &Path, output_dir: &Path) {
     }
 }
 
+/// Walks the content directory and records every published (non-hidden) post's
+/// language, so a post can link to its translations. Used by single-post builds,
+/// where the full-build pre-pass that normally populates this does not run.
+fn build_translation_index(
+    posts_dir: &Path,
+    languages: &crate::config::LanguagesConfig,
+) -> TranslationIndex {
+    let mut index = TranslationIndex::new();
+    for entry in WalkDir::new(posts_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "md"))
+    {
+        if let Ok(post) = Parser::parse_file(entry.path(), languages) {
+            if !post.frontmatter.hidden {
+                index.record(&post.category, &post.slug, &post.lang);
+            }
+        }
+    }
+    index
+}
+
 fn build_single_post(post_path: &str) -> Result<()> {
     println!("Building single post: {}\n", post_path);
 
@@ -842,6 +894,8 @@ fn build_single_post(post_path: &str) -> Result<()> {
     let shortcode_registry = ShortcodeRegistry::new();
     let generator = Generator::new(config.clone())?;
     let metadata = MetadataCache::load().unwrap_or_else(|_| MetadataCache::new());
+    let translation_index =
+        build_translation_index(Path::new(&config.build.content_dir), &config.languages);
 
     let path = Path::new(post_path);
 
@@ -885,6 +939,9 @@ fn build_single_post(post_path: &str) -> Result<()> {
         content_dir,
         Some(&original_paths),
         is_default_lang,
+        &translation_index,
+        &config.languages,
+        &config.site.url,
     );
     extra_data.insert("toc".to_string(), json!(headings));
     let output_path = generator.generate_post(&post, &extra_data)?;
@@ -906,6 +963,7 @@ struct RelatedPostData {
     thumbnail_metadata: Option<ThumbnailMetadata>,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_post_extra_data(
     post: &crate::types::Post,
     metadata: &MetadataCache,
@@ -913,12 +971,39 @@ fn build_post_extra_data(
     content_dir: &Path,
     original_paths: Option<&OriginalImagePaths>,
     include_siblings: bool,
+    translation_index: &TranslationIndex,
+    languages: &crate::config::LanguagesConfig,
+    site_url: &str,
 ) -> HashMap<String, serde_json::Value> {
     let mut data = HashMap::new();
 
     data.insert(
         "reading_time".to_string(),
         json!(reading_time::estimate(&post.content)),
+    );
+
+    // Language switcher + hreflang alternates. Independent of `include_siblings`
+    // (which gates same-language prev/next); translations exist for a post
+    // regardless of language.
+    data.insert(
+        "language_links".to_string(),
+        json!(i18n::language_links(
+            translation_index,
+            languages,
+            &post.category,
+            &post.slug,
+            &post.lang,
+        )),
+    );
+    data.insert(
+        "hreflang_alternates".to_string(),
+        json!(i18n::hreflang_alternates(
+            translation_index,
+            languages,
+            site_url,
+            &post.category,
+            &post.slug,
+        )),
     );
 
     if let Some(cat_info) = metadata

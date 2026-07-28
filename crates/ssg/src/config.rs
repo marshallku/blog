@@ -134,6 +134,17 @@ pub fn lang_to_og_locale(lang: &str) -> String {
     }
 }
 
+/// Human-readable, in-language name for a language code, used by the language
+/// switcher. Falls back to the uppercased code for unknown languages.
+pub fn lang_display_name(lang: &str) -> String {
+    match lang {
+        "ko" => "한국어".to_string(),
+        "en" => "English".to_string(),
+        "ja" => "日本語".to_string(),
+        other => other.to_uppercase(),
+    }
+}
+
 /// Assets configuration from manifest.json
 /// Dynamic structure: { "package_name": { "asset_key": "path", ... }, ... }
 /// Example: { "styles": { "version": "0.1.0", "theme": "/styles/0.1.0/theme.css" } }

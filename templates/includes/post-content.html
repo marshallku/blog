@@ -26,6 +26,18 @@
             <span class="post-header__sep">·</span>
             <span class="post-header__reading-time">{{ reading_time }}분 읽기</span>
             {% endif %}
+            {% if language_links %}
+            <span class="post-header__sep">·</span>
+            <span class="post-header__languages" aria-label="Language">
+                {% for l in language_links %}
+                {% if l.current %}
+                <span class="post-header__lang post-header__lang--current" lang="{{ l.lang }}" aria-current="true">{{ l.label }}</span>
+                {% else %}
+                <a class="post-header__lang" href="{{ l.url }}" hreflang="{{ l.lang }}" lang="{{ l.lang }}">{{ l.label }}</a>
+                {% endif %}
+                {% endfor %}
+            </span>
+            {% endif %}
         </div>
     </header>
 
