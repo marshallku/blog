@@ -45,7 +45,7 @@
 
     <div x-show="activeTab === 'all'" class="post-grid">
         {% for post in posts %}
-        {{ macros::post_card(post=post, t=t, show_category=true) }}
+        {{ macros::post_card(post=post, t=t, show_category=true, lang_prefix=lang_prefix) }}
         {% endfor %}
     </div>
 
@@ -53,11 +53,11 @@
     <div x-show="activeTab === '{{ cat_posts.category.slug }}'">
         <section class="post-grid">
             {% for post in cat_posts.posts %}
-            {{ macros::post_card(post=post, t=t) }}
+            {{ macros::post_card(post=post, t=t, lang_prefix=lang_prefix) }}
             {% endfor %}
         </section>
         <div class="post-grid__more">
-            <a href="/{{ cat_posts.category.slug }}/" class="button button--radius-rounded typography-b2">{{ t.more_in_category | replace(from='{category}', to=cat_posts.category.name) }} <i class="icon-arrow-forward"></i></a>
+            <a href="{{ lang_prefix }}/{{ cat_posts.category.slug }}/" class="button button--radius-rounded typography-b2">{{ t.more_in_category | replace(from='{category}', to=cat_posts.category.name) }} <i class="icon-arrow-forward"></i></a>
         </div>
     </div>
     {% endfor %}

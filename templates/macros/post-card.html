@@ -1,10 +1,10 @@
 {# Post card component macro #}
 {# Usage: {{ macros::post_card(post=post_meta) }} #}
 
-{% macro post_card(post, t, show_category=false) %}
+{% macro post_card(post, t, show_category=false, lang_prefix="") %}
 <article class="post-card">
     {% if post.thumbnail_metadata or post.frontmatter.og_image %}
-    <a class="post-card__image-link" href="/{{ post.category }}/{{ post.slug }}/" tabindex="-1" aria-hidden="true">
+    <a class="post-card__image-link" href="{{ lang_prefix }}/{{ post.category }}/{{ post.slug }}/" tabindex="-1" aria-hidden="true">
         <figure class="post-card__image" data-filename="{{ post.slug }}.png">
             {% if post.thumbnail_metadata %}
             <picture>
@@ -22,17 +22,17 @@
         {% if post.frontmatter.tags %}
         <div class="post-card__tags">
             {% for tag in post.frontmatter.tags %}
-            <a href="/tag/{{ tag }}/"><span class="post-card__hash">#</span>{{ tag | urldecode }}</a>
+            <a href="{{ lang_prefix }}/tag/{{ tag }}/"><span class="post-card__hash">#</span>{{ tag | urldecode }}</a>
             {% endfor %}
         </div>
         {% endif %}
-        <a href="/{{ post.category }}/{{ post.slug }}/">
+        <a href="{{ lang_prefix }}/{{ post.category }}/{{ post.slug }}/">
             <h2 class="post-card__title">{{ post.frontmatter.title }}</h2>
         </a>
         {% if post.frontmatter.description %}
         <p class="post-card__description">{{ post.frontmatter.description }}</p>
         {% endif %}
-        <a class="post-card__footer" href="/{{ post.category }}/{{ post.slug }}/">
+        <a class="post-card__footer" href="{{ lang_prefix }}/{{ post.category }}/{{ post.slug }}/">
             <span class="post-card__date">
                 <time datetime="{{ post.frontmatter.date.posted }}">{{ post.frontmatter.date.posted | date(format="%Y.%m.%d") }}</time>
                 {% if post.reading_time %}<span class="post-card__sep">·</span>{{ t.reading_time_short | replace(from="{n}", to=post.reading_time | str) }}{% endif %}

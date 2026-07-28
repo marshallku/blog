@@ -244,6 +244,46 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// A fresh in-memory `MetadataCache` per non-default language, each seeded with
+/// the full category list (empty categories are skipped at generation time).
+/// These caches are never persisted — only the default-language cache is.
+fn new_lang_metadata(
+    config: &SsgConfig,
+    categories: &[crate::types::Category],
+) -> HashMap<String, MetadataCache> {
+    config
+        .languages
+        .non_default()
+        .map(|lang| {
+            let mut md = MetadataCache::new();
+            md.set_category_info(categories.to_vec());
+            (lang.clone(), md)
+        })
+        .collect()
+}
+
+/// Generates all listing pages (homepage/category/tag/tags + SPA partials) for
+/// the default language at the site root, then for each non-default language
+/// under its `/<lang>/` prefix from that language's metadata.
+fn generate_all_listings(
+    index_generator: &IndexGenerator,
+    config: &SsgConfig,
+    metadata: &MetadataCache,
+    lang_metadata: &HashMap<String, MetadataCache>,
+) -> Result<()> {
+    index_generator.generate_all(metadata, &config.languages.default)?;
+    index_generator.generate_all_partials(metadata, &config.languages.default)?;
+
+    for lang in config.languages.non_default() {
+        if let Some(lang_md) = lang_metadata.get(lang) {
+            index_generator.generate_all(lang_md, lang)?;
+            index_generator.generate_all_partials(lang_md, lang)?;
+        }
+    }
+
+    Ok(())
+}
+
 fn build_all(use_cache: bool) -> Result<()> {
     println!("Building site...\n");
 
@@ -282,6 +322,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
     let category_slugs: Vec<String> = categories.iter().map(|c| c.slug.clone()).collect();
     config.validate_against_categories(&category_slugs)?;
+    let mut lang_metadata = new_lang_metadata(&config, &categories);
     metadata.set_category_info(categories);
 
     let mut existing_sources = std::collections::HashSet::new();
@@ -298,13 +339,20 @@ fn build_all(use_cache: bool) -> Result<()> {
                 // Every published language version is recorded so posts can link
                 // to their translations (language switcher + hreflang).
                 translation_index.record(&post.category, &post.slug, &post.lang);
-                // Non-default-language posts still render (below), but stay out of
-                // the default-language metadata so Korean listings, feeds, sitemap,
-                // and tag/category stats are not polluted by translations.
+                // The default language populates the primary metadata (Korean
+                // listings/feeds/sitemap); each other language populates its own
+                // in-memory cache used to build the /<lang>/ listing pages.
+                resolve_post_images(&mut post);
+                let reading_time = reading_time::estimate(&post.content);
                 if config.languages.is_default(&post.lang) {
-                    resolve_post_images(&mut post);
-                    let reading_time = reading_time::estimate(&post.content);
                     metadata.upsert_post(
+                        post.slug,
+                        post.category,
+                        post.frontmatter,
+                        Some(reading_time),
+                    );
+                } else if let Some(lang_md) = lang_metadata.get_mut(&post.lang) {
+                    lang_md.upsert_post(
                         post.slug,
                         post.category,
                         post.frontmatter,
@@ -418,8 +466,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     let page_errors = build_pages(&shortcode_registry, &renderer, &generator, &page_data);
 
     let index_generator = IndexGenerator::new(config.clone(), Arc::clone(&ui))?;
-    index_generator.generate_all(&metadata)?;
-    index_generator.generate_all_partials(&metadata)?;
+    generate_all_listings(&index_generator, &config, &metadata, &lang_metadata)?;
 
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(
@@ -501,6 +548,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     let category_slugs: Vec<String> = categories.iter().map(|c| c.slug.clone()).collect();
     config.validate_against_categories(&category_slugs)?;
     let mut metadata = MetadataCache::new();
+    let mut lang_metadata = new_lang_metadata(&config, &categories);
     metadata.set_category_info(categories);
 
     let cache = Arc::new(Mutex::new(if use_cache {
@@ -526,12 +574,20 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
             if !post.frontmatter.hidden {
                 existing_sources.insert(normalize_path(path));
                 translation_index.record(&post.category, &post.slug, &post.lang);
-                // Keep translations out of the default-language metadata (see the
-                // serial build for rationale); they still render below.
+                // Default language -> primary metadata; other languages -> their
+                // own in-memory cache for the /<lang>/ listing pages (see the
+                // serial build for rationale).
+                resolve_post_images(&mut post);
+                let reading_time = reading_time::estimate(&post.content);
                 if config.languages.is_default(&post.lang) {
-                    resolve_post_images(&mut post);
-                    let reading_time = reading_time::estimate(&post.content);
                     metadata.upsert_post(
+                        post.slug,
+                        post.category,
+                        post.frontmatter,
+                        Some(reading_time),
+                    );
+                } else if let Some(lang_md) = lang_metadata.get_mut(&post.lang) {
+                    lang_md.upsert_post(
                         post.slug,
                         post.category,
                         post.frontmatter,
@@ -684,8 +740,7 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     let page_errors = build_pages(&shortcode_registry, &renderer, &generator, &page_data);
 
     let index_generator = IndexGenerator::new((*config).clone(), Arc::clone(&ui))?;
-    index_generator.generate_all(&metadata)?;
-    index_generator.generate_all_partials(&metadata)?;
+    generate_all_listings(&index_generator, &config, &metadata, &lang_metadata)?;
 
     println!("📄 Generating RSS feeds...");
     FeedGenerator::generate_all_feeds(

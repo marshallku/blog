@@ -79,13 +79,56 @@ impl IndexGenerator {
         })
     }
 
-    /// Inserts the localization variables (`lang`, `t`) every template needs via
-    /// base.html. Listing pages are the default language for now; localized
-    /// listings arrive with the EN listing work-unit.
-    fn insert_localization(&self, context: &mut TeraContext) {
-        let lang = &self.config.languages.default;
+    /// Inserts the localization variables every template needs via base.html:
+    /// `lang`, the resolved string map `t`, and `lang_prefix` (the URL prefix
+    /// used to build language-aware internal links, e.g. `/en`).
+    fn insert_localization(&self, context: &mut TeraContext, lang: &str) {
         context.insert("lang", lang);
         context.insert("t", &self.ui.resolved(lang));
+        context.insert("lang_prefix", &self.lang_url_prefix(lang));
+    }
+
+    /// URL prefix for a language: empty for the default language (served at the
+    /// root), otherwise `/<lang>` (e.g. `/en`). Derived from `lang`, so it works
+    /// for any configured non-default language.
+    fn lang_url_prefix(&self, lang: &str) -> String {
+        if self.config.languages.is_default(lang) {
+            String::new()
+        } else {
+            format!("/{}", lang)
+        }
+    }
+
+    /// Filesystem root for a language's listing output: `output_dir` for the
+    /// default language, `output_dir/<lang>` otherwise.
+    fn lang_output_root(&self, lang: &str) -> PathBuf {
+        let mut root = PathBuf::from(&self.config.build.output_dir);
+        if !self.config.languages.is_default(lang) {
+            root.push(lang);
+        }
+        root
+    }
+
+    /// Filesystem root for a language's SPA partials: `output_dir/<partial_dir>`
+    /// for the default language, `output_dir/<partial_dir>/<lang>` otherwise. The
+    /// language segment goes AFTER `partial_dir` so the SPA's `/html/<path>`
+    /// mapping resolves `/en/chat/` to `/html/en/chat/`.
+    fn lang_partial_root(&self, lang: &str) -> PathBuf {
+        let mut root =
+            PathBuf::from(&self.config.build.output_dir).join(&self.config.build.partial_dir);
+        if !self.config.languages.is_default(lang) {
+            root.push(lang);
+        }
+        root
+    }
+
+    /// A category with its display name resolved to `lang`, so listing templates
+    /// that render `category.name` show the right language. For the default
+    /// language this is an unchanged clone (byte-identical output).
+    fn localize_category(&self, category: &Category, lang: &str) -> Category {
+        let mut localized = category.clone();
+        localized.name = category.display_name(lang).to_string();
+        localized
     }
 
     fn create_post_card_data<'a>(&self, post: &'a PostMetadata) -> PostCardData<'a> {
@@ -122,26 +165,23 @@ impl IndexGenerator {
         }
     }
 
-    pub fn generate_all(&self, metadata: &MetadataCache) -> Result<()> {
-        println!("\n📑 Generating indices...");
+    pub fn generate_all(&self, metadata: &MetadataCache, lang: &str) -> Result<()> {
+        println!("\n📑 Generating indices ({})...", lang);
 
-        self.generate_homepage(metadata)?;
+        self.generate_homepage(metadata, lang)?;
 
         let category_count = metadata.get_category_info().len();
         for category in metadata.get_category_info() {
-            self.generate_category_page(category, metadata)?;
+            self.generate_category_page(category, metadata, lang)?;
         }
 
         for tag in metadata.get_tags() {
-            self.generate_tag_page(&tag, metadata)?;
+            self.generate_tag_page(&tag, metadata, lang)?;
         }
 
-        self.remove_stale_tag_dirs(
-            &PathBuf::from(&self.config.build.output_dir).join("tag"),
-            metadata,
-        );
+        self.remove_stale_tag_dirs(&self.lang_output_root(lang).join("tag"), metadata);
 
-        self.generate_tags_overview(metadata)?;
+        self.generate_tags_overview(metadata, lang)?;
 
         println!("   ✓ Homepage");
         println!("   ✓ {} category pages", category_count);
@@ -150,27 +190,27 @@ impl IndexGenerator {
         Ok(())
     }
 
-    pub fn generate_all_partials(&self, metadata: &MetadataCache) -> Result<()> {
+    pub fn generate_all_partials(&self, metadata: &MetadataCache, lang: &str) -> Result<()> {
         if !self.config.build.generate_partials {
             return Ok(());
         }
 
-        println!("\n📄 Generating index partials...");
+        println!("\n📄 Generating index partials ({})...", lang);
 
-        self.generate_homepage_partial(metadata)?;
+        self.generate_homepage_partial(metadata, lang)?;
 
         let category_count = metadata.get_category_info().len();
         for category in metadata.get_category_info() {
-            self.generate_category_partial(category, metadata)?;
+            self.generate_category_partial(category, metadata, lang)?;
         }
 
         for tag in metadata.get_tags() {
-            self.generate_tag_partial(&tag, metadata)?;
+            self.generate_tag_partial(&tag, metadata, lang)?;
         }
 
-        self.remove_stale_tag_dirs(&self.get_partial_path("tag"), metadata);
+        self.remove_stale_tag_dirs(&self.lang_partial_root(lang).join("tag"), metadata);
 
-        self.generate_tags_overview_partial(metadata)?;
+        self.generate_tags_overview_partial(metadata, lang)?;
 
         println!("   ✓ Homepage partial");
         println!("   ✓ {} category partials", category_count);
@@ -179,27 +219,46 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_homepage(&self, metadata: &MetadataCache) -> Result<()> {
+    fn generate_homepage(&self, metadata: &MetadataCache, lang: &str) -> Result<()> {
+        let output = self.render_homepage(metadata, lang, "index.html")?;
+        let output_path = self.lang_output_root(lang).join("index.html");
+        fs::create_dir_all(output_path.parent().unwrap())?;
+        fs::write(&output_path, output)?;
+        Ok(())
+    }
+
+    /// Shared homepage render for both the full page and the SPA partial. The
+    /// category tabs are localized to `lang`; for non-default languages, tabs and
+    /// the recent list only include categories that have posts in that language.
+    fn render_homepage(
+        &self,
+        metadata: &MetadataCache,
+        lang: &str,
+        template: &str,
+    ) -> Result<String> {
+        let is_default = self.config.languages.is_default(lang);
         let posts_limit = self
             .config
             .build
             .homepage_posts_limit
             .unwrap_or(self.config.build.posts_per_page);
 
-        let mut visible_categories: Vec<_> = metadata
+        let mut visible_categories: Vec<Category> = metadata
             .get_category_info()
             .iter()
             .filter(|c| !c.hidden)
+            .filter(|c| is_default || !metadata.get_posts_by_category_tree(&c.slug).is_empty())
+            .map(|c| self.localize_category(c, lang))
             .collect();
         visible_categories.sort_by_key(|c| c.index);
 
-        let visible_category_slugs: HashSet<_> =
-            visible_categories.iter().map(|c| c.slug.as_str()).collect();
+        let visible_category_slugs: HashSet<String> =
+            visible_categories.iter().map(|c| c.slug.clone()).collect();
 
         let all_recent_posts: Vec<_> = metadata
             .get_recent_posts(posts_limit)
             .into_iter()
-            .filter(|p| visible_category_slugs.contains(p.category.as_str()))
+            .filter(|p| visible_category_slugs.contains(&p.category))
             .map(|p| self.create_post_card_data(p))
             .collect();
 
@@ -224,24 +283,34 @@ impl IndexGenerator {
         context.insert("category_posts", &category_posts);
         context.insert("categories", &visible_categories);
         context.insert("config", &self.config.to_template_config());
-        self.insert_localization(&mut context);
+        self.insert_localization(&mut context, lang);
 
-        let output = self.tera.render("index.html", &context)?;
-        let output_path = PathBuf::from(&self.config.build.output_dir).join("index.html");
-
-        fs::write(&output_path, output)?;
-
-        Ok(())
+        Ok(self.tera.render(template, &context)?)
     }
 
     fn generate_category_page(
         &self,
-        category_info: &crate::types::Category,
+        category_info: &Category,
         metadata: &MetadataCache,
+        lang: &str,
     ) -> Result<()> {
-        let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
+        let category_slug = self.maybe_encode(&category_info.slug);
+        let section_dir = self.lang_output_root(lang).join(&category_slug);
 
+        let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
         posts.sort_by(|a, b| compare_posts_desc(a, b));
+
+        // For a non-default language, a category with no posts is not published;
+        // remove any stale page it may have from an earlier build. The default
+        // language keeps generating an (empty) page-1 to preserve existing output.
+        if posts.is_empty() && !self.config.languages.is_default(lang) {
+            let index = section_dir.join("index.html");
+            if index.exists() {
+                let _ = fs::remove_file(&index);
+            }
+            Self::remove_stale_pagination(&section_dir, 0);
+            return Ok(());
+        }
 
         let posts_with_thumbnails: Vec<_> = posts
             .iter()
@@ -256,14 +325,9 @@ impl IndexGenerator {
             total_posts.div_ceil(posts_per_page)
         };
 
-        let base_url = format!("/{}/", category_info.slug);
-
-        let visible_categories: Vec<_> = metadata
-            .get_category_info()
-            .iter()
-            .filter(|c| !c.hidden)
-            .collect();
-
+        let base_url = format!("{}/{}/", self.lang_url_prefix(lang), category_info.slug);
+        let localized_category = self.localize_category(category_info, lang);
+        let visible_categories = self.localized_visible_categories(metadata, lang);
         let template_config = self.config.to_template_config();
 
         for page_num in 1..=total_pages {
@@ -272,12 +336,12 @@ impl IndexGenerator {
             let page_posts = &posts_with_thumbnails[start_idx..end_idx];
 
             let mut context = TeraContext::new();
-            context.insert("category", category_info);
+            context.insert("category", &localized_category);
             context.insert("posts", &page_posts);
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
-            self.insert_localization(&mut context);
+            self.insert_localization(&mut context, lang);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -286,15 +350,10 @@ impl IndexGenerator {
 
             let output = self.tera.render("category.html", &context)?;
 
-            let category_slug = self.maybe_encode(&category_info.slug);
-
             let output_path = if page_num == 1 {
-                PathBuf::from(&self.config.build.output_dir)
-                    .join(&category_slug)
-                    .join("index.html")
+                section_dir.join("index.html")
             } else {
-                PathBuf::from(&self.config.build.output_dir)
-                    .join(&category_slug)
+                section_dir
                     .join("page")
                     .join(page_num.to_string())
                     .join("index.html")
@@ -304,14 +363,23 @@ impl IndexGenerator {
             fs::write(&output_path, output)?;
         }
 
-        let section_dir = PathBuf::from(&self.config.build.output_dir)
-            .join(self.maybe_encode(&category_info.slug));
         Self::remove_stale_pagination(&section_dir, total_pages);
 
         Ok(())
     }
 
-    fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
+    /// Visible (non-hidden) categories with names localized to `lang`, for the
+    /// nav/category lists passed to listing templates.
+    fn localized_visible_categories(&self, metadata: &MetadataCache, lang: &str) -> Vec<Category> {
+        metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .map(|c| self.localize_category(c, lang))
+            .collect()
+    }
+
+    fn generate_tag_page(&self, tag: &str, metadata: &MetadataCache, lang: &str) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
 
         posts.sort_by(|a, b| compare_posts_desc(a, b));
@@ -329,15 +397,12 @@ impl IndexGenerator {
             total_posts.div_ceil(posts_per_page)
         };
 
-        let base_url = format!("/tag/{}/", tag);
-
-        let visible_categories: Vec<_> = metadata
-            .get_category_info()
-            .iter()
-            .filter(|c| !c.hidden)
-            .collect();
-
+        let base_url = format!("{}/tag/{}/", self.lang_url_prefix(lang), tag);
+        let visible_categories = self.localized_visible_categories(metadata, lang);
         let template_config = self.config.to_template_config();
+
+        let encoded_tag = self.maybe_encode(tag);
+        let section_dir = self.lang_output_root(lang).join("tag").join(&encoded_tag);
 
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
@@ -350,7 +415,7 @@ impl IndexGenerator {
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
-            self.insert_localization(&mut context);
+            self.insert_localization(&mut context, lang);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -359,17 +424,10 @@ impl IndexGenerator {
 
             let output = self.tera.render("tag.html", &context)?;
 
-            let encoded_tag = self.maybe_encode(tag);
-
             let output_path = if page_num == 1 {
-                PathBuf::from(&self.config.build.output_dir)
-                    .join("tag")
-                    .join(&encoded_tag)
-                    .join("index.html")
+                section_dir.join("index.html")
             } else {
-                PathBuf::from(&self.config.build.output_dir)
-                    .join("tag")
-                    .join(&encoded_tag)
+                section_dir
                     .join("page")
                     .join(page_num.to_string())
                     .join("index.html")
@@ -379,34 +437,25 @@ impl IndexGenerator {
             fs::write(&output_path, output)?;
         }
 
-        let section_dir = PathBuf::from(&self.config.build.output_dir)
-            .join("tag")
-            .join(self.maybe_encode(tag));
         Self::remove_stale_pagination(&section_dir, total_pages);
 
         Ok(())
     }
 
-    fn generate_tags_overview(&self, metadata: &MetadataCache) -> Result<()> {
+    fn generate_tags_overview(&self, metadata: &MetadataCache, lang: &str) -> Result<()> {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
         tags_with_counts.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
 
-        let visible_categories: Vec<_> = metadata
-            .get_category_info()
-            .iter()
-            .filter(|c| !c.hidden)
-            .collect();
+        let visible_categories = self.localized_visible_categories(metadata, lang);
 
         let mut context = TeraContext::new();
         context.insert("tags", &tags_with_counts);
         context.insert("categories", &visible_categories);
         context.insert("config", &self.config.to_template_config());
-        self.insert_localization(&mut context);
+        self.insert_localization(&mut context, lang);
 
         let output = self.tera.render("tags.html", &context)?;
-        let output_path = PathBuf::from(&self.config.build.output_dir)
-            .join("tags")
-            .join("index.html");
+        let output_path = self.lang_output_root(lang).join("tags").join("index.html");
 
         fs::create_dir_all(output_path.parent().unwrap())?;
         fs::write(&output_path, output)?;
@@ -414,69 +463,34 @@ impl IndexGenerator {
         Ok(())
     }
 
-    fn generate_homepage_partial(&self, metadata: &MetadataCache) -> Result<()> {
-        let posts_limit = self
-            .config
-            .build
-            .homepage_posts_limit
-            .unwrap_or(self.config.build.posts_per_page);
-
-        let mut visible_categories: Vec<_> = metadata
-            .get_category_info()
-            .iter()
-            .filter(|c| !c.hidden)
-            .collect();
-        visible_categories.sort_by_key(|c| c.index);
-
-        let visible_category_slugs: HashSet<_> =
-            visible_categories.iter().map(|c| c.slug.as_str()).collect();
-
-        let all_recent_posts: Vec<_> = metadata
-            .get_recent_posts(posts_limit)
-            .into_iter()
-            .filter(|p| visible_category_slugs.contains(p.category.as_str()))
-            .map(|p| self.create_post_card_data(p))
-            .collect();
-
-        let category_posts: Vec<CategoryPosts> = visible_categories
-            .iter()
-            .map(|cat| {
-                let mut posts = metadata.get_posts_by_category(&cat.slug);
-                posts.sort_by(|a, b| compare_posts_desc(a, b));
-                CategoryPosts {
-                    category: cat,
-                    posts: posts
-                        .into_iter()
-                        .take(posts_limit)
-                        .map(|p| self.create_post_card_data(p))
-                        .collect(),
-                }
-            })
-            .collect();
-
-        let mut context = TeraContext::new();
-        context.insert("posts", &all_recent_posts);
-        context.insert("category_posts", &category_posts);
-        context.insert("categories", &visible_categories);
-        context.insert("config", &self.config.to_template_config());
-        self.insert_localization(&mut context);
-
-        let output = self.tera.render("partials/index.html", &context)?;
-        let output_path = self.get_partial_path("index.html");
-
+    fn generate_homepage_partial(&self, metadata: &MetadataCache, lang: &str) -> Result<()> {
+        let output = self.render_homepage(metadata, lang, "partials/index.html")?;
+        let output_path = self.lang_partial_root(lang).join("index.html");
         fs::create_dir_all(output_path.parent().unwrap())?;
         fs::write(&output_path, output)?;
-
         Ok(())
     }
 
     fn generate_category_partial(
         &self,
-        category_info: &crate::types::Category,
+        category_info: &Category,
         metadata: &MetadataCache,
+        lang: &str,
     ) -> Result<()> {
+        let category_slug = self.maybe_encode(&category_info.slug);
+        let section_dir = self.lang_partial_root(lang).join(&category_slug);
+
         let mut posts = metadata.get_posts_by_category_tree(&category_info.slug);
         posts.sort_by(|a, b| compare_posts_desc(a, b));
+
+        if posts.is_empty() && !self.config.languages.is_default(lang) {
+            let index = section_dir.join("index.html");
+            if index.exists() {
+                let _ = fs::remove_file(&index);
+            }
+            Self::remove_stale_pagination(&section_dir, 0);
+            return Ok(());
+        }
 
         let posts_with_thumbnails: Vec<_> = posts
             .iter()
@@ -491,14 +505,9 @@ impl IndexGenerator {
             total_posts.div_ceil(posts_per_page)
         };
 
-        let base_url = format!("/{}/", category_info.slug);
-
-        let visible_categories: Vec<_> = metadata
-            .get_category_info()
-            .iter()
-            .filter(|c| !c.hidden)
-            .collect();
-
+        let base_url = format!("{}/{}/", self.lang_url_prefix(lang), category_info.slug);
+        let localized_category = self.localize_category(category_info, lang);
+        let visible_categories = self.localized_visible_categories(metadata, lang);
         let template_config = self.config.to_template_config();
 
         for page_num in 1..=total_pages {
@@ -507,12 +516,12 @@ impl IndexGenerator {
             let page_posts = &posts_with_thumbnails[start_idx..end_idx];
 
             let mut context = TeraContext::new();
-            context.insert("category", category_info);
+            context.insert("category", &localized_category);
             context.insert("posts", &page_posts);
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
-            self.insert_localization(&mut context);
+            self.insert_localization(&mut context, lang);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -521,25 +530,25 @@ impl IndexGenerator {
 
             let output = self.tera.render("partials/category.html", &context)?;
 
-            let category_slug = self.maybe_encode(&category_info.slug);
-
             let output_path = if page_num == 1 {
-                self.get_partial_path(&format!("{}/index.html", category_slug))
+                section_dir.join("index.html")
             } else {
-                self.get_partial_path(&format!("{}/page/{}/index.html", category_slug, page_num))
+                section_dir
+                    .join("page")
+                    .join(page_num.to_string())
+                    .join("index.html")
             };
 
             fs::create_dir_all(output_path.parent().unwrap())?;
             fs::write(&output_path, output)?;
         }
 
-        let section_dir = self.get_partial_path(&self.maybe_encode(&category_info.slug));
         Self::remove_stale_pagination(&section_dir, total_pages);
 
         Ok(())
     }
 
-    fn generate_tag_partial(&self, tag: &str, metadata: &MetadataCache) -> Result<()> {
+    fn generate_tag_partial(&self, tag: &str, metadata: &MetadataCache, lang: &str) -> Result<()> {
         let mut posts = metadata.get_posts_by_tag(tag);
         posts.sort_by(|a, b| compare_posts_desc(a, b));
 
@@ -556,15 +565,12 @@ impl IndexGenerator {
             total_posts.div_ceil(posts_per_page)
         };
 
-        let base_url = format!("/tag/{}/", tag);
-
-        let visible_categories: Vec<_> = metadata
-            .get_category_info()
-            .iter()
-            .filter(|c| !c.hidden)
-            .collect();
-
+        let base_url = format!("{}/tag/{}/", self.lang_url_prefix(lang), tag);
+        let visible_categories = self.localized_visible_categories(metadata, lang);
         let template_config = self.config.to_template_config();
+
+        let encoded_tag = self.maybe_encode(tag);
+        let section_dir = self.lang_partial_root(lang).join("tag").join(&encoded_tag);
 
         for page_num in 1..=total_pages {
             let start_idx = (page_num - 1) * posts_per_page;
@@ -577,7 +583,7 @@ impl IndexGenerator {
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
-            self.insert_localization(&mut context);
+            self.insert_localization(&mut context, lang);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -586,53 +592,43 @@ impl IndexGenerator {
 
             let output = self.tera.render("partials/tag.html", &context)?;
 
-            let encoded_tag = self.maybe_encode(tag);
-
             let output_path = if page_num == 1 {
-                self.get_partial_path(&format!("tag/{}/index.html", encoded_tag))
+                section_dir.join("index.html")
             } else {
-                self.get_partial_path(&format!("tag/{}/page/{}/index.html", encoded_tag, page_num))
+                section_dir
+                    .join("page")
+                    .join(page_num.to_string())
+                    .join("index.html")
             };
 
             fs::create_dir_all(output_path.parent().unwrap())?;
             fs::write(&output_path, output)?;
         }
 
-        let section_dir = self.get_partial_path(&format!("tag/{}", self.maybe_encode(tag)));
         Self::remove_stale_pagination(&section_dir, total_pages);
 
         Ok(())
     }
 
-    fn generate_tags_overview_partial(&self, metadata: &MetadataCache) -> Result<()> {
+    fn generate_tags_overview_partial(&self, metadata: &MetadataCache, lang: &str) -> Result<()> {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
         tags_with_counts.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
 
-        let visible_categories: Vec<_> = metadata
-            .get_category_info()
-            .iter()
-            .filter(|c| !c.hidden)
-            .collect();
+        let visible_categories = self.localized_visible_categories(metadata, lang);
 
         let mut context = TeraContext::new();
         context.insert("tags", &tags_with_counts);
         context.insert("categories", &visible_categories);
         context.insert("config", &self.config.to_template_config());
-        self.insert_localization(&mut context);
+        self.insert_localization(&mut context, lang);
 
         let output = self.tera.render("partials/tags.html", &context)?;
-        let output_path = self.get_partial_path("tags/index.html");
+        let output_path = self.lang_partial_root(lang).join("tags").join("index.html");
 
         fs::create_dir_all(output_path.parent().unwrap())?;
         fs::write(&output_path, output)?;
 
         Ok(())
-    }
-
-    fn get_partial_path(&self, relative: &str) -> PathBuf {
-        PathBuf::from(&self.config.build.output_dir)
-            .join(&self.config.build.partial_dir)
-            .join(relative)
     }
 
     /// Removes `page/N` directories beyond the current page count: posts

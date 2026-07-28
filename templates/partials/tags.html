@@ -1,6 +1,6 @@
 <div id="partial-content" data-page-lang="{{ lang }}"
      data-page-title="All Tags - {{ config.site_title }}"
-     data-page-url="{{ config.site_url }}/tags/"
+     data-page-url="{{ config.site_url }}{{ lang_prefix }}/tags/"
      data-page-styles="{{ config.assets.styles.tags | default(value='') }}">
 
 <div class="page page--top-padding">
@@ -12,7 +12,7 @@
         {% if tags %}
         <div class="tag-cloud">
             {% for tag_entry in tags %}
-            <a href="/tag/{{ tag_entry.0 }}/" class="tag-cloud__item">
+            <a href="{{ lang_prefix }}/tag/{{ tag_entry.0 }}/" class="tag-cloud__item">
                 <span class="tag-cloud__name typography-b2">{{ tag_entry.0 | urldecode }}</span>
                 <span class="tag-cloud__count typography-c1">({{ tag_entry.1 }})</span>
             </a>

@@ -10,7 +10,7 @@
         {% if posts %}
         <div class="post-grid">
             {% for post_meta in posts %}
-            {{ macros::post_card(post=post_meta, t=t) }}
+            {{ macros::post_card(post=post_meta, t=t, lang_prefix=lang_prefix) }}
             {% endfor %}
         </div>
 

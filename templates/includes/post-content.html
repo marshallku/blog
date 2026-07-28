@@ -9,14 +9,14 @@
         {% if post.frontmatter.tags %}
         <div class="post-header__tags">
             {% for tag in post.frontmatter.tags %}
-            <a href="/tag/{{ tag }}/" class="typography-c1"># {{ tag | urldecode }}</a>
+            <a href="{{ lang_prefix | default(value='') }}/tag/{{ tag }}/" class="typography-c1"># {{ tag | urldecode }}</a>
             {% endfor %}
         </div>
         {% endif %}
         <h1 class="post-header__title typography-h1">{{ post.frontmatter.title }}</h1>
         <div class="post-header__meta">
             <span class="post-header__category">
-                <a href="/{{ post.category }}/">{{ category_name | default(value=post.category) }}</a>
+                <a href="{{ lang_prefix | default(value='') }}/{{ post.category }}/">{{ category_name | default(value=post.category) }}</a>
             </span>
             <span class="post-header__sep">·</span>
             <time datetime="{{ post.frontmatter.date.posted }}" class="post-header__date">
@@ -126,7 +126,7 @@
     </p>
     <div class="post-related-posts__posts post-grid">
         {% for related in related_posts %}
-        {{ macros::post_card(post=related, t=t) }}
+        {{ macros::post_card(post=related, t=t, lang_prefix=lang_prefix) }}
         {% endfor %}
     </div>
 </section>
