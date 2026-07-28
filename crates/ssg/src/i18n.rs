@@ -1,7 +1,87 @@
 use crate::config::{lang_display_name, LanguagesConfig};
 use crate::slug::encode_for_url;
+use anyhow::{Context, Result};
 use serde::Serialize;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
+use std::path::Path;
+
+/// The UI-string catalog shipped in the repo, embedded at compile time so a
+/// checkout without `i18n/ui.yaml` still builds with sane defaults.
+const DEFAULT_UI_YAML: &str = include_str!("../../../i18n/ui.yaml");
+
+/// Localized UI strings loaded from `i18n/ui.yaml`: `language -> key -> value`.
+/// Templates receive the resolved map for their page's language as `t`.
+#[derive(Debug, Clone)]
+pub struct UiCatalog {
+    langs: BTreeMap<String, BTreeMap<String, String>>,
+    default_lang: String,
+}
+
+impl UiCatalog {
+    /// Load from `path` (falling back to the embedded default when absent) and
+    /// validate that every supported language defines the same keys as the
+    /// default language — so an English page can never silently render a Korean
+    /// string via fallback.
+    pub fn load(path: &Path, languages: &LanguagesConfig) -> Result<Self> {
+        let raw = if path.exists() {
+            let content = std::fs::read_to_string(path)
+                .with_context(|| format!("Failed to read UI catalog {}", path.display()))?;
+            serde_yaml::from_str(&content)
+                .with_context(|| format!("Failed to parse UI catalog {}", path.display()))?
+        } else {
+            serde_yaml::from_str(DEFAULT_UI_YAML).context("Failed to parse embedded UI catalog")?
+        };
+
+        let catalog = Self {
+            langs: raw,
+            default_lang: languages.default.clone(),
+        };
+        catalog.validate(languages)?;
+        Ok(catalog)
+    }
+
+    fn validate(&self, languages: &LanguagesConfig) -> Result<()> {
+        let default_keys = self.langs.get(&self.default_lang).ok_or_else(|| {
+            anyhow::anyhow!(
+                "UI catalog is missing the default language '{}'",
+                self.default_lang
+            )
+        })?;
+
+        for lang in &languages.supported {
+            let map = self.langs.get(lang).ok_or_else(|| {
+                anyhow::anyhow!("UI catalog is missing supported language '{}'", lang)
+            })?;
+            for key in default_keys.keys() {
+                if !map.contains_key(key) {
+                    anyhow::bail!(
+                        "UI catalog: language '{}' is missing key '{}' (required for full localization)",
+                        lang,
+                        key
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Resolved strings for `lang`: the default-language map overlaid with the
+    /// language's own entries. After `validate` there are no gaps, but the
+    /// overlay keeps the default as a safety net.
+    pub fn resolved(&self, lang: &str) -> BTreeMap<String, String> {
+        let mut map = self
+            .langs
+            .get(&self.default_lang)
+            .cloned()
+            .unwrap_or_default();
+        if let Some(overrides) = self.langs.get(lang) {
+            for (key, value) in overrides {
+                map.insert(key.clone(), value.clone());
+            }
+        }
+        map
+    }
+}
 
 /// Records which languages have a published (non-hidden) version of each post,
 /// keyed by the post's `(category, slug)` identity. Built once before rendering
@@ -203,6 +283,62 @@ mod tests {
         assert_eq!(links[1].lang, "en");
         assert_eq!(links[1].url, "/en/chat/foo/");
         assert!(links[1].current);
+    }
+
+    #[test]
+    fn test_ui_catalog_embedded_default_loads_and_resolves() {
+        // With the file absent, the embedded default is used and must satisfy
+        // validation for ko+en (the shipped languages).
+        let catalog =
+            UiCatalog::load(Path::new("/nonexistent/ui.yaml"), &langs()).expect("embedded default");
+        let en = catalog.resolved("en");
+        assert_eq!(en.get("share").map(String::as_str), Some("Share"));
+        let ko = catalog.resolved("ko");
+        assert_eq!(ko.get("share").map(String::as_str), Some("공유하기"));
+    }
+
+    #[test]
+    fn test_ui_catalog_validation_fails_on_missing_key() {
+        // A supported language missing a default-language key must fail.
+        let langs = LanguagesConfig {
+            default: "ko".to_string(),
+            supported: vec!["ko".to_string(), "en".to_string()],
+        };
+        let bad = UiCatalog {
+            langs: BTreeMap::from([
+                (
+                    "ko".to_string(),
+                    BTreeMap::from([("share".to_string(), "공유".to_string())]),
+                ),
+                ("en".to_string(), BTreeMap::new()),
+            ]),
+            default_lang: "ko".to_string(),
+        };
+        assert!(bad.validate(&langs).is_err());
+    }
+
+    #[test]
+    fn test_ui_catalog_resolved_falls_back_to_default() {
+        let catalog = UiCatalog {
+            langs: BTreeMap::from([
+                (
+                    "ko".to_string(),
+                    BTreeMap::from([
+                        ("share".to_string(), "공유".to_string()),
+                        ("only_ko".to_string(), "한국".to_string()),
+                    ]),
+                ),
+                (
+                    "en".to_string(),
+                    BTreeMap::from([("share".to_string(), "Share".to_string())]),
+                ),
+            ]),
+            default_lang: "ko".to_string(),
+        };
+        let en = catalog.resolved("en");
+        assert_eq!(en.get("share").map(String::as_str), Some("Share"));
+        // Missing in en → falls back to ko.
+        assert_eq!(en.get("only_ko").map(String::as_str), Some("한국"));
     }
 
     #[test]

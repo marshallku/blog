@@ -36,7 +36,7 @@ use crate::category::{discover_categories, validate_category};
 use crate::config::{load_config, SsgConfig};
 use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
-use crate::i18n::TranslationIndex;
+use crate::i18n::{TranslationIndex, UiCatalog};
 use crate::image::{ImageProcessor, ThumbnailMetadata};
 use crate::indices::IndexGenerator;
 use crate::metadata::{compare_posts_desc, MetadataCache};
@@ -248,9 +248,13 @@ fn build_all(use_cache: bool) -> Result<()> {
     println!("Building site...\n");
 
     let config = load_config()?;
+    let ui = Arc::new(UiCatalog::load(
+        Path::new("i18n/ui.yaml"),
+        &config.languages,
+    )?);
     let renderer = Renderer::new();
     let shortcode_registry = ShortcodeRegistry::new();
-    let generator = Generator::new(config.clone())?;
+    let generator = Generator::new(config.clone(), Arc::clone(&ui))?;
 
     let posts_dir = Path::new(&config.build.content_dir);
 
@@ -413,7 +417,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     let page_data = build_page_data(&metadata);
     let page_errors = build_pages(&shortcode_registry, &renderer, &generator, &page_data);
 
-    let index_generator = IndexGenerator::new(config.clone())?;
+    let index_generator = IndexGenerator::new(config.clone(), Arc::clone(&ui))?;
     index_generator.generate_all(&metadata)?;
     index_generator.generate_all_partials(&metadata)?;
 
@@ -478,6 +482,10 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     println!("Building site with {} threads...\n", num_threads);
 
     let config = Arc::new(load_config()?);
+    let ui = Arc::new(UiCatalog::load(
+        Path::new("i18n/ui.yaml"),
+        &config.languages,
+    )?);
     let posts_dir = Path::new(&config.build.content_dir);
 
     if !posts_dir.exists() {
@@ -566,10 +574,11 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
         let progress = Arc::clone(&progress);
         let metadata_for_nav = Arc::clone(&metadata_for_nav);
         let translation_index = Arc::clone(&translation_index);
+        let ui = Arc::clone(&ui);
 
         pool.spawn(move || {
             let renderer = Renderer::new();
-            let generator = match Generator::new((*config).clone()) {
+            let generator = match Generator::new((*config).clone(), Arc::clone(&ui)) {
                 Ok(g) => g,
                 Err(e) => {
                     eprintln!("Failed to create generator: {}", e);
@@ -670,11 +679,11 @@ fn build_all_parallel(use_cache: bool) -> Result<()> {
     metadata.save()?;
 
     let renderer = Renderer::new();
-    let generator = Generator::new((*config).clone())?;
+    let generator = Generator::new((*config).clone(), Arc::clone(&ui))?;
     let page_data = build_page_data(&metadata);
     let page_errors = build_pages(&shortcode_registry, &renderer, &generator, &page_data);
 
-    let index_generator = IndexGenerator::new((*config).clone())?;
+    let index_generator = IndexGenerator::new((*config).clone(), Arc::clone(&ui))?;
     index_generator.generate_all(&metadata)?;
     index_generator.generate_all_partials(&metadata)?;
 
@@ -890,9 +899,13 @@ fn build_single_post(post_path: &str) -> Result<()> {
     println!("Building single post: {}\n", post_path);
 
     let config = load_config()?;
+    let ui = Arc::new(UiCatalog::load(
+        Path::new("i18n/ui.yaml"),
+        &config.languages,
+    )?);
     let renderer = Renderer::new();
     let shortcode_registry = ShortcodeRegistry::new();
-    let generator = Generator::new(config.clone())?;
+    let generator = Generator::new(config.clone(), ui)?;
     let metadata = MetadataCache::load().unwrap_or_else(|_| MetadataCache::new());
     let translation_index =
         build_translation_index(Path::new(&config.build.content_dir), &config.languages);
@@ -1012,6 +1025,12 @@ fn build_post_extra_data(
         .find(|c| c.slug == post.category)
     {
         data.insert("category_info".to_string(), json!(cat_info));
+        // Category display name in the post's language (falls back to the
+        // default name), so the post header reads in the right language.
+        data.insert(
+            "category_name".to_string(),
+            json!(cat_info.display_name(&post.lang)),
+        );
     }
 
     // Cover/OG image CDN metadata is language-independent, so it is always built.

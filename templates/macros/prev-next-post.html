@@ -2,7 +2,7 @@
 {# Usage: {{ macros::prev_next_post(prev=prev_post, next=next_post) }} #}
 {# PostLink structure: slug, title, url, category, cover_image, thumbnail_metadata #}
 
-{% macro prev_next_post(prev, next) %}
+{% macro prev_next_post(prev, next, t) %}
 {% if prev or next %}
 <nav class="prev-next-post">
     {% if prev %}
@@ -10,7 +10,7 @@
         <div class="prev-next-post-post__meta">
             <span class="prev-next-post-post__label typography-c1">
                 <i class="icon-chevron-left"></i>
-                이전 글
+                {{ t.previous_post }}
             </span>
             <h4 class="prev-next-post-post__title typography-h4">{{ prev.title }}</h4>
             {% if prev.thumbnail_metadata %}
@@ -30,7 +30,7 @@
         <div class="prev-next-post-post__meta">
             <span class="prev-next-post-post__label typography-c1">
                 <i class="icon-chevron-right"></i>
-                다음 글
+                {{ t.next_post }}
             </span>
             <h4 class="prev-next-post-post__title typography-h4">{{ next.title }}</h4>
             {% if next.thumbnail_metadata %}

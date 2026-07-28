@@ -1,7 +1,7 @@
 {# Post card component macro #}
 {# Usage: {{ macros::post_card(post=post_meta) }} #}
 
-{% macro post_card(post, show_category=false) %}
+{% macro post_card(post, t, show_category=false) %}
 <article class="post-card">
     {% if post.thumbnail_metadata or post.frontmatter.og_image %}
     <a class="post-card__image-link" href="/{{ post.category }}/{{ post.slug }}/" tabindex="-1" aria-hidden="true">
@@ -35,7 +35,7 @@
         <a class="post-card__footer" href="/{{ post.category }}/{{ post.slug }}/">
             <span class="post-card__date">
                 <time datetime="{{ post.frontmatter.date.posted }}">{{ post.frontmatter.date.posted | date(format="%Y.%m.%d") }}</time>
-                {% if post.reading_time %}<span class="post-card__sep">·</span>{{ post.reading_time }}분{% endif %}
+                {% if post.reading_time %}<span class="post-card__sep">·</span>{{ t.reading_time_short | replace(from="{n}", to=post.reading_time | str) }}{% endif %}
             </span>
             <span class="post-card__read">read →</span>
         </a>

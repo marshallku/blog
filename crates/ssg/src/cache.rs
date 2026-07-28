@@ -217,7 +217,7 @@ pub fn compute_environment_hash(content_dir: &Path) -> Result<String> {
         hasher.update(hash_directory(Path::new("templates"))?.as_bytes());
     }
 
-    for file in ["config.yaml", "manifest.json"] {
+    for file in ["config.yaml", "manifest.json", "i18n/ui.yaml"] {
         let path = Path::new(file);
         if path.exists() {
             hasher.update(hash_file(path)?.as_bytes());

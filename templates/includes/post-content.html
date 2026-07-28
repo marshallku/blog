@@ -16,7 +16,7 @@
         <h1 class="post-header__title typography-h1">{{ post.frontmatter.title }}</h1>
         <div class="post-header__meta">
             <span class="post-header__category">
-                <a href="/{{ post.category }}/">{{ category_info.name | default(value=post.category) }}</a>
+                <a href="/{{ post.category }}/">{{ category_name | default(value=post.category) }}</a>
             </span>
             <span class="post-header__sep">·</span>
             <time datetime="{{ post.frontmatter.date.posted }}" class="post-header__date">
@@ -24,7 +24,7 @@
             </time>
             {% if reading_time %}
             <span class="post-header__sep">·</span>
-            <span class="post-header__reading-time">{{ reading_time }}분 읽기</span>
+            <span class="post-header__reading-time">{{ t.reading_time | replace(from='{n}', to=reading_time | str) }}</span>
             {% endif %}
             {% if language_links %}
             <span class="post-header__sep">·</span>
@@ -53,13 +53,13 @@
 
     {% set updated_date = post.frontmatter.date.modified | default(value=post.frontmatter.date.posted) %}
     <div class="post__updated">
-        <time datetime="{{ updated_date }}">// 최종 수정일: {{ updated_date | date(format="%Y.%m.%d") }}</time>
+        <time datetime="{{ updated_date }}">// {{ t.last_modified }}: {{ updated_date | date(format="%Y.%m.%d") }}</time>
     </div>
 
     {% if toc %}
     {% set section_headings = toc | filter(attribute="level", value=2) %}
     {% if section_headings | length > 0 %}
-    {{ toc_macros::table_of_contents(headings=toc) }}
+    {{ toc_macros::table_of_contents(headings=toc, t=t) }}
     {% endif %}
     {% endif %}
 
@@ -72,10 +72,10 @@
     {% set lang_prefix_str = lang_prefix | default(value="") %}
     {% set share_url = config.site_url ~ lang_prefix_str ~ "/" ~ enc_category ~ "/" ~ enc_slug ~ "/" %}
     <div class="post-share" data-share data-share-url="{{ share_url }}">
-        <span class="post-share__label typography-c1">공유하기</span>
+        <span class="post-share__label typography-c1">{{ t.share }}</span>
         <a class="post-share__button post-share__button--x" target="_blank" rel="noopener noreferrer"
            href="https://twitter.com/intent/tweet?text={{ post.frontmatter.title | urlencode_strict }}&url={{ share_url | urlencode_strict }}"
-           aria-label="X에 공유">
+           aria-label="{{ t.share_on | replace(from='{name}', to='X') }}">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
@@ -83,13 +83,13 @@
         </a>
         <a class="post-share__button post-share__button--linkedin" target="_blank" rel="noopener noreferrer"
            href="https://www.linkedin.com/sharing/share-offsite/?url={{ share_url | urlencode_strict }}"
-           aria-label="LinkedIn에 공유">
+           aria-label="{{ t.share_on | replace(from='{name}', to='LinkedIn') }}">
             <i class="icon-linkedin"></i>
             <span class="sr-only">LinkedIn</span>
         </a>
-        <button type="button" class="post-share__button post-share__button--copy" data-share-copy aria-label="링크 복사">
+        <button type="button" class="post-share__button post-share__button--copy" data-share-copy aria-label="{{ t.copy_link }}">
             <i class="icon-link"></i>
-            <span class="post-share__copy-label typography-c1">링크 복사</span>
+            <span class="post-share__copy-label typography-c1">{{ t.copy_link }}</span>
         </button>
     </div>
 </article>
@@ -108,19 +108,25 @@
 {% include "includes/comments.html" %}
 {% endif %}
 
-{{ nav_macros::prev_next_post(prev=prev_post, next=next_post) }}
+{{ nav_macros::prev_next_post(prev=prev_post, next=next_post, t=t) }}
 
 {% if related_posts and related_posts | length > 0 %}
 <section class="post-related-posts">
+    {# Escape the user-managed category name and slug before building the anchor:
+       the final string is marked `safe`, so the dynamic parts must be escaped
+       here to prevent HTML injection via a crafted category name. #}
+    {% set cat_name = category_name | default(value=post.category) | escape %}
+    {% set cat_href = post.category | escape %}
+    {% set cat_link = '<a href="/' ~ cat_href ~ '/">' ~ cat_name ~ '</a>' %}
     <h2 class="post-related-posts__title typography-h3">
-        <a href="/{{ post.category }}/">{{ category_info.name | default(value=post.category) }} 카테고리</a> 관련 글
+        {{ t.related_in_category | replace(from='{category}', to=cat_link) | safe }}
     </h2>
     <p class="post-related-posts__text typography-b1">
-        위 글이 유용하셨다면, 아래 글도 읽어보세요!
+        {{ t.related_prompt }}
     </p>
     <div class="post-related-posts__posts post-grid">
         {% for related in related_posts %}
-        {{ macros::post_card(post=related) }}
+        {{ macros::post_card(post=related, t=t) }}
         {% endfor %}
     </div>
 </section>

@@ -1,0 +1,36 @@
+# UI string catalog for template localization.
+#
+# Structure: <language-code> -> <key> -> <string>. The default language must
+# define every key; other supported languages must define the same keys (the
+# build fails otherwise, so an English page never silently falls back to Korean).
+# `{...}` placeholders are substituted in templates (e.g. {n}, {name}, {category}).
+
+ko:
+    reading_time: "{n}분 읽기"
+    reading_time_short: "{n}분"
+    last_modified: "최종 수정일"
+    share: "공유하기"
+    share_on: "{name}에 공유"
+    copy_link: "링크 복사"
+    related_in_category: "{category} 카테고리 관련 글"
+    related_prompt: "위 글이 유용하셨다면, 아래 글도 읽어보세요!"
+    table_of_contents: "목차"
+    previous_post: "이전 글"
+    next_post: "다음 글"
+    scroll_top: "맨 위로 스크롤"
+    toggle_theme: "테마 토글"
+
+en:
+    reading_time: "{n} min read"
+    reading_time_short: "{n} min"
+    last_modified: "Last modified"
+    share: "Share"
+    share_on: "Share on {name}"
+    copy_link: "Copy link"
+    related_in_category: "Related posts in {category}"
+    related_prompt: "If you enjoyed this, here are a few more to read!"
+    table_of_contents: "Table of contents"
+    previous_post: "Previous post"
+    next_post: "Next post"
+    scroll_top: "Scroll to top"
+    toggle_theme: "Toggle theme"

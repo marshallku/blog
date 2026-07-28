@@ -82,9 +82,15 @@ pub struct Category {
     #[serde(default)]
     pub slug: String,
 
-    /// Display name (from .category.yaml or capitalized slug)
+    /// Display name (from .category.yaml or capitalized slug), in the default
+    /// language.
     #[serde(default)]
     pub name: String,
+
+    /// Per-language display names, e.g. `names: { en: "Chat" }` in
+    /// `.category.yaml`. Falls back to `name` for languages not listed.
+    #[serde(default)]
+    pub names: std::collections::HashMap<String, String>,
 
     /// Optional description
     #[serde(default)]
@@ -109,6 +115,13 @@ pub struct Category {
     /// Optional cover image path
     #[serde(default)]
     pub cover_image: Option<String>,
+}
+
+impl Category {
+    /// Display name for `lang`, falling back to the default `name`.
+    pub fn display_name(&self, lang: &str) -> &str {
+        self.names.get(lang).unwrap_or(&self.name)
+    }
 }
 
 fn default_category_index() -> i32 {

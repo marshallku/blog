@@ -1,4 +1,5 @@
 use crate::config::{lang_to_og_locale, SsgConfig};
+use crate::i18n::UiCatalog;
 use crate::slug;
 use crate::types::{Page, Post};
 use anyhow::{Context, Result};
@@ -6,18 +7,20 @@ use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tera::{Context as TeraContext, Tera, Value};
 
 pub struct Generator {
     tera: Tera,
     config: SsgConfig,
+    ui: Arc<UiCatalog>,
 }
 
 impl Generator {
-    pub fn new(config: SsgConfig) -> Result<Self> {
+    pub fn new(config: SsgConfig, ui: Arc<UiCatalog>) -> Result<Self> {
         let tera = create_tera_engine()?;
 
-        Ok(Self { tera, config })
+        Ok(Self { tera, config, ui })
     }
 
     pub fn generate_post(
@@ -43,6 +46,7 @@ impl Generator {
                 .lang_path_prefix(&post.lang)
                 .map_or(String::new(), |p| format!("/{}", p)),
         );
+        context.insert("t", &self.ui.resolved(&post.lang));
         context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
@@ -81,6 +85,7 @@ impl Generator {
                 .lang_path_prefix(&post.lang)
                 .map_or(String::new(), |p| format!("/{}", p)),
         );
+        context.insert("t", &self.ui.resolved(&post.lang));
         context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
@@ -110,6 +115,8 @@ impl Generator {
         context.insert("page", &page.frontmatter);
         context.insert("slug", &page.slug);
         context.insert("content", html);
+        context.insert("lang", &self.config.languages.default);
+        context.insert("t", &self.ui.resolved(&self.config.languages.default));
         context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
@@ -145,6 +152,8 @@ impl Generator {
         context.insert("page", &page.frontmatter);
         context.insert("slug", &page.slug);
         context.insert("content", html);
+        context.insert("lang", &self.config.languages.default);
+        context.insert("t", &self.ui.resolved(&self.config.languages.default));
         context.insert("config", &self.config.to_template_config());
 
         for (key, value) in plugin_data {
@@ -348,6 +357,7 @@ fn create_tera_engine() -> Result<Tera> {
         .context(format!("Failed to load templates from {:?}", template_dir))?;
 
     tera.register_filter("urldecode", urldecode_filter);
+    tera.register_filter("str", str_filter);
 
     Ok(tera)
 }
@@ -356,4 +366,15 @@ fn urldecode_filter(value: &Value, _args: &HashMap<String, Value>) -> tera::Resu
     let s = tera::try_get_value!("urldecode", "value", String, value);
     let decoded = slug::decode_from_url(&s);
     Ok(Value::String(decoded))
+}
+
+/// Stringify a value (e.g. a number) so it can be used as a String filter
+/// argument such as `replace(from='{n}', to=count | str)`.
+pub fn str_filter(value: &Value, _args: &HashMap<String, Value>) -> tera::Result<Value> {
+    let s = match value {
+        Value::String(s) => s.clone(),
+        Value::Null => String::new(),
+        other => other.to_string(),
+    };
+    Ok(Value::String(s))
 }

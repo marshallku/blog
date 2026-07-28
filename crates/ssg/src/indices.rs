@@ -1,4 +1,5 @@
 use crate::config::SsgConfig;
+use crate::i18n::UiCatalog;
 use crate::image::{ImageProcessor, ThumbnailMetadata};
 use crate::metadata::{compare_posts_desc, MetadataCache, PostMetadata};
 use crate::slug;
@@ -8,6 +9,7 @@ use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tera::{Context as TeraContext, Tera, Value};
 
 #[derive(Debug, Clone, Serialize)]
@@ -52,12 +54,13 @@ struct PostCardData<'a> {
 pub struct IndexGenerator {
     tera: Tera,
     config: SsgConfig,
+    ui: Arc<UiCatalog>,
     image_processor: Option<ImageProcessor>,
     content_dir: PathBuf,
 }
 
 impl IndexGenerator {
-    pub fn new(config: SsgConfig) -> Result<Self> {
+    pub fn new(config: SsgConfig, ui: Arc<UiCatalog>) -> Result<Self> {
         let tera = create_tera_engine()?;
 
         let image_processor = config
@@ -70,9 +73,19 @@ impl IndexGenerator {
         Ok(Self {
             tera,
             config,
+            ui,
             image_processor,
             content_dir,
         })
+    }
+
+    /// Inserts the localization variables (`lang`, `t`) every template needs via
+    /// base.html. Listing pages are the default language for now; localized
+    /// listings arrive with the EN listing work-unit.
+    fn insert_localization(&self, context: &mut TeraContext) {
+        let lang = &self.config.languages.default;
+        context.insert("lang", lang);
+        context.insert("t", &self.ui.resolved(lang));
     }
 
     fn create_post_card_data<'a>(&self, post: &'a PostMetadata) -> PostCardData<'a> {
@@ -211,6 +224,7 @@ impl IndexGenerator {
         context.insert("category_posts", &category_posts);
         context.insert("categories", &visible_categories);
         context.insert("config", &self.config.to_template_config());
+        self.insert_localization(&mut context);
 
         let output = self.tera.render("index.html", &context)?;
         let output_path = PathBuf::from(&self.config.build.output_dir).join("index.html");
@@ -263,6 +277,7 @@ impl IndexGenerator {
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
+            self.insert_localization(&mut context);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -335,6 +350,7 @@ impl IndexGenerator {
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
+            self.insert_localization(&mut context);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -385,6 +401,7 @@ impl IndexGenerator {
         context.insert("tags", &tags_with_counts);
         context.insert("categories", &visible_categories);
         context.insert("config", &self.config.to_template_config());
+        self.insert_localization(&mut context);
 
         let output = self.tera.render("tags.html", &context)?;
         let output_path = PathBuf::from(&self.config.build.output_dir)
@@ -442,6 +459,7 @@ impl IndexGenerator {
         context.insert("category_posts", &category_posts);
         context.insert("categories", &visible_categories);
         context.insert("config", &self.config.to_template_config());
+        self.insert_localization(&mut context);
 
         let output = self.tera.render("partials/index.html", &context)?;
         let output_path = self.get_partial_path("index.html");
@@ -494,6 +512,7 @@ impl IndexGenerator {
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
+            self.insert_localization(&mut context);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -558,6 +577,7 @@ impl IndexGenerator {
             context.insert("post_count", &total_posts);
             context.insert("categories", &visible_categories);
             context.insert("config", &template_config);
+            self.insert_localization(&mut context);
 
             if total_pages > 1 {
                 let pagination = self.build_pagination_context(page_num, total_posts, &base_url);
@@ -598,6 +618,7 @@ impl IndexGenerator {
         context.insert("tags", &tags_with_counts);
         context.insert("categories", &visible_categories);
         context.insert("config", &self.config.to_template_config());
+        self.insert_localization(&mut context);
 
         let output = self.tera.render("partials/tags.html", &context)?;
         let output_path = self.get_partial_path("tags/index.html");
@@ -845,6 +866,7 @@ fn create_tera_engine() -> Result<Tera> {
         .context(format!("Failed to load templates from {:?}", template_dir))?;
 
     tera.register_filter("urldecode", urldecode_filter);
+    tera.register_filter("str", crate::generator::str_filter);
 
     Ok(tera)
 }

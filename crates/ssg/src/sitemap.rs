@@ -260,6 +260,7 @@ mod tests {
         Category {
             slug: slug.to_string(),
             name: slug.to_string(),
+            names: std::collections::HashMap::new(),
             description: String::new(),
             index: 0,
             hidden,

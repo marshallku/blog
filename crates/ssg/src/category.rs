@@ -73,6 +73,7 @@ fn load_category_metadata(dir: &Path, slug: &str, parent: Option<&Category>) -> 
         Category {
             slug: slug.to_string(),
             name: capitalize(name_part),
+            names: std::collections::HashMap::new(),
             description: String::new(),
             index: 999,
             hidden: false,
@@ -246,6 +247,7 @@ index: 0
             Category {
                 slug: "dev".to_string(),
                 name: "Development".to_string(),
+                names: std::collections::HashMap::new(),
                 description: String::new(),
                 index: 0,
                 hidden: false,
@@ -256,6 +258,7 @@ index: 0
             Category {
                 slug: "blog".to_string(),
                 name: "Blog".to_string(),
+                names: std::collections::HashMap::new(),
                 description: String::new(),
                 index: 1,
                 hidden: false,

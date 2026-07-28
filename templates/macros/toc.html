@@ -1,6 +1,6 @@
-{% macro table_of_contents(headings) %}
-<nav class="post-toc" aria-label="목차">
-    <div class="post-toc__bar"><span class="post-toc__icon">▤</span> 목차 — tree ./article</div>
+{% macro table_of_contents(headings, t) %}
+<nav class="post-toc" aria-label="{{ t.table_of_contents }}">
+    <div class="post-toc__bar"><span class="post-toc__icon">▤</span> {{ t.table_of_contents }} — tree ./article</div>
     <ul class="post-toc__list">
         {% for heading in headings %}
         {% if heading.level == 2 or heading.level == 3 %}
