@@ -43,7 +43,7 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
 
             try {
                 const res = await fetch(
-                    `${this.apiUrl}/api/v2/comment/list?postSlug=${encodeURIComponent(this.postSlug)}`,
+                    `${this.apiUrl}/api/v2/comment/list?postSlug=${encodeURIComponent(this.postSlug)}&lang=${encodeURIComponent(document.documentElement.lang)}`,
                 );
                 if (!res.ok) throw new Error();
                 list.innerHTML = await res.text();
@@ -78,6 +78,7 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
                         url: this.url || undefined,
                         body: this.body,
                         parentCommentId: this.parentId || undefined,
+                        lang: document.documentElement.lang,
                     }),
                 });
 

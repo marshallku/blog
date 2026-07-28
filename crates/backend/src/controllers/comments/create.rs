@@ -41,6 +41,9 @@ pub struct AddCommentPayload {
 
     #[serde(rename = "parentCommentId")]
     pub parent_comment_id: Option<String>,
+
+    #[serde(default)]
+    pub lang: Option<String>,
 }
 
 pub async fn post(
@@ -49,6 +52,7 @@ pub async fn post(
     ValidatedJson(payload): ValidatedJson<AddCommentPayload>,
 ) -> impl IntoResponse {
     let is_root = user.is_some() && user.unwrap().role == UserRole::Root;
+    let lang = crate::i18n::normalize_lang(payload.lang.as_deref());
     let post_slug = normalize_slug(&payload.post_slug).to_string();
 
     // Replies are always 1-depth: normalize the parent to the top-level comment
@@ -120,6 +124,7 @@ pub async fn post(
     let mut context = Context::new();
     context.insert("comment", &created_comment.to_response());
     context.insert("border", &true);
+    context.insert("t", &crate::i18n::ui_strings(lang));
 
     match TEMPLATES.render("comments/comment.html", &context) {
         Ok(html) => (

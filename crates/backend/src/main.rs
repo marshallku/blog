@@ -22,6 +22,7 @@ mod constants;
 mod controllers;
 mod database;
 mod env;
+mod i18n;
 mod models;
 mod templates;
 mod utils;

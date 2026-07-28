@@ -15,6 +15,8 @@ use crate::{
 pub struct ListCommentsQuery {
     #[serde(rename = "postSlug")]
     pub slug: String,
+    #[serde(default)]
+    pub lang: Option<String>,
 }
 
 pub async fn get(
@@ -37,6 +39,10 @@ pub async fn get(
 
     let mut context = Context::new();
     context.insert("comments", &comments);
+    context.insert(
+        "t",
+        &crate::i18n::ui_strings(crate::i18n::normalize_lang(query.lang.as_deref())),
+    );
 
     match TEMPLATES.render("comments/list.html", &context) {
         Ok(html) => (

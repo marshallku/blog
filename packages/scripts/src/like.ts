@@ -25,7 +25,7 @@ export function likeButton(postSlug: string, apiUrl: string): LikeButtonData {
 
             try {
                 const res = await fetch(
-                    `${this.apiUrl}/api/v2/like/status?postSlug=${encodeURIComponent(this.postSlug)}`,
+                    `${this.apiUrl}/api/v2/like/status?postSlug=${encodeURIComponent(this.postSlug)}&lang=${encodeURIComponent(document.documentElement.lang)}`,
                     { credentials: "include" },
                 );
                 if (!res.ok) throw new Error();
@@ -50,7 +50,7 @@ export function likeButton(postSlug: string, apiUrl: string): LikeButtonData {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
-                    body: JSON.stringify({ postSlug: this.postSlug }),
+                    body: JSON.stringify({ postSlug: this.postSlug, lang: document.documentElement.lang }),
                 });
 
                 if (!res.ok) throw new Error();

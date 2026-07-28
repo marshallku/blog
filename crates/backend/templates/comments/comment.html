@@ -2,7 +2,7 @@
     <figure class="comment-bubble__avatar">
         <img
             src="https://api.dicebear.com/9.x/glass/svg?seed={{ comment.name | urlencode }}"
-            alt="{{ comment.name }} 님의 아바타"
+            alt="{{ comment.name }}{{ t.avatar_alt_suffix }}"
             width="38"
             height="38"
             loading="lazy"
@@ -16,14 +16,14 @@
         </div>
         <div class="comment-bubble__text">{{ comment.body }}</div>
         <div class="comment-bubble__footer">
-            <time class="comment-bubble__date" datetime="{{ comment.createdAt }}">{{ comment.createdAt | date(format="%Y년 %m월 %d일") }}</time>
+            <time class="comment-bubble__date" datetime="{{ comment.createdAt }}">{{ comment.createdAt | date(format=t.date_format) }}</time>
             <span class="comment-bubble__sep">·</span>
             <button
                 type="button"
                 class="comment-bubble__reply-btn"
                 data-id="{% if comment.parentCommentId %}{{ comment.parentCommentId }}{% else %}{{ comment._id }}{% endif %}"
                 data-name="{{ comment.name }}"
-            >답글</button>
+            >{{ t.reply }}</button>
         </div>
     </div>
 </li>

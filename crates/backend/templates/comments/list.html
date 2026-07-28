@@ -1,6 +1,6 @@
 <ul class="comment-list">
     {% if comments | length == 0 %}
-    <li class="comment-list__empty">아직 댓글이 없습니다.</li>
+    <li class="comment-list__empty">{{ t.no_comments }}</li>
     {% else %}
     {% for comment in comments %}
     {% set border = true %}

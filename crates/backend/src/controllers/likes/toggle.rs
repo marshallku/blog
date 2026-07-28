@@ -21,6 +21,8 @@ use crate::{
 
 #[derive(Deserialize, Validate)]
 pub struct ToggleLikePayload {
+    #[serde(default)]
+    pub lang: Option<String>,
     #[serde(rename = "postSlug")]
     #[validate(length(min = 1))]
     pub post_slug: String,
@@ -33,6 +35,7 @@ pub async fn post(
     ValidatedJson(payload): ValidatedJson<ToggleLikePayload>,
 ) -> impl IntoResponse {
     let cookie_jar = CookieJar::from_headers(&headers);
+    let lang = crate::i18n::normalize_lang(payload.lang.as_deref());
     let post_slug = normalize_slug(&payload.post_slug).to_string();
     let ip_hash = crate::utils::ip::hash_ip(&ip);
 
@@ -57,6 +60,7 @@ pub async fn post(
     let mut context = Context::new();
     context.insert("liked", &liked);
     context.insert("count", &count);
+    context.insert("t", &crate::i18n::ui_strings(lang));
 
     let html = match TEMPLATES.render("likes/button.html", &context) {
         Ok(html) => html,
