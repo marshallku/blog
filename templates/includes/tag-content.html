@@ -2,8 +2,8 @@
 
 <div class="page page--top-padding">
     <header class="page-header">
-        <h1 class="typography-h1">{{ tag | urldecode }} 태그 글</h1>
-        <p class="post-count typography-c1">총 {{ post_count }}개</p>
+        <h1 class="typography-h1">{{ t.tag_posts_heading | replace(from='{tag}', to=tag | urldecode) }}</h1>
+        <p class="post-count typography-c1">{{ t.post_count | replace(from='{n}', to=post_count | str) }}</p>
     </header>
 
     <div class="contents">

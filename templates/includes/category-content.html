@@ -2,8 +2,8 @@
 
 <div class="page page--top-padding">
     <header class="page-header"{% if category.color %} style="border-color: {{ category.color }}"{% endif %}>
-        <h1 class="typography-h1"{% if category.color %} style="color: {{ category.color }}"{% endif %}>{{ category.name }} 카테고리 글</h1>
-        <p class="post-count typography-c1">총 {{ post_count }}개</p>
+        <h1 class="typography-h1"{% if category.color %} style="color: {{ category.color }}"{% endif %}>{{ t.category_posts_heading | replace(from='{category}', to=category.name) }}</h1>
+        <p class="post-count typography-c1">{{ t.post_count | replace(from='{n}', to=post_count | str) }}</p>
     </header>
 
     <div class="contents">

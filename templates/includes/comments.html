@@ -10,24 +10,24 @@
             <form class="comment-composer__form" @submit.prevent="submit">
                 <div x-show="parentId" x-cloak class="comment-composer__replying">
                     <span class="comment-composer__reply-mark">↳</span>
-                    <span class="comment-composer__reply-to" x-text="replyingTo"></span> 님에게 답글
+                    {{ t.reply_prefix }}<span class="comment-composer__reply-to" x-text="replyingTo"></span>{{ t.reply_suffix }}
                     <button type="button" @click="cancelReply" class="comment-composer__cancel">[x]</button>
                 </div>
                 <div class="comment-composer__ids">
                     <label class="comment-composer__field">
                         <span class="comment-composer__sigil">~$</span>
-                        <input type="text" id="comment-name" name="name" placeholder="이름 / nickname" x-model="name" class="comment-composer__input">
+                        <input type="text" id="comment-name" name="name" placeholder="{{ t.comment_name }} / nickname" x-model="name" class="comment-composer__input">
                     </label>
                     <label class="comment-composer__field">
                         <span class="comment-composer__sigil comment-composer__sigil--at">@</span>
-                        <input type="url" id="comment-url" name="url" placeholder="website (optional)" x-model="url" class="comment-composer__input">
+                        <input type="url" id="comment-url" name="url" placeholder="{{ t.comment_website_optional }}" x-model="url" class="comment-composer__input">
                     </label>
                 </div>
                 <div class="comment-composer__row">
                     <figure class="comment-composer__avatar">
                         <img
                             :src="'https://api.dicebear.com/9.x/glass/svg?seed=' + encodeURIComponent(name || 'anonymous')"
-                            alt="내 아바타"
+                            alt="{{ t.comment_avatar_alt }}"
                             width="42"
                             height="42"
                         />
@@ -41,7 +41,7 @@
                         @input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 200) + 'px'"
                         @keydown.ctrl.enter.prevent="submit"
                         @keydown.meta.enter.prevent="submit"
-                        placeholder="메시지를 입력하세요…  (⌘/Ctrl + Enter 전송)"
+                        placeholder="{{ t.comment_body_placeholder }}"
                         class="comment-composer__textarea"
                     ></textarea>
                     <button type="submit" class="comment-composer__send" :disabled="loading || !body">send ↵</button>
@@ -50,9 +50,9 @@
         </div>
 
         <div class="comment-thread__log">
-            <p class="comment-thread__note">— 작성한 댓글은 수정하거나 삭제할 수 없습니다 —</p>
+            <p class="comment-thread__note">— {{ t.comment_immutable_notice }} —</p>
             <div id="comment-list">
-                <p class="comment-list__empty">댓글을 불러오는 중...</p>
+                <p class="comment-list__empty">{{ t.comment_loading }}</p>
             </div>
         </div>
     </div>

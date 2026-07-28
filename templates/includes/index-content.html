@@ -28,7 +28,7 @@
                     :data-active="activeTab === 'all'"
                     class="button typography-b2"
                 >
-                    전체
+                    {{ t.all }}
                 </button>
                 {% for cat_posts in category_posts %}
                 <button
@@ -57,7 +57,7 @@
             {% endfor %}
         </section>
         <div class="post-grid__more">
-            <a href="/{{ cat_posts.category.slug }}/" class="button button--radius-rounded typography-b2">{{ cat_posts.category.name }} 카테고리 글 더 보기 <i class="icon-arrow-forward"></i></a>
+            <a href="/{{ cat_posts.category.slug }}/" class="button button--radius-rounded typography-b2">{{ t.more_in_category | replace(from='{category}', to=cat_posts.category.name) }} <i class="icon-arrow-forward"></i></a>
         </div>
     </div>
     {% endfor %}
