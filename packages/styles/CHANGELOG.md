@@ -1,5 +1,13 @@
 # @blog/styles
 
+## 0.8.5
+
+### Patch Changes
+
+- Ship the multilingual UI assets: the global navigation language toggle, runtime
+  string localization (comment/like/share widgets selected by `<html lang>`), the
+  SPA `<html lang>` sync, and the language-switcher styles.
+
 ## 0.8.4
 
 ### Patch Changes
