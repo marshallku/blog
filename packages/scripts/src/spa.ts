@@ -120,6 +120,14 @@ function updatePageMeta(): void {
         document.title = title;
     }
 
+    // Keep <html lang> in sync so runtime-localized strings (t()) and assistive
+    // tech follow the destination language when navigating (e.g. the language
+    // switcher swaps a Korean post for its English translation via the SPA).
+    const lang = partialContent.dataset.pageLang;
+    if (lang) {
+        document.documentElement.lang = lang;
+    }
+
     const styles = partialContent.dataset.pageStyles;
     if (styles) {
         updatePageStyles(styles);

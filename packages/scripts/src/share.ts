@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 const COPY_RESET_MS = 2000;
 
 function bindContainer(container: HTMLElement): void {
@@ -18,7 +20,7 @@ function bindContainer(container: HTMLElement): void {
 
             if (label) {
                 const original = label.textContent;
-                label.textContent = "복사됨!";
+                label.textContent = t("copied");
                 setTimeout(() => {
                     label.textContent = original;
                 }, COPY_RESET_MS);

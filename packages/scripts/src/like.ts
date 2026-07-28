@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 interface LikeButtonData {
     postSlug: string;
     apiUrl: string;
@@ -29,7 +31,7 @@ export function likeButton(postSlug: string, apiUrl: string): LikeButtonData {
                 if (!res.ok) throw new Error();
                 container.innerHTML = await res.text();
             } catch {
-                container.innerHTML = '<button class="post-like__button" disabled>오류</button>';
+                container.innerHTML = '<button class="post-like__button" disabled>' + t("error") + "</button>";
             } finally {
                 this.loading = false;
             }

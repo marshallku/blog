@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 interface CommentFormData {
     postSlug: string;
     apiUrl: string;
@@ -46,7 +48,7 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
                 if (!res.ok) throw new Error();
                 list.innerHTML = await res.text();
             } catch {
-                list.innerHTML = '<p class="comment-list__error">댓글을 불러오지 못했습니다.</p>';
+                list.innerHTML = '<p class="comment-list__error">' + t("commentsLoadError") + "</p>";
             }
         },
 
@@ -72,7 +74,7 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         postSlug: this.postSlug,
-                        name: this.name || "익명",
+                        name: this.name || t("anonymous"),
                         url: this.url || undefined,
                         body: this.body,
                         parentCommentId: this.parentId || undefined,
@@ -110,7 +112,7 @@ export function commentForm(postSlug: string, apiUrl: string): CommentFormData {
                 this.body = "";
                 this.cancelReply();
             } catch {
-                alert("댓글 등록에 실패했습니다.");
+                alert(t("commentPostError"));
             } finally {
                 this.loading = false;
             }
