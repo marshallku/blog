@@ -14,10 +14,6 @@ if [ ! -x "$BLOG_BIN" ]; then
     exit 1
 fi
 
-# Build the site in place. nginx serves dist/ directly
-# (root /home/marshall/dev/blog/dist), so the build IS the deploy — no copy
-# step. The incremental cache invalidates itself when the binary, templates,
-# config.yaml, or manifest.json change, and prunes output for deleted posts.
 "$BLOG_BIN" build --incremental
 
-echo "✅ Site built — served directly from dist/"
+echo "✅ Site built into dist/"
