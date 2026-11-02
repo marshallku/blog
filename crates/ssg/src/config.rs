@@ -482,44 +482,38 @@ mod tests {
         assert_eq!(lang_to_og_locale("fr"), "fr");
     }
 
+    fn config_with_languages(supported: &[&str]) -> SsgConfig {
+        SsgConfig {
+            languages: LanguagesConfig {
+                default: "ko".to_string(),
+                supported: supported.iter().map(|lang| lang.to_string()).collect(),
+            },
+            ..SsgConfig::default()
+        }
+    }
+
     #[test]
     fn test_config_rejects_language_colliding_with_partial_dir() {
-        let mut config = SsgConfig::default();
+        let mut config = config_with_languages(&["ko", "html"]);
         config.build.partial_dir = "html".to_string();
-        config.languages = LanguagesConfig {
-            default: "ko".to_string(),
-            supported: vec!["ko".to_string(), "html".to_string()],
-        };
         assert!(config.validate().is_err());
     }
 
     #[test]
     fn test_config_rejects_language_colliding_with_reserved_segment() {
-        let mut config = SsgConfig::default();
-        config.languages = LanguagesConfig {
-            default: "ko".to_string(),
-            supported: vec!["ko".to_string(), "tag".to_string()],
-        };
+        let config = config_with_languages(&["ko", "tag"]);
         assert!(config.validate().is_err());
     }
 
     #[test]
     fn test_config_accepts_normal_languages() {
-        let mut config = SsgConfig::default();
-        config.languages = LanguagesConfig {
-            default: "ko".to_string(),
-            supported: vec!["ko".to_string(), "en".to_string()],
-        };
+        let config = config_with_languages(&["ko", "en"]);
         assert!(config.validate().is_ok());
     }
 
     #[test]
     fn test_validate_against_categories_detects_collision() {
-        let mut config = SsgConfig::default();
-        config.languages = LanguagesConfig {
-            default: "ko".to_string(),
-            supported: vec!["ko".to_string(), "en".to_string()],
-        };
+        let config = config_with_languages(&["ko", "en"]);
         // A top-level category named "en" collides with the /en/ prefix.
         assert!(config
             .validate_against_categories(&["en".to_string(), "dev".to_string()])
@@ -532,11 +526,7 @@ mod tests {
 
     #[test]
     fn test_validate_against_categories_allows_disjoint() {
-        let mut config = SsgConfig::default();
-        config.languages = LanguagesConfig {
-            default: "ko".to_string(),
-            supported: vec!["ko".to_string(), "en".to_string()],
-        };
+        let config = config_with_languages(&["ko", "en"]);
         assert!(config
             .validate_against_categories(&[
                 "dev".to_string(),
