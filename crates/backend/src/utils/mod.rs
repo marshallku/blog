@@ -1,3 +1,4 @@
+pub mod comment_guard;
 pub mod encode;
 pub mod encryption;
 pub mod ip;

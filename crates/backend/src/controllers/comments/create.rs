@@ -15,6 +15,7 @@ use crate::{
     models::{comment::Comment, user::UserRole},
     templates::TEMPLATES,
     utils::{
+        comment_guard::{self, Submission},
         slug::normalize_slug,
         validator::ValidatedJson,
         webhook::{send_message, DiscordEmbed, DiscordField},
@@ -44,6 +45,13 @@ pub struct AddCommentPayload {
 
     #[serde(default)]
     pub lang: Option<String>,
+
+    /// Honeypot: hidden from people, so any value means a bot filled the form
+    #[serde(default)]
+    pub homepage: Option<String>,
+
+    #[serde(rename = "formToken", default)]
+    pub form_token: Option<String>,
 }
 
 pub async fn post(
@@ -53,6 +61,30 @@ pub async fn post(
 ) -> impl IntoResponse {
     let is_root = user.is_some() && user.unwrap().role == UserRole::Root;
     let lang = crate::i18n::normalize_lang(payload.lang.as_deref());
+
+    if !is_root {
+        let submission = Submission {
+            honeypot: payload.homepage.as_deref(),
+            token: payload.form_token.as_deref(),
+        };
+
+        if let Err(rejection) =
+            comment_guard::check(&submission, &state.jwt_secret, Utc::now().timestamp())
+        {
+            log::warn!(
+                "[Comment] Rejected on {} by {}: {}",
+                payload.post_slug,
+                payload.name,
+                rejection.reason()
+            );
+            return (
+                StatusCode::BAD_REQUEST,
+                [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
+                "<p class=\"comment-form__error\">댓글 등록에 실패했습니다.</p>".to_string(),
+            )
+                .into_response();
+        }
+    }
     let post_slug = normalize_slug(&payload.post_slug).to_string();
 
     // Replies are always 1-depth: normalize the parent to the top-level comment

@@ -31,6 +31,10 @@ pub fn app() -> Router<AppState> {
             get(super::comments::list::get),
         )
         .route(
+            &format!("{}/comment/token", API_VERSION_PREFIX),
+            get(super::comments::token::get),
+        )
+        .route(
             &format!("{}/comment/:id", API_VERSION_PREFIX),
             delete(super::comments::delete::delete),
         )

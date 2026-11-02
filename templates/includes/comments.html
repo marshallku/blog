@@ -13,6 +13,9 @@
                     {{ t.reply_prefix }}<span class="comment-composer__reply-to" x-text="replyingTo"></span>{{ t.reply_suffix }}
                     <button type="button" @click="cancelReply" class="comment-composer__cancel">[x]</button>
                 </div>
+                <div class="comment-honeypot" aria-hidden="true" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden">
+                    <label>Homepage <input type="text" name="homepage" tabindex="-1" autocomplete="off" x-model="homepage"></label>
+                </div>
                 <div class="comment-composer__ids">
                     <label class="comment-composer__field">
                         <span class="comment-composer__sigil">~$</span>

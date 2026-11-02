@@ -29,6 +29,9 @@
         <form class="comment-form__form" @submit.prevent="submit">
             <input type="hidden" name="postSlug" :value="postSlug">
             <input type="hidden" name="parentCommentId" x-model="parentId">
+            <div class="comment-honeypot" aria-hidden="true" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden">
+                <label>Homepage <input type="text" name="homepage" tabindex="-1" autocomplete="off" x-model="homepage"></label>
+            </div>
 
             <div x-show="parentId" x-cloak class="comment-form__replying typography-c1">
                 {{ t.reply_prefix }}<span x-text="replyingTo"></span>{{ t.reply_suffix_page }}
