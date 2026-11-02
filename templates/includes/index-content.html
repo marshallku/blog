@@ -62,3 +62,24 @@
     </div>
     {% endfor %}
 </section>
+
+<section class="business-info" aria-label="{{ t.business_info }}">
+    <dl class="business-info__list">
+        <div class="business-info__item">
+            <dt>{{ t.business_name_label }}</dt>
+            <dd>{{ t.business_name }}</dd>
+        </div>
+        <div class="business-info__item">
+            <dt>{{ t.business_representative_label }}</dt>
+            <dd>{{ t.business_representative }}</dd>
+        </div>
+        <div class="business-info__item">
+            <dt>{{ t.business_registration_number_label }}</dt>
+            <dd>166-04-03998</dd>
+        </div>
+        <div class="business-info__item">
+            <dt>{{ t.business_address_label }}</dt>
+            <dd>{{ t.business_address }}</dd>
+        </div>
+    </dl>
+</section>

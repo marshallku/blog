@@ -1,5 +1,11 @@
 # @blog/styles
 
+## 0.8.6
+
+### Patch Changes
+
+- Add business information styles for the home page
+
 ## 0.8.5
 
 ### Patch Changes

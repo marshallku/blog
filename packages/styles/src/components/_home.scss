@@ -114,3 +114,32 @@
         }
     }
 }
+
+.business-info {
+    width: clamp(0px, map.get(palette.$container-width, "large"), 100%);
+    margin: 0 auto;
+    padding: 48px 20px 0;
+    color: palette.color(sub);
+
+    &__list {
+        @include fonts.typography(c1);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px 16px;
+        margin: 0;
+    }
+
+    &__item {
+        display: flex;
+        gap: 6px;
+
+        dt {
+            font-weight: 600;
+        }
+
+        dd {
+            margin: 0;
+        }
+    }
+}
