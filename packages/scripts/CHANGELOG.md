@@ -1,5 +1,11 @@
 # @blog/scripts
 
+## 0.5.4
+
+### Patch Changes
+
+- Send the comment form token and honeypot field so the API can reject bot comments
+
 ## 0.5.3
 
 ### Patch Changes
